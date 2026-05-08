@@ -9,7 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef CLUT_OUTPUT_COLOR
+const char ClutStrFail[] = "\033[31mFAIL\033[0m";
+#else
 const char ClutStrFail[] = "FAIL";
+#endif
 
 #define TEST_ASSERT(condition) ClutTestAssert((condition), __FILE__, __LINE__, "Expression Is False -> " #condition)
 #define TEST_ASSERT_TRUE(condition) ClutTestAssert((condition), __FILE__, __LINE__, "Expected True But Was False -> " #condition)
