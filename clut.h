@@ -25,11 +25,11 @@ typedef struct ClutData {
   long start_time;
 } ClutData;
 
-#define RETURN_IF_FAILED                                                                                                                   \
-  do {                                                                                                                                     \
-    if (Clut.current_test_failed) {                                                                                                        \
-      return;                                                                                                                              \
-    }                                                                                                                                      \
+#define RETURN_IF_FAILED                                                                                                                                                           \
+  do {                                                                                                                                                                             \
+    if (Clut.current_test_failed) {                                                                                                                                                \
+      return;                                                                                                                                                                      \
+    }                                                                                                                                                                              \
   } while (0)
 
 #define TEST_BEGIN() ClutTestBegin(__FILE__)
@@ -43,10 +43,12 @@ typedef struct ClutData {
 #define TEST_ASSERT_EQUALS_INT(expected, actual) ClutTestAssertEqualsInt((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUALS_FLOAT(expected, actual) ClutTestAssertEqualsFloat((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUALS_DOUBLE(expected, actual) ClutTestAssertEqualsDouble((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUALS_STRING(expected, actual) ClutTestAssertEqualsString((expected), (actual), __FILE__, __LINE__, NULL)
 
 #define TEST_ASSERT_EQUALS_INT_MESSAGE(expected, actual, msg) ClutTestAssertEqualsInt((expected), (actual), __FILE__, __LINE__, msg)
 #define TEST_ASSERT_EQUALS_FLOAT_MESSAGE(expected, actual, msg) ClutTestAssertEqualsFloat((expected), (actual), __FILE__, __LINE__, msg)
 #define TEST_ASSERT_EQUALS_DOUBLE_MESSAGE(expected, actual, msg) ClutTestAssertEqualsDouble((expected), (actual), __FILE__, __LINE__, msg)
+#define TEST_ASSERT_EQUALS_STRING_MESSAGE(expected, actual, msg) ClutTestAssertEqualsString((const char *)(expected), (const char *)(actual), __FILE__, __LINE__, msg)
 
 void ClutReset();
 void ClutTestBegin(const char *file);
@@ -58,6 +60,7 @@ void ClutTestAssert(bool condition, const char *file, const int line, const char
 void ClutTestAssertEqualsInt(int expected, int actual, const char *file, const int line, char *msg);
 void ClutTestAssertEqualsFloat(float expected, float actual, const char *file, const int line, char *msg);
 void ClutTestAssertEqualsDouble(double expected, double actual, const char *file, const int line, char *msg);
+void ClutTestAssertEqualsString(const char *expected, const char *actual, const char *file, const int line, char *msg);
 
 #ifdef CLUT_IMPLEMENTATION
 
@@ -65,6 +68,7 @@ void ClutTestAssertEqualsDouble(double expected, double actual, const char *file
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 ClutData Clut = {};
@@ -173,6 +177,35 @@ void ClutTestAssertEqualsDouble(double expected, double actual, const char *file
   const char *msg_to_print = msg;
   if (msg == NULL) {
     ClutFormatMessage(buffer, sizeof(buffer), "Expected: %f, Received: %f", expected, actual);
+    msg_to_print = buffer;
+  }
+  ClutFail(file, line, msg_to_print);
+}
+
+void ClutTestAssertEqualsString(const char *expected, const char *actual, const char *file, const int line, char *msg) {
+  RETURN_IF_FAILED;
+
+  if (expected == actual)
+    return;
+
+  if (expected == NULL || actual == NULL) {
+    Clut.current_test_failed = true;
+  } else {
+    for (size_t i = 0; expected[i] || actual[i]; i++) {
+      if (expected[i] != actual[i]) {
+        Clut.current_test_failed = true;
+        break;
+      }
+    }
+  }
+
+  if (!Clut.current_test_failed)
+    return;
+
+  char buffer[CLUT_MSG_BUFFER_SIZE];
+  const char *msg_to_print = msg;
+  if (msg == NULL) {
+    ClutFormatMessage(buffer, sizeof(buffer), "Expected: %s, Received: %s", expected, actual);
     msg_to_print = buffer;
   }
   ClutFail(file, line, msg_to_print);
