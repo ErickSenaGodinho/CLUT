@@ -1,14 +1,8 @@
 #ifndef INCLUDE_CLUT_H
 #define INCLUDE_CLUT_H
 
-#include <float.h>
-#include <math.h>
-#include <stdarg.h>
 #include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <stddef.h>
 
 #ifdef CLUT_OUTPUT_COLOR
 const char ClutStrFail[] = "\033[31mFAIL\033[0m";
@@ -18,7 +12,7 @@ const char ClutStrFail[] = "FAIL";
 const char ClutStrPass[] = "PASS";
 #endif
 
-#define MSG_BUFFER_SIZE 256
+#define CLUT_MSG_BUFFER_SIZE 256
 
 typedef void (*ClutTestFunction)(void);
 
@@ -67,6 +61,12 @@ void ClutTestAssertEqualsDouble(double expected, double actual, const char *file
 
 #ifdef CLUT_IMPLEMENTATION
 
+#include <float.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <time.h>
+
 ClutData Clut = {};
 
 void ClutReset() {
@@ -102,10 +102,10 @@ int ClutTestEnd() {
   double total_time = ((double)(end_time - Clut.start_time)) / CLOCKS_PER_SEC;
   size_t failures = Clut.failures;
 
-  char buffer[MSG_BUFFER_SIZE];
+  char buffer[CLUT_MSG_BUFFER_SIZE];
   ClutFormatMessage(buffer, sizeof(buffer),
                     "------------------------\n"
-                    "%llu Tests %llu Failures - Total Time %.2fs\n",
+                    "%zu Tests %zu Failures - Total Time %.2fs\n",
                     Clut.total_tests, Clut.failures, total_time);
   printf("%s", buffer);
 
@@ -141,7 +141,7 @@ void ClutTestAssertEqualsInt(int expected, int actual, const char *file, const i
   if (expected == actual) {
     return;
   }
-  char buffer[MSG_BUFFER_SIZE];
+  char buffer[CLUT_MSG_BUFFER_SIZE];
   const char *msg_to_print = msg;
   if (msg == NULL) {
     ClutFormatMessage(buffer, sizeof(buffer), "Expected: %d, Received: %d", expected, actual);
@@ -155,7 +155,7 @@ void ClutTestAssertEqualsFloat(float expected, float actual, const char *file, c
   if (fabsf(expected - actual) < FLT_EPSILON) {
     return;
   }
-  char buffer[MSG_BUFFER_SIZE];
+  char buffer[CLUT_MSG_BUFFER_SIZE];
   const char *msg_to_print = msg;
   if (msg == NULL) {
     ClutFormatMessage(buffer, sizeof(buffer), "Expected: %f, Received: %f", expected, actual);
@@ -169,7 +169,7 @@ void ClutTestAssertEqualsDouble(double expected, double actual, const char *file
   if (fabs(expected - actual) < DBL_EPSILON) {
     return;
   }
-  char buffer[MSG_BUFFER_SIZE];
+  char buffer[CLUT_MSG_BUFFER_SIZE];
   const char *msg_to_print = msg;
   if (msg == NULL) {
     ClutFormatMessage(buffer, sizeof(buffer), "Expected: %f, Received: %f", expected, actual);
