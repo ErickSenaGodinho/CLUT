@@ -49,11 +49,13 @@ typedef struct ClutData {
 #define TEST_ASSERT_EQUALS_FLOAT(expected, actual) ClutTestAssertEqualsFloat((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUALS_DOUBLE(expected, actual) ClutTestAssertEqualsDouble((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUALS_STRING(expected, actual) ClutTestAssertEqualsString((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUALS_STRING_LEN(expected, actual, len) ClutTestAssertEqualsStringLen((expected), (actual), (len), __FILE__, __LINE__, NULL)
 
 #define TEST_ASSERT_EQUALS_INT_MESSAGE(expected, actual, msg) ClutTestAssertEqualsInt((expected), (actual), __FILE__, __LINE__, msg)
 #define TEST_ASSERT_EQUALS_FLOAT_MESSAGE(expected, actual, msg) ClutTestAssertEqualsFloat((expected), (actual), __FILE__, __LINE__, msg)
 #define TEST_ASSERT_EQUALS_DOUBLE_MESSAGE(expected, actual, msg) ClutTestAssertEqualsDouble((expected), (actual), __FILE__, __LINE__, msg)
 #define TEST_ASSERT_EQUALS_STRING_MESSAGE(expected, actual, msg) ClutTestAssertEqualsString((const char *)(expected), (const char *)(actual), __FILE__, __LINE__, msg)
+#define TEST_ASSERT_EQUALS_STRING_LEN_MESSAGE(expected, actual, len, msg) ClutTestAssertEqualsStringLen((expected), (actual), (len), __FILE__, __LINE__, msg)
 
 void ClutReset();
 void ClutTestBegin(const char *file);
@@ -74,6 +76,7 @@ void ClutPrintExpectedActualInt(int expected, int actual);
 void ClutPrintExpectedActualFloat(float expected, float actual);
 void ClutPrintExpectedActualDouble(double expected, double actual);
 void ClutPrintExpectedActualString(const char *expected, const char *actual);
+void ClutPrintExpectedActualStringLen(const char *expected, const char *actual, size_t len);
 void ClutPrintf(const char *fmt, ...);
 
 void ClutFail();
@@ -82,6 +85,7 @@ void ClutTestAssertEqualsInt(int expected, int actual, const char *file, const i
 void ClutTestAssertEqualsFloat(float expected, float actual, const char *file, const int line, char *msg);
 void ClutTestAssertEqualsDouble(double expected, double actual, const char *file, const int line, char *msg);
 void ClutTestAssertEqualsString(const char *expected, const char *actual, const char *file, const int line, char *msg);
+void ClutTestAssertEqualsStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, char *msg);
 
 #ifdef CLUT_IMPLEMENTATION
 
@@ -154,7 +158,7 @@ void ClutEndTestLog() { ClutPrintChar('\n'); }
 
 void ClutPrint(const char *str) {
   if (str == NULL) {
-    str = "NULL";
+    str = "(null)";
   }
   fprintf(Clut.stream, "%s", str);
 }
@@ -201,6 +205,8 @@ void ClutPrintExpectedActualString(const char *expected, const char *actual) {
   ClutPrint(CLUT_STR_RECEIVED);
   ClutPrint(actual);
 }
+
+void ClutPrintExpectedActualStringLen(const char *expected, const char *actual, size_t len) { ClutPrintf("Expected %s to equal %s until index %zu", expected, actual, len); }
 
 void ClutFail() {
   Clut.current_test_failed = true;
@@ -293,6 +299,37 @@ void ClutTestAssertEqualsString(const char *expected, const char *actual, const 
     ClutPrint(msg);
   } else {
     ClutPrintExpectedActualString(expected, actual);
+  }
+  ClutEndTestLog();
+  ClutFail();
+}
+
+void ClutTestAssertEqualsStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, char *msg) {
+  RETURN_IF_FAILED;
+
+  if (expected == actual)
+    return;
+
+  if (expected == NULL || actual == NULL) {
+    Clut.current_test_failed = true;
+  } else {
+    for (size_t i = 0; i < len && (expected[i] || actual[i]); i++) {
+      if (expected[i] != actual[i]) {
+        Clut.current_test_failed = true;
+        break;
+      }
+    }
+  }
+
+  if (!Clut.current_test_failed)
+    return;
+
+  ClutBeginTestLog(file, line);
+  ClutPrintFail();
+  if (msg) {
+    ClutPrint(msg);
+  } else {
+    ClutPrintExpectedActualStringLen(expected, actual, len);
   }
   ClutEndTestLog();
   ClutFail();
