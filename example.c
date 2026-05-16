@@ -3,27 +3,44 @@
 
 #include "clut.h"
 
-void test1() { TEST_ASSERT_FALSE(1 == 1); }
-void test2() { TEST_ASSERT_EQUALS_INT(1, 0); }
-void test3() { TEST_ASSERT_EQUALS_FLOAT_MESSAGE(0.3f, 0.2f + 0.1f, "Must be 0.3f"); }
-void test4() {
-  TEST_ASSERT_EQUALS_STRING("Teste", "Teste");
-  TEST_ASSERT_NULL(NULL);
-  TEST_ASSERT_NOT_NULL(NULL);
+int add(int a, int b) { return a + b; }
+float divide(float a, float b) { return b != 0.0f ? a / b : 0.0f; }
+char *say_hello() { return "Hello"; }
+void *return_null() { return NULL; }
+
+void test_add() {
+  TEST_ASSERT_EQUALS_INT(5, add(2, 3));  // Passed
+  TEST_ASSERT_EQUALS_INT(0, add(-1, 1)); // Passed
 }
-void test5() {
-  TEST_ASSERT_GREATER_THAN_INT(1, 2);
-  TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(2.2f, 2.2f);
-  TEST_ASSERT_LESS_THAN_DOUBLE(2.2, 1.5);
-  TEST_ASSERT_LESS_OR_EQUAL_INT(1, 1);
+
+void test_divide() {
+  TEST_ASSERT_EQUALS_FLOAT(0.5f, divide(1.0f, 2.0f)); // Passed
+  TEST_ASSERT_EQUALS_FLOAT(0.0f, divide(5.0f, 0.0f)); // Passed
+}
+
+void test_strings() {
+  TEST_ASSERT_EQUALS_STRING("Hello", say_hello()); // Passed
+  TEST_ASSERT_NOT_NULL(say_hello());               // Passed
+}
+
+void test_null_pointer() {
+  TEST_ASSERT_NULL(return_null()); // Passed
+}
+
+void test_comparisons() {
+  TEST_ASSERT_GREATER_THAN_INT(10, 5);             // Failed: expected 5 > 10
+  TEST_ASSERT_LESS_OR_EQUAL_INT(5, 5);             // Not validated due to previous failure
+  TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(3.0f, 3.14f); // Not validated due to previous failure
 }
 
 int main() {
   TEST_BEGIN();
-  TEST_RUN(test1);
-  TEST_RUN(test2);
-  TEST_RUN(test3);
-  TEST_RUN(test4);
-  TEST_RUN(test5);
+
+  TEST_RUN(test_add);          // Passed: all assertions passed
+  TEST_RUN(test_divide);       // Passed: all assertions passed
+  TEST_RUN(test_strings);      // Passed: all assertions passed
+  TEST_RUN(test_null_pointer); // Passed: all assertions passed
+  TEST_RUN(test_comparisons);  // Failed: one assertion failed
+
   return TEST_END();
 }
