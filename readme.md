@@ -40,6 +40,7 @@ int main() {
 - [ ] Pointer Assertions
     - [x] TEST_ASSERT_NULL(pointer)
     - [x] TEST_ASSERT_NOT_NULL(pointer)
+    - [x] TEST_ASSERT_EQUALS_PTR(expected, actual)
     - [ ] Pointer comparisons
 
 - [ ] Integer Assertions
@@ -57,6 +58,8 @@ int main() {
     - [x] TEST_ASSERT_LESS_THAN_FLOAT(expected, actual)
     - [x] TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(expected, actual)
     - [x] TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(expected, actual)
+    - [ ] TEST_ASSERT_NOT_EQUALS_FLOAT(expected, actual)
+    - [ ] TEST_ASSERT_NOT_EQUALS_DOUBLE(expected, actual)
     - [ ] Number within tolerance
 
 - [x] String Assertions
