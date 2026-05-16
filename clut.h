@@ -19,7 +19,6 @@ const char ClutStrPass[] = "PASS";
 #define CLUT_STR_LESS_THAN " to be less than "
 #define CLUT_STR_GREATER_OR_EQUAL " to be greater or equal than "
 #define CLUT_STR_LESS_OR_EQUAL " to be less or equal than "
-
 #define CLUT_STR_NOT_EQUAL " to not be equal to "
 
 typedef void (*ClutTestFunction)(void);
