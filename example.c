@@ -23,8 +23,13 @@ void test_strings() {
   TEST_ASSERT_NOT_NULL(say_hello());               // Passed
 }
 
-void test_null_pointer() {
+void test_pointers() {
+  int x = 10;
+  int *p1 = &x;
+  int *p2 = &x;
+
   TEST_ASSERT_NULL(return_null()); // Passed
+  TEST_ASSERT_EQUALS_PTR(p1, p2);  // Passed
 }
 
 void test_comparisons() {
@@ -36,11 +41,11 @@ void test_comparisons() {
 int main() {
   TEST_BEGIN();
 
-  TEST_RUN(test_add);          // Passed: all assertions passed
-  TEST_RUN(test_divide);       // Passed: all assertions passed
-  TEST_RUN(test_strings);      // Passed: all assertions passed
-  TEST_RUN(test_null_pointer); // Passed: all assertions passed
-  TEST_RUN(test_comparisons);  // Failed: one assertion failed
+  TEST_RUN(test_add);         // Passed: all assertions passed
+  TEST_RUN(test_divide);      // Passed: all assertions passed
+  TEST_RUN(test_strings);     // Passed: all assertions passed
+  TEST_RUN(test_pointers);    // Passed: all assertions passed
+  TEST_RUN(test_comparisons); // Failed: one assertion failed
 
   return TEST_END();
 }

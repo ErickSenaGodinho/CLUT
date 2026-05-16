@@ -57,6 +57,7 @@ typedef struct ClutData {
 #define TEST_ASSERT_EQUALS_DOUBLE(expected, actual) ClutTestAssertEqualsDouble((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUALS_STRING(expected, actual) ClutTestAssertEqualsString((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUALS_STRING_LEN(expected, actual, len) ClutTestAssertEqualsStringLen((expected), (actual), (len), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUALS_PTR(expected, actual) ClutTestAssertEqualsPtr((expected), (actual), __FILE__, __LINE__, NULL)
 
 #define TEST_ASSERT_GREATER_THAN_INT(expected, actual) ClutAssertCompareInternalInt(((actual) > (expected)), (expected), (actual), __FILE__, __LINE__, NULL, CLUT_STR_GREATER_THAN)
 #define TEST_ASSERT_LESS_THAN_INT(expected, actual) ClutAssertCompareInternalInt(((actual) < (expected)), (expected), (actual), __FILE__, __LINE__, NULL, CLUT_STR_LESS_THAN)
@@ -116,6 +117,7 @@ void ClutPrintChar(const char c);
 void ClutPrintInt(int number);
 void ClutPrintFloat(float number);
 void ClutPrintDouble(double number);
+void ClutPrintPtr(void *ptr);
 void ClutPrintf(const char *fmt, ...);
 
 void ClutPrintFail();
@@ -124,6 +126,7 @@ void ClutPrintExpectedActualFloat(float expected, float actual);
 void ClutPrintExpectedActualDouble(double expected, double actual);
 void ClutPrintExpectedActualString(const char *expected, const char *actual);
 void ClutPrintExpectedActualStringLen(const char *expected, const char *actual, size_t len);
+void ClutPrintExpectedActualPtr(void *expected, void *actual);
 
 void ClutFail();
 void ClutTestAssert(bool condition, const char *file, const int line, const char *msg);
@@ -132,6 +135,7 @@ void ClutTestAssertEqualsFloat(float expected, float actual, const char *file, c
 void ClutTestAssertEqualsDouble(double expected, double actual, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualsString(const char *expected, const char *actual, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualsStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg);
+void ClutTestAssertEqualsPtr(void *expected, void *actual, const char *file, const int line, const char *msg);
 
 void ClutAssertCompareInternalInt(bool condition, int expected, int actual, const char *file, int line, const char *msg, const char *opStr);
 void ClutAssertCompareInternalFloat(bool condition, float expected, float actual, const char *file, int line, const char *msg, const char *opStr);
@@ -214,6 +218,7 @@ void ClutPrint(const char *str) {
 }
 void ClutPrintChar(const char c) { fprintf(Clut.stream, "%c", c); }
 void ClutPrintInt(int number) { fprintf(Clut.stream, "%d", number); }
+void ClutPrintPtr(void *ptr) { fprintf(Clut.stream, "%p", ptr); }
 void ClutPrintFloat(float number) { fprintf(Clut.stream, "%f", number); }
 void ClutPrintDouble(double number) { fprintf(Clut.stream, "%f", number); }
 void ClutPrintf(const char *fmt, ...) {
@@ -257,6 +262,13 @@ void ClutPrintExpectedActualString(const char *expected, const char *actual) {
 }
 
 void ClutPrintExpectedActualStringLen(const char *expected, const char *actual, size_t len) { ClutPrintf("Expected %s to equal %s until index %zu", expected, actual, len); }
+
+void ClutPrintExpectedActualPtr(void *expected, void *actual) {
+  ClutPrint(CLUT_STR_EXPECTED);
+  ClutPrintPtr(expected);
+  ClutPrint(CLUT_STR_RECEIVED);
+  ClutPrintPtr(actual);
+}
 
 void ClutFail() {
   Clut.current_test_failed = true;
@@ -380,6 +392,22 @@ void ClutTestAssertEqualsStringLen(const char *expected, const char *actual, siz
     ClutPrint(msg);
   } else {
     ClutPrintExpectedActualStringLen(expected, actual, len);
+  }
+  ClutEndTestLog();
+  ClutFail();
+}
+
+void ClutTestAssertEqualsPtr(void *expected, void *actual, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+  if (expected == actual)
+    return;
+
+  ClutBeginTestLog(file, line);
+  ClutPrintFail();
+  if (msg) {
+    ClutPrint(msg);
+  } else {
+    ClutPrintExpectedActualPtr(expected, actual);
   }
   ClutEndTestLog();
   ClutFail();
