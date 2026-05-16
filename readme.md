@@ -1,6 +1,6 @@
 # CLUT - C Lightweight Unit Testing Library
 
-CLUT is a simple, lightweight unit testing library for C, inspired by JUnit and Unity. It provides easy-to-use assertions and clean output.
+CLUT is a lightweight, header-only C unit testing library inspired by JUnit and Unity. It makes writing and running tests simple, with clean, readable output.
 
 ## Installation
 ```c
@@ -27,45 +27,45 @@ int main() {
 
 ## Features
 
--[ ] Customization
-    -[x] Color output
-    -[ ] Custom test output streams
+- [ ] Customization
+    - [x] Color output
+    - [ ] Custom test output streams
 
--[x] Boolean Assertions
-    -[x] TEST_ASSERT(condition)
-    -[x] TEST_ASSERT_TRUE(condition)
-    -[x] TEST_ASSERT_FALSE(condition)
-    -[x] TEST_ASSERT_UNLESS(condition)
+- [x] Boolean Assertions
+    - [x] TEST_ASSERT(condition)
+    - [x] TEST_ASSERT_TRUE(condition)
+    - [x] TEST_ASSERT_FALSE(condition)
+    - [x] TEST_ASSERT_UNLESS(condition)
 
--[ ] Pointer Assertions
-    -[x] TEST_ASSERT_NULL(pointer)
-    -[x] TEST_ASSERT_NOT_NULL(pointer)
-    -[ ] Pointer comparisons
+- [ ] Pointer Assertions
+    - [x] TEST_ASSERT_NULL(pointer)
+    - [x] TEST_ASSERT_NOT_NULL(pointer)
+    - [ ] Pointer comparisons
 
--[ ] Integer Assertions
-    -[x] TEST_ASSERT_EQUALS_INT(expected, actual)
-    -[ ] TEST_ASSERT_NOT_EQUALS_INT(expected, actual)
-    -[x] TEST_ASSERT_GREATER_THAN_INT(expected, actual)
-    -[x] TEST_ASSERT_LESS_THAN_INT(expected, actual)
-    -[x] TEST_ASSERT_GREATER_OR_EQUAL_INT(expected, actual)
-    -[x] TEST_ASSERT_LESS_OR_EQUAL_INT(expected, actual)
+- [ ] Integer Assertions
+    - [x] TEST_ASSERT_EQUALS_INT(expected, actual)
+    - [ ] TEST_ASSERT_NOT_EQUALS_INT(expected, actual)
+    - [x] TEST_ASSERT_GREATER_THAN_INT(expected, actual)
+    - [x] TEST_ASSERT_LESS_THAN_INT(expected, actual)
+    - [x] TEST_ASSERT_GREATER_OR_EQUAL_INT(expected, actual)
+    - [x] TEST_ASSERT_LESS_OR_EQUAL_INT(expected, actual)
 
--[ ] Floating Point Assertions
-    -[x] TEST_ASSERT_EQUALS_FLOAT(expected, actual)
-    -[x] TEST_ASSERT_EQUALS_DOUBLE(expected, actual)
-    -[x] TEST_ASSERT_GREATER_THAN_FLOAT(expected, actual)
-    -[x] TEST_ASSERT_LESS_THAN_FLOAT(expected, actual)
-    -[x] TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(expected, actual)
-    -[x] TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(expected, actual)
-    -[ ] Number within tolerance
+- [ ] Floating Point Assertions
+    - [x] TEST_ASSERT_EQUALS_FLOAT(expected, actual)
+    - [x] TEST_ASSERT_EQUALS_DOUBLE(expected, actual)
+    - [x] TEST_ASSERT_GREATER_THAN_FLOAT(expected, actual)
+    - [x] TEST_ASSERT_LESS_THAN_FLOAT(expected, actual)
+    - [x] TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(expected, actual)
+    - [x] TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(expected, actual)
+    - [ ] Number within tolerance
 
--[x] String Assertions
-    -[x] TEST_ASSERT_EQUALS_STRING(expected, actual)
-    -[x] TEST_ASSERT_EQUALS_STRING_LEN(expected, actual, len)
+- [x] String Assertions
+    - [x] TEST_ASSERT_EQUALS_STRING(expected, actual)
+    - [x] TEST_ASSERT_EQUALS_STRING_LEN(expected, actual, len)
 
--[ ] Memory & Array Assertions
-    -[ ] Memory comparisons
-    -[ ] Array comparisons
+- [ ] Memory & Array Assertions
+    - [ ] Memory comparisons
+    - [ ] Array comparisons
 
 ---
 
@@ -78,7 +78,7 @@ TEST_ASSERT_EQUALS_INT(5, 5);
 ```
 
 Output:
-<pre>test_file.c:10:TestAddition:<span style="color:green">PASS</span></pre>
+<pre>test_file.c:10:TestAddition:PASS</pre>
 
 ### Failing Test
 Code:
@@ -87,7 +87,7 @@ TEST_ASSERT_EQUALS_INT(5, 4);
 ```
 
 Output:
-<pre>test_file.c:12:TestAddition:<span style="color:red">FAIL</span>:Expected 5 Received 4</pre>
+<pre>test_file.c:12:TestAddition:FAIL:Expected 5 Received 4</pre>
 
 ### String Failure
 Code:
@@ -96,7 +96,7 @@ TEST_ASSERT_EQUALS_STRING("Hello", "Hella");
 ```
 
 Output:
-<pre>test_file.c:20:TestStrings:<span style="color:red">FAIL</span>:Expected Hello Received Hella</pre>
+<pre>test_file.c:20:TestStrings:FAIL:Expected Hello Received Hella</pre>
 
 ---
 
