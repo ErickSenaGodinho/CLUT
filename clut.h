@@ -59,19 +59,19 @@ typedef struct ClutData {
 #define TEST_ASSERT_NULL(pointer) ClutTestAssert(((pointer) == NULL), __FILE__, __LINE__, "Expected NULL")
 #define TEST_ASSERT_NOT_NULL(pointer) ClutTestAssert(((pointer) != NULL), __FILE__, __LINE__, "Expected Non-NULL")
 
-#define TEST_ASSERT_EQUALS_INT(expected, actual) ClutTestAssertEqualsInt((expected), (actual), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_EQUALS_FLOAT(expected, actual) ClutTestAssertEqualsFloat((expected), (actual), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_EQUALS_DOUBLE(expected, actual) ClutTestAssertEqualsDouble((expected), (actual), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_EQUALS_STRING(expected, actual) ClutTestAssertEqualsString((expected), (actual), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_EQUALS_STRING_LEN(expected, actual, len) ClutTestAssertEqualsStringLen((expected), (actual), (len), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_EQUALS_PTR(expected, actual) ClutTestAssertEqualsPtr((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUAL_INT(expected, actual) ClutTestAssertEqualInt((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUAL_FLOAT(expected, actual) ClutTestAssertEqualFloat((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUAL_DOUBLE(expected, actual) ClutTestAssertEqualDouble((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUAL_STRING(expected, actual) ClutTestAssertEqualString((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUAL_STRING_LEN(expected, actual, len) ClutTestAssertEqualStringLen((expected), (actual), (len), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUAL_PTR(expected, actual) ClutTestAssertEqualPtr((expected), (actual), __FILE__, __LINE__, NULL)
 
-#define TEST_ASSERT_NOT_EQUALS_INT(expected, actual) ClutTestAssertNotEqualsInt((expected), (actual), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_NOT_EQUALS_FLOAT(expected, actual) ClutTestAssertNotEqualsFloat((expected), (actual), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_NOT_EQUALS_DOUBLE(expected, actual) ClutTestAssertNotEqualsDouble((expected), (actual), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_NOT_EQUALS_STRING(expected, actual) ClutTestAssertNotEqualsString((expected), (actual), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_NOT_EQUALS_STRING_LEN(expected, actual, len) ClutTestAssertNotEqualsStringLen((expected), (actual), (len), __FILE__, __LINE__, NULL)
-#define TEST_ASSERT_NOT_EQUALS_PTR(expected, actual) ClutTestAssertNotEqualsPtr((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_NOT_EQUAL_INT(expected, actual) ClutTestAssertNotEqualInt((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_NOT_EQUAL_FLOAT(expected, actual) ClutTestAssertNotEqualFloat((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_NOT_EQUAL_DOUBLE(expected, actual) ClutTestAssertNotEqualDouble((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_NOT_EQUAL_STRING(expected, actual) ClutTestAssertNotEqualString((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_NOT_EQUAL_STRING_LEN(expected, actual, len) ClutTestAssertNotEqualStringLen((expected), (actual), (len), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_NOT_EQUAL_PTR(expected, actual) ClutTestAssertNotEqualPtr((expected), (actual), __FILE__, __LINE__, NULL)
 
 #define TEST_ASSERT_GREATER_THAN_INT(expected, actual) ClutAssertCompareInternalInt(CLUT_CMP_GT(expected, actual), (expected), (actual), __FILE__, __LINE__, NULL, CLUT_STR_GREATER_THAN)
 #define TEST_ASSERT_LESS_THAN_INT(expected, actual) ClutAssertCompareInternalInt(CLUT_CMP_LT(expected, actual), (expected), (actual), __FILE__, __LINE__, NULL, CLUT_STR_LESS_THAN)
@@ -97,18 +97,18 @@ typedef struct ClutData {
 #define TEST_ASSERT_NULL_MESSAGE(pointer, msg) ClutTestAssert(((pointer) == NULL), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_NOT_NULL_MESSAGE(pointer, msg) ClutTestAssert(((pointer) != NULL), __FILE__, __LINE__, (msg))
 
-#define TEST_ASSERT_EQUALS_INT_MESSAGE(expected, actual, msg) ClutTestAssertEqualsInt((expected), (actual), __FILE__, __LINE__, (msg))
-#define TEST_ASSERT_EQUALS_FLOAT_MESSAGE(expected, actual, msg) ClutTestAssertEqualsFloat((expected), (actual), __FILE__, __LINE__, (msg))
-#define TEST_ASSERT_EQUALS_DOUBLE_MESSAGE(expected, actual, msg) ClutTestAssertEqualsDouble((expected), (actual), __FILE__, __LINE__, (msg))
-#define TEST_ASSERT_EQUALS_STRING_MESSAGE(expected, actual, msg) ClutTestAssertEqualsString((const char *)(expected), (const char *)(actual), __FILE__, __LINE__, (msg))
-#define TEST_ASSERT_EQUALS_STRING_LEN_MESSAGE(expected, actual, len, msg) ClutTestAssertEqualsStringLen((expected), (actual), (len), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_EQUAL_INT_MESSAGE(expected, actual, msg) ClutTestAssertEqualInt((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_EQUAL_FLOAT_MESSAGE(expected, actual, msg) ClutTestAssertEqualFloat((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_EQUAL_DOUBLE_MESSAGE(expected, actual, msg) ClutTestAssertEqualDouble((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_EQUAL_STRING_MESSAGE(expected, actual, msg) ClutTestAssertEqualString((const char *)(expected), (const char *)(actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_EQUAL_STRING_LEN_MESSAGE(expected, actual, len, msg) ClutTestAssertEqualStringLen((expected), (actual), (len), __FILE__, __LINE__, (msg))
 
-#define TEST_ASSERT_NOT_EQUALS_INT_MESSAGE(expected, actual, msg) ClutTestAssertEqualsInt((expected), (actual), __FILE__, __LINE__, (msg))
-#define TEST_ASSERT_NOT_EQUALS_FLOAT_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualsFloat((expected), (actual), __FILE__, __LINE__, (msg))
-#define TEST_ASSERT_NOT_EQUALS_DOUBLE_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualsDouble((expected), (actual), __FILE__, __LINE__, (msg))
-#define TEST_ASSERT_NOT_EQUALS_STRING_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualsString((expected), (actual), __FILE__, __LINE__, (msg))
-#define TEST_ASSERT_NOT_EQUALS_STRING_LEN_MESSAGE(expected, actual, len, msg) ClutTestAssertNotEqualsStringLen((expected), (actual), (len), __FILE__, __LINE__, (msg))
-#define TEST_ASSERT_NOT_EQUALS_PTR_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualsPtr((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(expected, actual, msg) ClutTestAssertEqualInt((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_NOT_EQUAL_FLOAT_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualFloat((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_NOT_EQUAL_DOUBLE_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualDouble((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_NOT_EQUAL_STRING_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualString((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_NOT_EQUAL_STRING_LEN_MESSAGE(expected, actual, len, msg) ClutTestAssertNotEqualStringLen((expected), (actual), (len), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_NOT_EQUAL_PTR_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualPtr((expected), (actual), __FILE__, __LINE__, (msg))
 
 #define TEST_ASSERT_GREATER_THAN_INT_MESSAGE(expected, actual, msg) ClutAssertCompareInternalInt(CLUT_CMP_GT(expected, actual), (expected), (actual), __FILE__, __LINE__, (msg), CLUT_STR_GREATER_THAN)
 #define TEST_ASSERT_LESS_THAN_INT_MESSAGE(expected, actual, msg) ClutAssertCompareInternalInt(CLUT_CMP_LT(expected, actual), (expected), (actual), __FILE__, __LINE__, (msg), CLUT_STR_LESS_THAN)
@@ -151,19 +151,19 @@ void ClutPrintExpectedActualPtr(void *expected, void *actual, const char *opStr)
 
 void ClutFail();
 void ClutTestAssert(bool condition, const char *file, const int line, const char *msg);
-void ClutTestAssertEqualsInt(int expected, int actual, const char *file, const int line, const char *msg);
-void ClutTestAssertEqualsFloat(float expected, float actual, const char *file, const int line, const char *msg);
-void ClutTestAssertEqualsDouble(double expected, double actual, const char *file, const int line, const char *msg);
-void ClutTestAssertEqualsString(const char *expected, const char *actual, const char *file, const int line, const char *msg);
-void ClutTestAssertEqualsStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg);
-void ClutTestAssertEqualsPtr(void *expected, void *actual, const char *file, const int line, const char *msg);
+void ClutTestAssertEqualInt(int expected, int actual, const char *file, const int line, const char *msg);
+void ClutTestAssertEqualFloat(float expected, float actual, const char *file, const int line, const char *msg);
+void ClutTestAssertEqualDouble(double expected, double actual, const char *file, const int line, const char *msg);
+void ClutTestAssertEqualString(const char *expected, const char *actual, const char *file, const int line, const char *msg);
+void ClutTestAssertEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg);
+void ClutTestAssertEqualPtr(void *expected, void *actual, const char *file, const int line, const char *msg);
 
-void ClutTestAssertNotEqualsInt(int expected, int actual, const char *file, const int line, const char *msg);
-void ClutTestAssertNotEqualsFloat(float expected, float actual, const char *file, const int line, const char *msg);
-void ClutTestAssertNotEqualsDouble(double expected, double actual, const char *file, const int line, const char *msg);
-void ClutTestAssertNotEqualsString(const char *expected, const char *actual, const char *file, const int line, const char *msg);
-void ClutTestAssertNotEqualsStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg);
-void ClutTestAssertNotEqualsPtr(void *expected, void *actual, const char *file, const int line, const char *msg);
+void ClutTestAssertNotEqualInt(int expected, int actual, const char *file, const int line, const char *msg);
+void ClutTestAssertNotEqualFloat(float expected, float actual, const char *file, const int line, const char *msg);
+void ClutTestAssertNotEqualDouble(double expected, double actual, const char *file, const int line, const char *msg);
+void ClutTestAssertNotEqualString(const char *expected, const char *actual, const char *file, const int line, const char *msg);
+void ClutTestAssertNotEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg);
+void ClutTestAssertNotEqualPtr(void *expected, void *actual, const char *file, const int line, const char *msg);
 
 void ClutAssertCompareInternalInt(bool condition, int expected, int actual, const char *file, int line, const char *msg, const char *opStr);
 void ClutAssertCompareInternalFloat(bool condition, float expected, float actual, const char *file, int line, const char *msg, const char *opStr);
@@ -321,7 +321,7 @@ void ClutTestAssert(bool condition, const char *file, const int line, const char
   }
 }
 
-void ClutTestAssertEqualsInt(int expected, int actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertEqualInt(int expected, int actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
   if (expected == actual) {
     return;
@@ -337,7 +337,7 @@ void ClutTestAssertEqualsInt(int expected, int actual, const char *file, const i
   ClutFail();
 }
 
-void ClutTestAssertEqualsFloat(float expected, float actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertEqualFloat(float expected, float actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
   if (fabsf(expected - actual) < FLT_EPSILON) {
     return;
@@ -353,7 +353,7 @@ void ClutTestAssertEqualsFloat(float expected, float actual, const char *file, c
   ClutFail();
 }
 
-void ClutTestAssertEqualsDouble(double expected, double actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertEqualDouble(double expected, double actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
   if (fabs(expected - actual) < DBL_EPSILON) {
     return;
@@ -369,7 +369,7 @@ void ClutTestAssertEqualsDouble(double expected, double actual, const char *file
   ClutFail();
 }
 
-void ClutTestAssertEqualsString(const char *expected, const char *actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertEqualString(const char *expected, const char *actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
   if (expected == actual)
@@ -400,7 +400,7 @@ void ClutTestAssertEqualsString(const char *expected, const char *actual, const 
   ClutFail();
 }
 
-void ClutTestAssertEqualsStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg) {
+void ClutTestAssertEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
   if (expected == actual)
@@ -431,7 +431,7 @@ void ClutTestAssertEqualsStringLen(const char *expected, const char *actual, siz
   ClutFail();
 }
 
-void ClutTestAssertEqualsPtr(void *expected, void *actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertEqualPtr(void *expected, void *actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
   if (expected == actual)
     return;
@@ -447,7 +447,7 @@ void ClutTestAssertEqualsPtr(void *expected, void *actual, const char *file, con
   ClutFail();
 }
 
-void ClutTestAssertNotEqualsInt(int expected, int actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertNotEqualInt(int expected, int actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
   if (expected != actual) {
     return;
@@ -464,7 +464,7 @@ void ClutTestAssertNotEqualsInt(int expected, int actual, const char *file, cons
   ClutFail();
 }
 
-void ClutTestAssertNotEqualsFloat(float expected, float actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertNotEqualFloat(float expected, float actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
   if (fabsf(expected - actual) >= FLT_EPSILON) {
     return;
@@ -481,7 +481,7 @@ void ClutTestAssertNotEqualsFloat(float expected, float actual, const char *file
   ClutFail();
 }
 
-void ClutTestAssertNotEqualsDouble(double expected, double actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertNotEqualDouble(double expected, double actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
   if (fabs(expected - actual) >= DBL_EPSILON) {
     return;
@@ -498,7 +498,7 @@ void ClutTestAssertNotEqualsDouble(double expected, double actual, const char *f
   ClutFail();
 }
 
-void ClutTestAssertNotEqualsString(const char *expected, const char *actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertNotEqualString(const char *expected, const char *actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
   bool are_equal = true;
@@ -530,7 +530,7 @@ void ClutTestAssertNotEqualsString(const char *expected, const char *actual, con
   ClutFail();
 }
 
-void ClutTestAssertNotEqualsStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg) {
+void ClutTestAssertNotEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
   bool are_equal = true;
@@ -562,7 +562,7 @@ void ClutTestAssertNotEqualsStringLen(const char *expected, const char *actual, 
   ClutFail();
 }
 
-void ClutTestAssertNotEqualsPtr(void *expected, void *actual, const char *file, const int line, const char *msg) {
+void ClutTestAssertNotEqualPtr(void *expected, void *actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
   if (expected != actual)

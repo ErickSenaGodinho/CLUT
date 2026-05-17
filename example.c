@@ -9,19 +9,19 @@ char *say_hello() { return "Hello"; }
 void *return_null() { return NULL; }
 
 void test_add() {
-  TEST_ASSERT_EQUALS_INT(5, add(2, 3));  // Passed
-  TEST_ASSERT_EQUALS_INT(0, add(-1, 1)); // Passed
+  TEST_ASSERT_EQUAL_INT(5, add(2, 3));  // Passed
+  TEST_ASSERT_EQUAL_INT(0, add(-1, 1)); // Passed
 }
 
 void test_divide() {
-  TEST_ASSERT_EQUALS_FLOAT(0.5f, divide(1.0f, 2.0f)); // Passed
-  TEST_ASSERT_EQUALS_FLOAT(0.0f, divide(5.0f, 0.0f)); // Passed
+  TEST_ASSERT_EQUAL_FLOAT(0.5f, divide(1.0f, 2.0f)); // Passed
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, divide(5.0f, 0.0f)); // Passed
 }
 
 void test_strings() {
-  TEST_ASSERT_EQUALS_STRING("Hello", say_hello());            // Passed
-  TEST_ASSERT_NOT_EQUALS_STRING_LEN("Hella", say_hello(), 5); // Passed
-  TEST_ASSERT_NOT_NULL(say_hello());                          // Passed
+  TEST_ASSERT_EQUAL_STRING("Hello", say_hello());            // Passed
+  TEST_ASSERT_NOT_EQUAL_STRING_LEN("Hella", say_hello(), 5); // Passed
+  TEST_ASSERT_NOT_NULL(say_hello());                         // Passed
 }
 
 void test_pointers() {
@@ -30,7 +30,7 @@ void test_pointers() {
   int *p2 = &x;
 
   TEST_ASSERT_NULL(return_null()); // Passed
-  TEST_ASSERT_EQUALS_PTR(p1, p2);  // Passed
+  TEST_ASSERT_EQUAL_PTR(p1, p2);   // Passed
 }
 
 void test_comparisons() {
