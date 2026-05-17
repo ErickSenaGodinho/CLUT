@@ -41,11 +41,12 @@ int main() {
     - [x] TEST_ASSERT_NULL(pointer)
     - [x] TEST_ASSERT_NOT_NULL(pointer)
     - [x] TEST_ASSERT_EQUALS_PTR(expected, actual)
+    - [x] TEST_ASSERT_NOT_EQUALS_PTR(expected, actual)
     - [ ] Pointer comparisons
 
 - [ ] Integer Assertions
     - [x] TEST_ASSERT_EQUALS_INT(expected, actual)
-    - [ ] TEST_ASSERT_NOT_EQUALS_INT(expected, actual)
+    - [X] TEST_ASSERT_NOT_EQUALS_INT(expected, actual)
     - [x] TEST_ASSERT_GREATER_THAN_INT(expected, actual)
     - [x] TEST_ASSERT_LESS_THAN_INT(expected, actual)
     - [x] TEST_ASSERT_GREATER_OR_EQUAL_INT(expected, actual)
@@ -58,13 +59,15 @@ int main() {
     - [x] TEST_ASSERT_LESS_THAN_FLOAT(expected, actual)
     - [x] TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(expected, actual)
     - [x] TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(expected, actual)
-    - [ ] TEST_ASSERT_NOT_EQUALS_FLOAT(expected, actual)
-    - [ ] TEST_ASSERT_NOT_EQUALS_DOUBLE(expected, actual)
+    - [X] TEST_ASSERT_NOT_EQUALS_FLOAT(expected, actual)
+    - [X] TEST_ASSERT_NOT_EQUALS_DOUBLE(expected, actual)
     - [ ] Number within tolerance
 
 - [x] String Assertions
     - [x] TEST_ASSERT_EQUALS_STRING(expected, actual)
     - [x] TEST_ASSERT_EQUALS_STRING_LEN(expected, actual, len)
+    - [x] TEST_ASSERT_NOT_EQUALS_STRING(expected, actual)
+    - [x] TEST_ASSERT_NOT_EQUALS_STRING_LEN(expected, actual, len)
 
 - [ ] Memory & Array Assertions
     - [ ] Memory comparisons
@@ -99,7 +102,7 @@ TEST_ASSERT_EQUALS_STRING("Hello", "Hella");
 ```
 
 Output:
-<pre>test_file.c:20:TestStrings:FAIL:Expected Hello Received Hella</pre>
+<pre>test_file.c:20:TestStrings:FAIL:Expected Hella to be equal to Hello</pre>
 
 ---
 

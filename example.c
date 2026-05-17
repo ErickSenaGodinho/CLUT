@@ -19,8 +19,9 @@ void test_divide() {
 }
 
 void test_strings() {
-  TEST_ASSERT_EQUALS_STRING("Hello", say_hello()); // Passed
-  TEST_ASSERT_NOT_NULL(say_hello());               // Passed
+  TEST_ASSERT_EQUALS_STRING("Hello", say_hello());            // Passed
+  TEST_ASSERT_NOT_EQUALS_STRING_LEN("Hella", say_hello(), 5); // Passed
+  TEST_ASSERT_NOT_NULL(say_hello());                          // Passed
 }
 
 void test_pointers() {
