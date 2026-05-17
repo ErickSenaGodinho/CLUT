@@ -34,6 +34,11 @@ void test_pointers() {
 }
 
 void test_comparisons() {
+  float x = 0;
+  for (int i = 0; i < 10; i++)
+    x += 0.1f;
+
+  TEST_ASSERT_LESS_OR_EQUAL_FLOAT(1.0f, x);        // Passed
   TEST_ASSERT_GREATER_THAN_INT(10, 5);             // Failed: expected 5 > 10
   TEST_ASSERT_LESS_OR_EQUAL_INT(5, 5);             // Not validated due to previous failure
   TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(3.0f, 3.14f); // Not validated due to previous failure
