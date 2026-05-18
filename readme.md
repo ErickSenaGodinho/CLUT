@@ -30,6 +30,7 @@ int main() {
 - [x] Customization
     - [x] Color output
     - [x] Custom test output streams
+    - [x] Custom float and double epsilon
 
 - [x] Boolean Assertions
     - [x] TEST_ASSERT(condition)
