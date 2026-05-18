@@ -51,6 +51,7 @@ int main() {
     - [x] TEST_ASSERT_LESS_THAN_INT(expected, actual)
     - [x] TEST_ASSERT_GREATER_OR_EQUAL_INT(expected, actual)
     - [x] TEST_ASSERT_LESS_OR_EQUAL_INT(expected, actual)
+    - [ ] Number within tolerance
 
 - [ ] Floating Point Assertions
     - [x] TEST_ASSERT_EQUAL_FLOAT(expected, actual)
@@ -80,7 +81,7 @@ int main() {
 ### Passing Test
 Code:
 ```c
-TEST_ASSERT_EQUALS_INT(5, 5);
+TEST_ASSERT_EQUAL_INT(5, 5);
 ```
 
 Output:
@@ -89,7 +90,7 @@ Output:
 ### Failing Test
 Code:
 ```c
-TEST_ASSERT_EQUALS_INT(5, 4);
+TEST_ASSERT_EQUAL_INT(5, 4);
 ```
 
 Output:
@@ -98,7 +99,7 @@ Output:
 ### String Failure
 Code:
 ```c
-TEST_ASSERT_EQUALS_STRING("Hello", "Hella");
+TEST_ASSERT_EQUAL_STRING("Hello", "Hella");
 ```
 
 Output:
