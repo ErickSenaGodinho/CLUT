@@ -40,11 +40,25 @@ typedef struct ClutData {
   FILE *stream;
 } ClutData;
 
+#ifndef CLUT_STREAM_DEFAULT
+#define CLUT_STREAM_DEFAULT stdout
+#endif
+
+#ifndef CLUT_STREAM_FAIL
+#define CLUT_STREAM_FAIL stderr
+#endif
+
+#ifdef CLUT_META_TESTING
+#define RETURN_IF_FAILED                                                                                                                                                                                                   \
+  do {                                                                                                                                                                                                                     \
+  } while (0)
+#else
 #define RETURN_IF_FAILED                                                                                                                                                                                                   \
   do {                                                                                                                                                                                                                     \
     if (Clut.current_test_failed)                                                                                                                                                                                          \
       return;                                                                                                                                                                                                              \
   } while (0)
+#endif
 
 #define TEST_BEGIN() ClutTestBegin(__FILE__)
 #define TEST_RUN(clut_test_function) ClutTestRun((clut_test_function), __LINE__, #clut_test_function)
@@ -196,7 +210,7 @@ void ClutReset() {
   Clut.current_test_function_name = NULL;
   Clut.current_test_failed = false;
   Clut.start_time = 0;
-  Clut.stream = stdout;
+  Clut.stream = CLUT_STREAM_DEFAULT;
 }
 
 void ClutTestBegin(const char *file) {
@@ -317,7 +331,7 @@ void ClutPrintExpectedActualPtr(void *expected, void *actual, const char *opStr)
 void ClutFail() {
   Clut.current_test_failed = true;
   Clut.failures++;
-  Clut.stream = stderr;
+  Clut.stream = CLUT_STREAM_FAIL;
 }
 
 void ClutTestAssert(bool condition, const char *file, const int line, const char *msg) {

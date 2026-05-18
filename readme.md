@@ -27,9 +27,9 @@ int main() {
 
 ## Features
 
-- [ ] Customization
+- [x] Customization
     - [x] Color output
-    - [ ] Custom test output streams
+    - [x] Custom test output streams
 
 - [x] Boolean Assertions
     - [x] TEST_ASSERT(condition)
