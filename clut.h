@@ -22,6 +22,8 @@
 #define CLUT_STR_GREATER_OR_EQUAL " to be greater or equal than "
 #define CLUT_STR_LESS_OR_EQUAL " to be less or equal than "
 #define CLUT_STR_UNTIL_LEN " until length "
+#define CLUT_STR_WITHIN_DELTA " within +/- "
+#define CLUT_STR_BUT_DIFF " but actual diff was "
 
 #ifndef CLUT_FLOAT_EPSILON
 #define CLUT_FLOAT_EPSILON 1e-5f
@@ -129,6 +131,12 @@ typedef struct ClutData {
 #define TEST_ASSERT_LESS_THAN_DOUBLE(expected, actual) ClutTestAssertDoubleLessThan((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(expected, actual) ClutTestAssertDoubleLessOrEqual((expected), (actual), __FILE__, __LINE__, NULL)
 
+#define TEST_ASSERT_WITHIN_CHAR(expected, delta, actual) ClutTestAssertWithinChar((expected), (delta), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_WITHIN_INT(expected, delta, actual) ClutTestAssertWithinInt((expected), (delta), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_WITHIN_UINT(expected, delta, actual) ClutTestAssertWithinUint((expected), (delta), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_WITHIN_FLOAT(expected, delta, actual) ClutTestAssertWithinFloat((expected), (delta), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_WITHIN_DOUBLE(expected, delta, actual) ClutTestAssertWithinDouble((expected), (delta), (actual), __FILE__, __LINE__, NULL)
+
 /* Messages */
 
 #define TEST_ASSERT_MESSAGE(condition, mgs) ClutTestAssert((condition), __FILE__, __LINE__, (msg))
@@ -174,6 +182,12 @@ typedef struct ClutData {
 #define TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE_MESSAGE(expected, actual, msg) ClutTestAssertDoubleGreaterOrEqual((expected), (actual), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_LESS_THAN_DOUBLE_MESSAGE(expected, actual, msg) ClutTestAssertDoubleLessThan((expected), (actual), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_LESS_OR_EQUAL_DOUBLE_MESSAGE(expected, actual, msg) ClutTestAssertDoubleLessOrEqual((expected), (actual), __FILE__, __LINE__, (msg))
+
+#define TEST_ASSERT_WITHIN_CHAR_MESSAGE(expected, delta, actual, msg) ClutTestAssertWithinChar((expected), (delta), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_WITHIN_INT_MESSAGE(expected, delta, actual, msg) ClutTestAssertWithinInt((expected), (delta), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_WITHIN_UINT_MESSAGE(expected, delta, actual, msg) ClutTestAssertWithinUint((expected), (delta), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_WITHIN_FLOAT_MESSAGE(expected, delta, actual, msg) ClutTestAssertWithinFloat((expected), (delta), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_WITHIN_DOUBLE_MESSAGE(expected, delta, actual, msg) ClutTestAssertWithinDouble((expected), (delta), (actual), __FILE__, __LINE__, (msg))
 
 void ClutReset();
 void ClutTestBegin(const char *file);
@@ -236,6 +250,12 @@ void ClutTestAssertDoubleGreaterThan(double expected, double actual, const char 
 void ClutTestAssertDoubleGreaterOrEqual(double expected, double actual, const char *file, int line, const char *msg);
 void ClutTestAssertDoubleLessThan(double expected, double actual, const char *file, int line, const char *msg);
 void ClutTestAssertDoubleLessOrEqual(double expected, double actual, const char *file, int line, const char *msg);
+
+void ClutTestAssertWithinChar(char expected, char delta, char actual, const char *file, const int line, const char *msg);
+void ClutTestAssertWithinInt(int expected, int delta, int actual, const char *file, const int line, const char *msg);
+void ClutTestAssertWithinUint(size_t expected, size_t delta, size_t actual, const char *file, const int line, const char *msg);
+void ClutTestAssertWithinFloat(float expected, float delta, float actual, const char *file, const int line, const char *msg);
+void ClutTestAssertWithinDouble(double expected, double delta, double actual, const char *file, const int line, const char *msg);
 
 #ifdef CLUT_IMPLEMENTATION
 
@@ -388,6 +408,51 @@ void ClutPrintExpectedActualPtr(void *expected, void *actual, const char *opStr)
   ClutPrintPtr(actual);
 }
 
+void ClutPrintWithinDiffChar(char expected, char delta, char diff) {
+  ClutPrint(CLUT_STR_EXPECTED);
+  ClutPrintChar(expected);
+  ClutPrint(CLUT_STR_WITHIN_DELTA);
+  ClutPrintChar(delta);
+  ClutPrint(CLUT_STR_BUT_DIFF);
+  ClutPrintChar(diff);
+}
+
+void ClutPrintWithinDiffInt(int expected, int delta, int diff) {
+  ClutPrint(CLUT_STR_EXPECTED);
+  ClutPrintInt(expected);
+  ClutPrint(CLUT_STR_WITHIN_DELTA);
+  ClutPrintInt(delta);
+  ClutPrint(CLUT_STR_BUT_DIFF);
+  ClutPrintInt(diff);
+}
+
+void ClutPrintWithinDiffUint(size_t expected, size_t delta, size_t diff) {
+  ClutPrint(CLUT_STR_EXPECTED);
+  ClutPrintUint(expected);
+  ClutPrint(CLUT_STR_WITHIN_DELTA);
+  ClutPrintUint(delta);
+  ClutPrint(CLUT_STR_BUT_DIFF);
+  ClutPrintUint(diff);
+}
+
+void ClutPrintWithinDiffFloat(float expected, float delta, float diff) {
+  ClutPrint(CLUT_STR_EXPECTED);
+  ClutPrintFloat(expected);
+  ClutPrint(CLUT_STR_WITHIN_DELTA);
+  ClutPrintFloat(delta);
+  ClutPrint(CLUT_STR_BUT_DIFF);
+  ClutPrintFloat(diff);
+}
+
+void ClutPrintWithinDiffDouble(double expected, double delta, double diff) {
+  ClutPrint(CLUT_STR_EXPECTED);
+  ClutPrintDouble(expected);
+  ClutPrint(CLUT_STR_WITHIN_DELTA);
+  ClutPrintDouble(delta);
+  ClutPrint(CLUT_STR_BUT_DIFF);
+  ClutPrintDouble(diff);
+}
+
 void ClutFail() {
 #ifndef CLUT_META_TESTING
   Clut.failures++;
@@ -398,6 +463,7 @@ void ClutFail() {
 
 void ClutTestAssert(bool condition, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (!condition) {
     ClutFail();
     ClutBeginTestLog(file, line);
@@ -409,6 +475,7 @@ void ClutTestAssert(bool condition, const char *file, const int line, const char
 
 void ClutTestAssertEqualChar(char expected, char actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (expected == actual) {
     return;
   }
@@ -420,6 +487,7 @@ void ClutTestAssertEqualChar(char expected, char actual, const char *file, const
 
 void ClutTestAssertEqualInt(int expected, int actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (expected == actual) {
     return;
   }
@@ -431,6 +499,7 @@ void ClutTestAssertEqualInt(int expected, int actual, const char *file, const in
 
 void ClutTestAssertEqualUint(size_t expected, size_t actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (expected == actual) {
     return;
   }
@@ -442,6 +511,7 @@ void ClutTestAssertEqualUint(size_t expected, size_t actual, const char *file, c
 
 void ClutTestAssertEqualFloat(float expected, float actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (fabsf(expected - actual) < CLUT_FLOAT_EPSILON) {
     return;
   }
@@ -453,6 +523,7 @@ void ClutTestAssertEqualFloat(float expected, float actual, const char *file, co
 
 void ClutTestAssertEqualDouble(double expected, double actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (fabs(expected - actual) < CLUT_DOUBLE_EPSILON) {
     return;
   }
@@ -514,6 +585,7 @@ void ClutTestAssertEqualStringLen(const char *expected, const char *actual, size
 
 void ClutTestAssertEqualPtr(void *expected, void *actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (expected == actual)
     return;
 
@@ -524,6 +596,7 @@ void ClutTestAssertEqualPtr(void *expected, void *actual, const char *file, cons
 
 void ClutTestAssertNotEqualChar(char expected, char actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (expected != actual) {
     return;
   }
@@ -535,6 +608,7 @@ void ClutTestAssertNotEqualChar(char expected, char actual, const char *file, co
 
 void ClutTestAssertNotEqualInt(int expected, int actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (expected != actual) {
     return;
   }
@@ -546,6 +620,7 @@ void ClutTestAssertNotEqualInt(int expected, int actual, const char *file, const
 
 void ClutTestAssertNotEqualUint(size_t expected, size_t actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (expected != actual) {
     return;
   }
@@ -557,6 +632,7 @@ void ClutTestAssertNotEqualUint(size_t expected, size_t actual, const char *file
 
 void ClutTestAssertNotEqualFloat(float expected, float actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (fabsf(expected - actual) >= CLUT_FLOAT_EPSILON) {
     return;
   }
@@ -568,6 +644,7 @@ void ClutTestAssertNotEqualFloat(float expected, float actual, const char *file,
 
 void ClutTestAssertNotEqualDouble(double expected, double actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
+
   if (fabs(expected - actual) >= CLUT_DOUBLE_EPSILON) {
     return;
   }
@@ -653,6 +730,7 @@ void ClutAssertCompareInternalInt(bool condition, int expected, int actual, cons
 
 void ClutAssertCompareInternalUint(bool condition, size_t expected, size_t actual, const char *file, int line, const char *msg, const char *opStr) {
   RETURN_IF_FAILED;
+
   if (condition)
     return;
 
@@ -703,5 +781,69 @@ void ClutTestAssertDoubleGreaterOrEqual(double expected, double actual, const ch
 void ClutTestAssertDoubleLessThan(double expected, double actual, const char *file, int line, const char *msg) { ClutAssertCompareInternalDouble(actual < expected - CLUT_DOUBLE_EPSILON, expected, actual, file, line, msg, CLUT_STR_LESS_THAN); }
 void ClutTestAssertDoubleLessOrEqual(double expected, double actual, const char *file, int line, const char *msg) { ClutAssertCompareInternalDouble(actual <= expected + CLUT_DOUBLE_EPSILON, expected, actual, file, line, msg, CLUT_STR_LESS_OR_EQUAL); }
 
+void ClutTestAssertWithinChar(char expected, char delta, char actual, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  char diff = (actual > expected) ? (actual - expected) : (expected - actual);
+
+  if (diff <= delta)
+    return;
+
+  CLUT_START_FAILURE_LOG(file, line, msg);
+  ClutPrintWithinDiffChar(expected, delta, diff);
+  CLUT_END_FAILURE_LOG();
+}
+
+void ClutTestAssertWithinInt(int expected, int delta, int actual, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  int diff = (actual > expected) ? (actual - expected) : (expected - actual);
+
+  if (diff <= delta)
+    return;
+
+  CLUT_START_FAILURE_LOG(file, line, msg);
+  ClutPrintWithinDiffInt(expected, delta, diff);
+  CLUT_END_FAILURE_LOG();
+}
+
+void ClutTestAssertWithinUint(size_t expected, size_t delta, size_t actual, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  size_t diff = (actual > expected) ? (actual - expected) : (expected - actual);
+
+  if (diff <= delta)
+    return;
+
+  CLUT_START_FAILURE_LOG(file, line, msg);
+  ClutPrintWithinDiffUint(expected, delta, diff);
+  CLUT_END_FAILURE_LOG();
+}
+
+void ClutTestAssertWithinFloat(float expected, float delta, float actual, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  float diff = fabsf(actual - expected);
+
+  if (diff <= (delta + CLUT_FLOAT_EPSILON))
+    return;
+
+  CLUT_START_FAILURE_LOG(file, line, msg);
+  ClutPrintWithinDiffFloat(expected, delta, diff);
+  CLUT_END_FAILURE_LOG();
+}
+
+void ClutTestAssertWithinDouble(double expected, double delta, double actual, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  double diff = fabs(actual - expected);
+
+  if (diff <= (delta + CLUT_DOUBLE_EPSILON))
+    return;
+
+  CLUT_START_FAILURE_LOG(file, line, msg);
+  ClutPrintWithinDiffDouble(expected, delta, diff);
+  CLUT_END_FAILURE_LOG();
+}
 #endif
 #endif

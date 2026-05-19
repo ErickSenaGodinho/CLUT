@@ -245,6 +245,46 @@ void test_suite_strings(void) {
   VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_STRING_LEN("clut_framework", "clut_testing", 5));
 }
 
+void test_suite_within_comparisons(void) {
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 52));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 55));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 45));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_CHAR(50, 5, 56));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_CHAR(50, 5, 44));
+
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_INT(100, 10, 105));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_INT(100, 10, 110));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_INT(100, 10, 90));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_INT(100, 10, 111));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_INT(100, 10, 89));
+
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_UINT(1000, 50, 980));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_UINT(1000, 50, 1050));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_UINT(1000, 50, 950));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_UINT(1000, 50, 1051));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_UINT(1000, 50, 949));
+
+  float accumulated_float = 0.0f;
+  for (int i = 0; i < 10; i++) {
+    accumulated_float += 0.1f;
+  }
+  float expected_float = 1.0f;
+
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_FLOAT(expected_float, 0.00001f, accumulated_float));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_FLOAT(expected_float, 0.0f, accumulated_float));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_FLOAT(expected_float, 0.0000001f, accumulated_float + 0.1f));
+
+  double accumulated_double = 0.0;
+  for (int i = 0; i < 10; i++) {
+    accumulated_double += 0.1;
+  }
+  double expected_double = 1.0;
+
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.00001, accumulated_double));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.0, accumulated_double));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.0000001, accumulated_double + 0.1));
+}
+
 int main(void) {
 #ifdef _WIN32
   g_dev_null = fopen("nul", "w");
@@ -262,6 +302,7 @@ int main(void) {
   TEST_RUN(test_suite_floating_point_numbers);
   TEST_RUN(test_suite_floating_point_precision_accumulation);
   TEST_RUN(test_suite_strings);
+  TEST_RUN(test_suite_within_comparisons);
 
   int exit_code = TEST_END();
 

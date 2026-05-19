@@ -48,26 +48,27 @@ int main() {
 - [x] Char Assertions
     - [x] TEST_ASSERT_EQUAL_CHAR(expected, actual)
     - [x] TEST_ASSERT_NOT_EQUAL_CHAR(expected, actual)
+    - [x] TEST_ASSERT_WITHIN_CHAR(expected, delta, actual)
 
-- [ ] Integer Assertions
+- [x] Integer Assertions
     - [x] TEST_ASSERT_EQUAL_INT(expected, actual)
     - [X] TEST_ASSERT_NOT_EQUAL_INT(expected, actual)
     - [x] TEST_ASSERT_GREATER_THAN_INT(expected, actual)
     - [x] TEST_ASSERT_LESS_THAN_INT(expected, actual)
     - [x] TEST_ASSERT_GREATER_OR_EQUAL_INT(expected, actual)
     - [x] TEST_ASSERT_LESS_OR_EQUAL_INT(expected, actual)
-    - [ ] Number within tolerance
+    - [x] TEST_ASSERT_WITHIN_INT(expected, delta, actual)
 
-- [ ] Unsigned Integer Assertions
+- [x] Unsigned Integer Assertions
     - [x] TEST_ASSERT_EQUAL_UINT(expected, actual)
     - [X] TEST_ASSERT_NOT_EQUAL_UINT(expected, actual)
     - [x] TEST_ASSERT_GREATER_THAN_UINT(expected, actual)
     - [x] TEST_ASSERT_LESS_THAN_UINT(expected, actual)
     - [x] TEST_ASSERT_GREATER_OR_EQUAL_UINT(expected, actual)
     - [x] TEST_ASSERT_LESS_OR_EQUAL_UINT(expected, actual)
-    - [ ] Number within tolerance
+    - [x] TEST_ASSERT_WITHIN_UINT(expected, delta, actual)
 
-- [ ] Floating Point Assertions
+- [x] Floating Point Assertions
     - [x] TEST_ASSERT_EQUAL_FLOAT(expected, actual)
     - [x] TEST_ASSERT_EQUAL_DOUBLE(expected, actual)
     - [x] TEST_ASSERT_GREATER_THAN_FLOAT(expected, actual)
@@ -76,7 +77,8 @@ int main() {
     - [x] TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(expected, actual)
     - [X] TEST_ASSERT_NOT_EQUAL_FLOAT(expected, actual)
     - [X] TEST_ASSERT_NOT_EQUAL_DOUBLE(expected, actual)
-    - [ ] Number within tolerance
+    - [x] TEST_ASSERT_WITHIN_FLOAT(expected, delta, actual)
+    - [x] TEST_ASSERT_WITHIN_DOUBLE(expected, delta, actual)
 
 - [x] String Assertions
     - [x] TEST_ASSERT_EQUAL_STRING(expected, actual)
