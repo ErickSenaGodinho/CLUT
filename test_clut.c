@@ -76,6 +76,14 @@ void test_suite_pointers_and_nullness(void) {
   VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_PTR(ptr, ptr));
 }
 
+void test_suite_char_comparisons(void) {
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR('\n', '\n'));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_CHAR('A', 'B'));
+
+  VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_CHAR('A', 'B'));
+  VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_CHAR('\n', '\n'));
+}
+
 void test_suite_integer_comparisons(void) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_INT(10, 10));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT(10, 20));
@@ -248,6 +256,7 @@ int main(void) {
 
   TEST_RUN(test_suite_boolean_and_basic);
   TEST_RUN(test_suite_pointers_and_nullness);
+  TEST_RUN(test_suite_char_comparisons);
   TEST_RUN(test_suite_integer_comparisons);
   TEST_RUN(test_suite_uint_comparisons);
   TEST_RUN(test_suite_floating_point_numbers);
