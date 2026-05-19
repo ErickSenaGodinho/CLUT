@@ -28,20 +28,20 @@ void validate_fail(bool assert_condition, const char *macro_expression, const ch
   }
 }
 
-#define VALIDATE_PASS(assertion_expr)                                                                                                                                                                                      \
-  do {                                                                                                                                                                                                                     \
-    Clut.total_tests++;                                                                                                                                                                                                    \
-    Clut.current_test_failed = false;                                                                                                                                                                                      \
-    assertion_expr;                                                                                                                                                                                                        \
-    validate_pass(Clut.current_test_failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                \
+#define VALIDATE_PASS(assertion_expr)                                                                                                                                                                                                                              \
+  do {                                                                                                                                                                                                                                                             \
+    Clut.total_tests++;                                                                                                                                                                                                                                            \
+    Clut.current_test_failed = false;                                                                                                                                                                                                                              \
+    assertion_expr;                                                                                                                                                                                                                                                \
+    validate_pass(Clut.current_test_failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                                                        \
   } while (0)
 
-#define VALIDATE_FAIL(assertion_expr)                                                                                                                                                                                      \
-  do {                                                                                                                                                                                                                     \
-    Clut.total_tests++;                                                                                                                                                                                                    \
-    Clut.current_test_failed = false;                                                                                                                                                                                      \
-    assertion_expr;                                                                                                                                                                                                        \
-    validate_fail(Clut.current_test_failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                \
+#define VALIDATE_FAIL(assertion_expr)                                                                                                                                                                                                                              \
+  do {                                                                                                                                                                                                                                                             \
+    Clut.total_tests++;                                                                                                                                                                                                                                            \
+    Clut.current_test_failed = false;                                                                                                                                                                                                                              \
+    assertion_expr;                                                                                                                                                                                                                                                \
+    validate_fail(Clut.current_test_failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                                                        \
   } while (0)
 
 void test_suite_boolean_and_basic(void) {
@@ -98,6 +98,30 @@ void test_suite_integer_comparisons(void) {
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_INT(10, 5));
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_INT(5, 5));
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_INT(5, 10));
+}
+
+void test_suite_uint_comparisons(void) {
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT(10, 10));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT(10, 20));
+
+  VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_UINT(10, 20));
+  VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_UINT(10, 10));
+
+  VALIDATE_PASS(TEST_ASSERT_GREATER_THAN_UINT(5, 10));
+  VALIDATE_FAIL(TEST_ASSERT_GREATER_THAN_UINT(10, 5));
+  VALIDATE_FAIL(TEST_ASSERT_GREATER_THAN_UINT(10, 10));
+
+  VALIDATE_PASS(TEST_ASSERT_LESS_THAN_UINT(10, 5));
+  VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_UINT(5, 10));
+  VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_UINT(5, 5));
+
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_UINT(5, 10));
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_UINT(10, 10));
+  VALIDATE_FAIL(TEST_ASSERT_GREATER_OR_EQUAL_UINT(10, 5));
+
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_UINT(10, 5));
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_UINT(5, 5));
+  VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_UINT(5, 10));
 }
 
 void test_suite_floating_point_numbers(void) {
@@ -225,6 +249,7 @@ int main(void) {
   TEST_RUN(test_suite_boolean_and_basic);
   TEST_RUN(test_suite_pointers_and_nullness);
   TEST_RUN(test_suite_integer_comparisons);
+  TEST_RUN(test_suite_uint_comparisons);
   TEST_RUN(test_suite_floating_point_numbers);
   TEST_RUN(test_suite_floating_point_precision_accumulation);
   TEST_RUN(test_suite_strings);
