@@ -45,6 +45,10 @@ int main() {
     - [x] TEST_ASSERT_NOT_EQUAL_PTR(expected, actual)
     - [ ] Pointer comparisons
 
+- [x] Char Assertions
+    - [x] TEST_ASSERT_EQUAL_CHAR(expected, actual)
+    - [x] TEST_ASSERT_NOT_EQUAL_CHAR(expected, actual)
+
 - [ ] Integer Assertions
     - [x] TEST_ASSERT_EQUAL_INT(expected, actual)
     - [X] TEST_ASSERT_NOT_EQUAL_INT(expected, actual)
@@ -52,6 +56,15 @@ int main() {
     - [x] TEST_ASSERT_LESS_THAN_INT(expected, actual)
     - [x] TEST_ASSERT_GREATER_OR_EQUAL_INT(expected, actual)
     - [x] TEST_ASSERT_LESS_OR_EQUAL_INT(expected, actual)
+    - [ ] Number within tolerance
+
+- [ ] Unsigned Integer Assertions
+    - [x] TEST_ASSERT_EQUAL_UINT(expected, actual)
+    - [X] TEST_ASSERT_NOT_EQUAL_UINT(expected, actual)
+    - [x] TEST_ASSERT_GREATER_THAN_UINT(expected, actual)
+    - [x] TEST_ASSERT_LESS_THAN_UINT(expected, actual)
+    - [x] TEST_ASSERT_GREATER_OR_EQUAL_UINT(expected, actual)
+    - [x] TEST_ASSERT_LESS_OR_EQUAL_UINT(expected, actual)
     - [ ] Number within tolerance
 
 - [ ] Floating Point Assertions
