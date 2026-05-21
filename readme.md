@@ -1,6 +1,6 @@
-# CLUT - C Lightweight Unit Testing Library
+# CLUT - C Lightweight Unit Testing Framework
 
-CLUT is a lightweight, header-only C unit testing library inspired by JUnit and Unity. It makes writing and running tests simple, with clean, readable output.
+CLUT is a lightweight, header-only C unit testing framework inspired by JUnit and Unity. It makes writing and running tests simple, with clean, readable output.
 
 ## Installation
 ```c
@@ -27,7 +27,9 @@ int main() {
 
 ## Features
 
-- [x] Customization
+- [ ] Test Execution Hooks & Customization
+    - [ ] setUp
+    - [ ] tearDown
     - [x] Color output
     - [x] Custom test output streams
     - [x] Custom float and double epsilon
