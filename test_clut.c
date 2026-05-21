@@ -285,6 +285,75 @@ void test_suite_within_comparisons(void) {
   VALIDATE_FAIL(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.0000001, accumulated_double + 0.1));
 }
 
+void test_suite_memory(void) {
+  typedef struct {
+    int x;
+    int y;
+    char c;
+  } DummyStruct;
+
+  DummyStruct s1 = {0};
+  DummyStruct s2 = {0};
+  DummyStruct s3 = {0};
+  DummyStruct s4 = {0};
+
+  s1.x = 10;
+  s1.y = 20;
+  s1.c = 'A';
+
+  s2.x = 10;
+  s2.y = 20;
+  s2.c = 'A';
+
+  s3.x = 10;
+  s3.y = 99;
+  s3.c = 'A';
+
+  s4.x = 10;
+  s4.y = 20;
+  s4.c = 'Z';
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&s1, &s2, sizeof(DummyStruct)));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&s1, &s1, sizeof(DummyStruct)));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_MEMORY(&s1, &s3, sizeof(DummyStruct)));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_MEMORY(&s1, &s4, sizeof(DummyStruct)));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(NULL, NULL, 0));
+
+  DummyStruct buf1[3];
+  DummyStruct buf2[3];
+  DummyStruct buf3[3];
+
+  memset(buf1, 0, sizeof(buf1));
+  memset(buf2, 0, sizeof(buf2));
+  memset(buf3, 0, sizeof(buf3));
+
+  buf1[0] = (DummyStruct){10, 20, 'A'};
+  buf1[1] = (DummyStruct){30, 40, 'B'};
+  buf1[2] = (DummyStruct){50, 60, 'C'};
+
+  buf2[0] = (DummyStruct){10, 20, 'A'};
+  buf2[1] = (DummyStruct){30, 40, 'B'};
+  buf2[2] = (DummyStruct){50, 60, 'C'};
+
+  buf3[0] = (DummyStruct){10, 20, 'A'};
+  buf3[1] = (DummyStruct){30, 99, 'B'};
+  buf3[2] = (DummyStruct){50, 60, 'C'};
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(buf1, buf2, sizeof(buf1)));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_MEMORY(buf1, buf3, sizeof(buf1)));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(buf1, buf3, sizeof(DummyStruct)));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&buf1[1], &buf2[1], sizeof(DummyStruct)));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(NULL, NULL, 0));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_MEMORY(buf1, NULL, sizeof(buf1)));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_MEMORY(NULL, buf2, sizeof(buf2)));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&s1, &s2, 0));
+}
+
 int main(void) {
 #ifdef _WIN32
   g_dev_null = fopen("nul", "w");
@@ -303,6 +372,7 @@ int main(void) {
   TEST_RUN(test_suite_floating_point_precision_accumulation);
   TEST_RUN(test_suite_strings);
   TEST_RUN(test_suite_within_comparisons);
+  TEST_RUN(test_suite_memory);
 
   int exit_code = TEST_END();
 

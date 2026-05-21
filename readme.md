@@ -38,12 +38,11 @@ int main() {
     - [x] TEST_ASSERT_FALSE(condition)
     - [x] TEST_ASSERT_UNLESS(condition)
 
-- [ ] Pointer Assertions
+- [x] Pointer Assertions
     - [x] TEST_ASSERT_NULL(pointer)
     - [x] TEST_ASSERT_NOT_NULL(pointer)
     - [x] TEST_ASSERT_EQUAL_PTR(expected, actual)
     - [x] TEST_ASSERT_NOT_EQUAL_PTR(expected, actual)
-    - [ ] Pointer comparisons
 
 - [x] Char Assertions
     - [x] TEST_ASSERT_EQUAL_CHAR(expected, actual)
@@ -86,8 +85,11 @@ int main() {
     - [x] TEST_ASSERT_NOT_EQUAL_STRING(expected, actual)
     - [x] TEST_ASSERT_NOT_EQUAL_STRING_LEN(expected, actual, len)
 
-- [ ] Memory & Array Assertions
-    - [ ] Memory comparisons
+- [x] Memory Assertions (watch out for struct padding / uninitialized bytes)
+    - [x] TEST_ASSERT_EQUAL_MEMORY(expected, actual, len)
+    - [x] TEST_ASSERT_EQUAL_MEMORY_ARRAY(expected, actual, len, num_elements)
+
+- [ ] Array Assertions
     - [ ] Array comparisons
 
 ---

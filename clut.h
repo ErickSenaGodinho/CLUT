@@ -24,6 +24,11 @@
 #define CLUT_STR_UNTIL_LEN " until length "
 #define CLUT_STR_WITHIN_DELTA " within +/- "
 #define CLUT_STR_BUT_DIFF " but actual diff was "
+#define CLUT_STR_MEMORY_NULL "One of the pointers is NULL"
+#define CLUT_STR_MISMATCH_AT "Memory mismatch at byte offset "
+#define CLUT_STR_ARRAY_MISMATCH_AT "Array mismatch at Element ["
+#define CLUT_STR_ARRAY_BYTE "], Byte Offset ["
+#define CLUT_STR_WAS " but was "
 
 #ifndef CLUT_FLOAT_EPSILON
 #define CLUT_FLOAT_EPSILON 1e-5f
@@ -137,6 +142,9 @@ typedef struct ClutData {
 #define TEST_ASSERT_WITHIN_FLOAT(expected, delta, actual) ClutTestAssertWithinFloat((expected), (delta), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_WITHIN_DOUBLE(expected, delta, actual) ClutTestAssertWithinDouble((expected), (delta), (actual), __FILE__, __LINE__, NULL)
 
+#define TEST_ASSERT_EQUAL_MEMORY(expected, actual, len) ClutTestAssertEqualMemory((expected), (actual), (len), 1, __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUAL_MEMORY_ARRAY(expected, actual, len, num_elements) ClutTestAssertEqualMemory((expected), (actual), (len), (num_elements), __FILE__, __LINE__, NULL)
+
 /* Messages */
 
 #define TEST_ASSERT_MESSAGE(condition, mgs) ClutTestAssert((condition), __FILE__, __LINE__, (msg))
@@ -189,6 +197,9 @@ typedef struct ClutData {
 #define TEST_ASSERT_WITHIN_FLOAT_MESSAGE(expected, delta, actual, msg) ClutTestAssertWithinFloat((expected), (delta), (actual), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_WITHIN_DOUBLE_MESSAGE(expected, delta, actual, msg) ClutTestAssertWithinDouble((expected), (delta), (actual), __FILE__, __LINE__, (msg))
 
+#define TEST_ASSERT_EQUAL_MEMORY_MESSAGE(expected, actual, len, num_elements, msg) ClutTestAssertEqualMemory((expected), (actual), (len), 1, __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_EQUAL_MEMORY_ARRAY_MESSAGE(expected, actual, len, num_elements, msg) ClutTestAssertEqualMemory((expected), (actual), (len), (num_elements), __FILE__, __LINE__, (msg))
+
 void ClutReset();
 void ClutTestBegin(const char *file);
 void ClutTestRun(ClutTestFunction clut_test_function, const int line, const char *clut_test_name);
@@ -204,6 +215,7 @@ void ClutPrintUint(size_t number);
 void ClutPrintFloat(float number);
 void ClutPrintDouble(double number);
 void ClutPrintPtr(void *ptr);
+void ClutPrintHex(int value);
 void ClutPrintf(const char *fmt, ...);
 
 void ClutPrintFail();
@@ -256,6 +268,8 @@ void ClutTestAssertWithinInt(int expected, int delta, int actual, const char *fi
 void ClutTestAssertWithinUint(size_t expected, size_t delta, size_t actual, const char *file, const int line, const char *msg);
 void ClutTestAssertWithinFloat(float expected, float delta, float actual, const char *file, const int line, const char *msg);
 void ClutTestAssertWithinDouble(double expected, double delta, double actual, const char *file, const int line, const char *msg);
+
+void ClutTestAssertEqualMemory(const void *expected, const void *actual, size_t len, size_t num_elements, const char *file, const int line, const char *msg);
 
 #ifdef CLUT_IMPLEMENTATION
 
@@ -335,9 +349,10 @@ void ClutPrint(const char *str) {
 void ClutPrintChar(const char c) { fprintf(Clut.stream, "%c", c); }
 void ClutPrintInt(int number) { fprintf(Clut.stream, "%d", number); }
 void ClutPrintUint(size_t number) { fprintf(Clut.stream, "%zu", number); }
-void ClutPrintPtr(void *ptr) { fprintf(Clut.stream, "%p", ptr); }
 void ClutPrintFloat(float number) { fprintf(Clut.stream, "%f", number); }
 void ClutPrintDouble(double number) { fprintf(Clut.stream, "%f", number); }
+void ClutPrintPtr(void *ptr) { fprintf(Clut.stream, "%p", ptr); }
+void ClutPrintHex(int value) { fprintf(Clut.stream, "0x%02X", value); }
 void ClutPrintf(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -352,9 +367,11 @@ void ClutPrintFail() {
 
 void ClutPrintExpectedActualChar(char expected, char actual, const char *opStr) {
   ClutPrint(CLUT_STR_EXPECTED);
-  ClutPrintf("'%c' (0x%02X)", expected, (unsigned char)expected);
-  ClutPrint(opStr);
-  ClutPrintf("'%c' (0x%02X)", actual, (unsigned char)actual);
+  ClutPrintf("'%c' (", expected);
+  ClutPrintHex((unsigned char)expected);
+  ClutPrintf(") %s '%c' (", opStr, actual);
+  ClutPrintHex((unsigned char)actual);
+  ClutPrintChar(')');
 }
 
 void ClutPrintExpectedActualInt(int expected, int actual, const char *opStr) {
@@ -844,6 +861,56 @@ void ClutTestAssertWithinDouble(double expected, double delta, double actual, co
   CLUT_START_FAILURE_LOG(file, line, msg);
   ClutPrintWithinDiffDouble(expected, delta, diff);
   CLUT_END_FAILURE_LOG();
+}
+
+void ClutTestAssertEqualMemory(const void *expected, const void *actual, size_t len, size_t num_elements, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  if (num_elements == 0 || len == 0)
+    return;
+
+  if (expected == actual)
+    return;
+
+  if (expected == NULL || actual == NULL) {
+    CLUT_START_FAILURE_LOG(file, line, msg);
+    ClutPrint(CLUT_STR_MEMORY_NULL);
+    CLUT_END_FAILURE_LOG();
+    return;
+  }
+
+  const unsigned char *ptr_exp = (const unsigned char *)expected;
+  const unsigned char *ptr_act = (const unsigned char *)actual;
+
+  for (size_t elem = 0; elem < num_elements; elem++) {
+    for (size_t byte = 0; byte < len; byte++) {
+      size_t offset = (elem * len) + byte;
+
+      if (ptr_exp[offset] != ptr_act[offset]) {
+        CLUT_START_FAILURE_LOG(file, line, msg);
+
+        if (num_elements > 1) {
+          ClutPrint(CLUT_STR_ARRAY_MISMATCH_AT);
+          ClutPrintUint(elem);
+          ClutPrint(CLUT_STR_ARRAY_BYTE);
+          ClutPrintUint(byte);
+          ClutPrint("]. ");
+        } else {
+          ClutPrint(CLUT_STR_MISMATCH_AT);
+          ClutPrintUint(byte);
+          ClutPrint(". ");
+        }
+
+        ClutPrint(CLUT_STR_EXPECTED);
+        ClutPrintHex(ptr_exp[offset]);
+        ClutPrint(CLUT_STR_WAS);
+        ClutPrintHex(ptr_act[offset]);
+
+        CLUT_END_FAILURE_LOG();
+        return;
+      }
+    }
+  }
 }
 #endif
 #endif
