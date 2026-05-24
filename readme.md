@@ -75,14 +75,18 @@ int main() {
 
 - [x] Floating Point Assertions
     - [x] TEST_ASSERT_EQUAL_FLOAT(expected, actual)
-    - [x] TEST_ASSERT_EQUAL_DOUBLE(expected, actual)
+    - [X] TEST_ASSERT_NOT_EQUAL_FLOAT(expected, actual)
     - [x] TEST_ASSERT_GREATER_THAN_FLOAT(expected, actual)
     - [x] TEST_ASSERT_LESS_THAN_FLOAT(expected, actual)
+    - [x] TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(expected, actual)
+    - [x] TEST_ASSERT_LESS_OR_EQUAL_FLOAT(expected, actual)
+    - [x] TEST_ASSERT_WITHIN_FLOAT(expected, delta, actual)
+    - [x] TEST_ASSERT_EQUAL_DOUBLE(expected, actual)
+    - [X] TEST_ASSERT_NOT_EQUAL_DOUBLE(expected, actual)
+    - [x] TEST_ASSERT_GREATER_THAN_DOUBLE(expected, actual)
+    - [x] TEST_ASSERT_LESS_THAN_DOUBLE(expected, actual)
     - [x] TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(expected, actual)
     - [x] TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(expected, actual)
-    - [X] TEST_ASSERT_NOT_EQUAL_FLOAT(expected, actual)
-    - [X] TEST_ASSERT_NOT_EQUAL_DOUBLE(expected, actual)
-    - [x] TEST_ASSERT_WITHIN_FLOAT(expected, delta, actual)
     - [x] TEST_ASSERT_WITHIN_DOUBLE(expected, delta, actual)
 
 - [x] String Assertions
