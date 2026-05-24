@@ -38,16 +38,36 @@
 #define CLUT_DOUBLE_EPSILON 1e-9
 #endif
 
-typedef void (*ClutTestFunction)(void);
+typedef void (*ClutHookFn)();
+typedef void (*ClutTestFn)();
 
-typedef struct ClutData {
+typedef struct {
   size_t total_tests;
   size_t failures;
-  const char *current_test_file;
-  const char *current_test_function_name;
-  bool current_test_failed;
+
   long start_time;
+
   FILE *stream;
+} ClutRunner;
+
+typedef struct {
+  ClutHookFn before_all;
+  ClutHookFn before_each;
+  ClutHookFn after_each;
+  ClutHookFn after_all;
+} ClutHooks;
+
+typedef struct {
+  const char *file;
+  const char *name;
+
+  bool failed;
+} ClutTestState;
+
+typedef struct {
+  ClutRunner runner;
+  ClutHooks hooks;
+  ClutTestState current;
 } ClutData;
 
 #ifndef CLUT_STREAM_DEFAULT
@@ -65,7 +85,7 @@ typedef struct ClutData {
 #else
 #define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
   do {                                                                                                                                                                                                                                                             \
-    if (Clut.current_test_failed)                                                                                                                                                                                                                                  \
+    if (Clut.current.failed)                                                                                                                                                                                                                                       \
       return;                                                                                                                                                                                                                                                      \
   } while (0)
 #endif
@@ -85,8 +105,13 @@ typedef struct ClutData {
   }                                                                                                                                                                                                                                                                \
   while (0)
 
+#define CLUT_BEFORE_ALL(hook_fn) Clut.hooks.before_all = (hook_fn)
+#define CLUT_BEFORE_EACH(hook_fn) Clut.hooks.before_each = (hook_fn)
+#define CLUT_AFTER_ALL(hook_fn) Clut.hooks.after_all = (hook_fn)
+#define CLUT_AFTER_EACH(hook_fn) Clut.hooks.after_each = (hook_fn)
+
 #define TEST_BEGIN() ClutTestBegin(__FILE__)
-#define TEST_RUN(clut_test_function) ClutTestRun((clut_test_function), __LINE__, #clut_test_function)
+#define TEST_RUN(test_fn) ClutTestRun((test_fn), __LINE__, #test_fn)
 #define TEST_END() ClutTestEnd()
 
 /* Assertions */
@@ -202,7 +227,7 @@ typedef struct ClutData {
 
 void ClutReset();
 void ClutTestBegin(const char *file);
-void ClutTestRun(ClutTestFunction clut_test_function, const int line, const char *clut_test_name);
+void ClutTestRun(ClutTestFn test_fn, const int line, const char *test_fn_name);
 int ClutTestEnd();
 
 void ClutBeginTestLog(const char *file, const int line);
@@ -281,44 +306,53 @@ void ClutTestAssertEqualMemory(const void *expected, const void *actual, size_t 
 ClutData Clut = {};
 
 void ClutReset() {
-  Clut.total_tests = 0;
-  Clut.failures = 0;
-  Clut.current_test_file = NULL;
-  Clut.current_test_function_name = NULL;
-  Clut.current_test_failed = false;
-  Clut.start_time = 0;
-  Clut.stream = CLUT_STREAM_DEFAULT;
+  Clut.runner.total_tests = 0;
+  Clut.runner.failures = 0;
+  Clut.runner.start_time = 0;
+  Clut.runner.stream = CLUT_STREAM_DEFAULT;
+
+  Clut.current.file = NULL;
+  Clut.current.name = NULL;
+  Clut.current.failed = false;
 }
 
 void ClutTestBegin(const char *file) {
   ClutReset();
-  Clut.current_test_file = file;
-  Clut.start_time = clock();
+  if (Clut.hooks.before_all)
+    Clut.hooks.before_all();
+  Clut.current.file = file;
+  Clut.runner.start_time = clock();
 }
 
-void ClutTestRun(ClutTestFunction clut_test_function, const int line, const char *clut_test_function_name) {
+void ClutTestRun(ClutTestFn test_fn, const int line, const char *test_fn_name) {
 #ifndef CLUT_META_TESTING
-  Clut.total_tests++;
+  Clut.runner.total_tests++;
 #endif
-  Clut.current_test_failed = false;
-  Clut.current_test_function_name = clut_test_function_name;
-  clut_test_function();
-  if (!Clut.current_test_failed) {
-    ClutBeginTestLog(Clut.current_test_file, line);
+  if (Clut.hooks.before_each)
+    Clut.hooks.before_each();
+  Clut.current.failed = false;
+  Clut.current.name = test_fn_name;
+  test_fn();
+  if (!Clut.current.failed) {
+    ClutBeginTestLog(Clut.current.file, line);
     ClutPrint(CLUT_STR_PASSED);
     ClutEndTestLog();
   }
+  if (Clut.hooks.after_each)
+    Clut.hooks.after_each();
 }
 
 int ClutTestEnd() {
-  if (Clut.total_tests == 0)
-    return Clut.failures;
-
   int end_time = clock();
-  double total_time = ((double)(end_time - Clut.start_time)) / CLOCKS_PER_SEC;
+  if (Clut.hooks.after_all)
+    Clut.hooks.after_all();
+  if (Clut.runner.total_tests == 0)
+    return Clut.runner.failures;
 
-  size_t total_tests = Clut.total_tests;
-  size_t failures = Clut.failures;
+  double total_time = ((double)(end_time - Clut.runner.start_time)) / CLOCKS_PER_SEC;
+
+  size_t total_tests = Clut.runner.total_tests;
+  size_t failures = Clut.runner.failures;
 
   ClutReset();
 
@@ -334,7 +368,7 @@ void ClutBeginTestLog(const char *file, const int line) {
   ClutPrintChar(':');
   ClutPrintInt(line);
   ClutPrintChar(':');
-  ClutPrint(Clut.current_test_function_name);
+  ClutPrint(Clut.current.name);
   ClutPrintChar(':');
 }
 
@@ -344,19 +378,19 @@ void ClutPrint(const char *str) {
   if (str == NULL) {
     str = "(null)";
   }
-  fprintf(Clut.stream, "%s", str);
+  fprintf(Clut.runner.stream, "%s", str);
 }
-void ClutPrintChar(const char c) { fprintf(Clut.stream, "%c", c); }
-void ClutPrintInt(int number) { fprintf(Clut.stream, "%d", number); }
-void ClutPrintUint(size_t number) { fprintf(Clut.stream, "%zu", number); }
-void ClutPrintFloat(float number) { fprintf(Clut.stream, "%f", number); }
-void ClutPrintDouble(double number) { fprintf(Clut.stream, "%f", number); }
-void ClutPrintPtr(void *ptr) { fprintf(Clut.stream, "%p", ptr); }
-void ClutPrintHex(int value) { fprintf(Clut.stream, "0x%02X", value); }
+void ClutPrintChar(const char c) { fprintf(Clut.runner.stream, "%c", c); }
+void ClutPrintInt(int number) { fprintf(Clut.runner.stream, "%d", number); }
+void ClutPrintUint(size_t number) { fprintf(Clut.runner.stream, "%zu", number); }
+void ClutPrintFloat(float number) { fprintf(Clut.runner.stream, "%f", number); }
+void ClutPrintDouble(double number) { fprintf(Clut.runner.stream, "%f", number); }
+void ClutPrintPtr(void *ptr) { fprintf(Clut.runner.stream, "%p", ptr); }
+void ClutPrintHex(int value) { fprintf(Clut.runner.stream, "0x%02X", value); }
 void ClutPrintf(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  vfprintf(Clut.stream, fmt, args);
+  vfprintf(Clut.runner.stream, fmt, args);
   va_end(args);
 }
 
@@ -472,10 +506,10 @@ void ClutPrintWithinDiffDouble(double expected, double delta, double diff) {
 
 void ClutFail() {
 #ifndef CLUT_META_TESTING
-  Clut.failures++;
+  Clut.runner.failures++;
 #endif
-  Clut.current_test_failed = true;
-  Clut.stream = CLUT_STREAM_FAIL;
+  Clut.current.failed = true;
+  Clut.runner.stream = CLUT_STREAM_FAIL;
 }
 
 void ClutTestAssert(bool condition, const char *file, const int line, const char *msg) {
@@ -557,17 +591,17 @@ void ClutTestAssertEqualString(const char *expected, const char *actual, const c
     return;
 
   if (expected == NULL || actual == NULL) {
-    Clut.current_test_failed = true;
+    Clut.current.failed = true;
   } else {
     for (size_t i = 0; expected[i] || actual[i]; i++) {
       if (expected[i] != actual[i]) {
-        Clut.current_test_failed = true;
+        Clut.current.failed = true;
         break;
       }
     }
   }
 
-  if (!Clut.current_test_failed)
+  if (!Clut.current.failed)
     return;
 
   CLUT_START_FAILURE_LOG(file, line, msg);
@@ -582,17 +616,17 @@ void ClutTestAssertEqualStringLen(const char *expected, const char *actual, size
     return;
 
   if (expected == NULL || actual == NULL) {
-    Clut.current_test_failed = true;
+    Clut.current.failed = true;
   } else {
     for (size_t i = 0; i < len && (expected[i] || actual[i]); i++) {
       if (expected[i] != actual[i]) {
-        Clut.current_test_failed = true;
+        Clut.current.failed = true;
         break;
       }
     }
   }
 
-  if (!Clut.current_test_failed)
+  if (!Clut.current.failed)
     return;
 
   CLUT_START_FAILURE_LOG(file, line, msg);

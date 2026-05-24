@@ -3,6 +3,8 @@
 
 #include "clut.h"
 
+int CTX_COUNTER;
+
 int add(int a, int b) { return a + b; }
 float divide(float a, float b) { return b != 0.0f ? a / b : 0.0f; }
 char *say_hello() { return "Hello"; }
@@ -39,19 +41,36 @@ void test_comparisons() {
     x += 0.1f;
 
   TEST_ASSERT_LESS_OR_EQUAL_FLOAT(1.0f, x);        // Passed
-  TEST_ASSERT_GREATER_THAN_INT(10, 5);             // Failed: expected 5 > 10
-  TEST_ASSERT_LESS_OR_EQUAL_INT(5, 5);             // Not validated due to previous failure
-  TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(3.0f, 3.14f); // Not validated due to previous failure
+  TEST_ASSERT_GREATER_THAN_INT(5, 10);             // Passed
+  TEST_ASSERT_LESS_OR_EQUAL_INT(5, 5);             // Passed
+  TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(3.0f, 3.14f); // Passed
 }
 
+void test_context() {
+  TEST_ASSERT_EQUAL_INT(12, CTX_COUNTER);        // Passed
+  TEST_ASSERT_GREATER_THAN_INT(20, CTX_COUNTER); // Failed: expected 12 > 20
+  TEST_ASSERT_EQUAL_INT(10, CTX_COUNTER);        // Not validated due to previous failure
+}
+
+void before_all() { CTX_COUNTER = 5; }
+void before_each() { CTX_COUNTER += 2; }
+void after_each() { CTX_COUNTER -= 1; }
+void after_all() { CTX_COUNTER = 0; }
+
 int main() {
+  CLUT_BEFORE_ALL(before_all);
+  CLUT_BEFORE_EACH(before_each);
+  CLUT_AFTER_EACH(after_each);
+  CLUT_AFTER_ALL(after_all);
+
   TEST_BEGIN();
 
   TEST_RUN(test_add);         // Passed: all assertions passed
   TEST_RUN(test_divide);      // Passed: all assertions passed
   TEST_RUN(test_strings);     // Passed: all assertions passed
   TEST_RUN(test_pointers);    // Passed: all assertions passed
-  TEST_RUN(test_comparisons); // Failed: one assertion failed
+  TEST_RUN(test_comparisons); // Passed: all assertions passed
+  TEST_RUN(test_context);     // Failed: one assertion failed
 
   return TEST_END();
 }

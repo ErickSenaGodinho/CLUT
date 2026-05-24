@@ -15,7 +15,7 @@ void validate_pass(bool assert_condition, const char *macro_expression, const ch
     fprintf(stderr, "%s:%d:%s:", file, line, func_name);
     fprintf(stderr, CLUT_STR_FAIL ":False-positive FAILURE detected\n");
     fprintf(stderr, "  -> Expression: %s\n\n", macro_expression);
-    Clut.failures++;
+    Clut.runner.failures++;
   }
 }
 
@@ -24,24 +24,24 @@ void validate_fail(bool assert_condition, const char *macro_expression, const ch
     fprintf(stderr, "%s:%d:%s:", file, line, func_name);
     fprintf(stderr, CLUT_STR_FAIL ":False-positive PASS detected\n");
     fprintf(stderr, "  -> Expression: %s\n\n", macro_expression);
-    Clut.failures++;
+    Clut.runner.failures++;
   }
 }
 
 #define VALIDATE_PASS(assertion_expr)                                                                                                                                                                                                                              \
   do {                                                                                                                                                                                                                                                             \
-    Clut.total_tests++;                                                                                                                                                                                                                                            \
-    Clut.current_test_failed = false;                                                                                                                                                                                                                              \
+    Clut.runner.total_tests++;                                                                                                                                                                                                                                     \
+    Clut.current.failed = false;                                                                                                                                                                                                                                   \
     assertion_expr;                                                                                                                                                                                                                                                \
-    validate_pass(Clut.current_test_failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                                                        \
+    validate_pass(Clut.current.failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                                                             \
   } while (0)
 
 #define VALIDATE_FAIL(assertion_expr)                                                                                                                                                                                                                              \
   do {                                                                                                                                                                                                                                                             \
-    Clut.total_tests++;                                                                                                                                                                                                                                            \
-    Clut.current_test_failed = false;                                                                                                                                                                                                                              \
+    Clut.runner.total_tests++;                                                                                                                                                                                                                                     \
+    Clut.current.failed = false;                                                                                                                                                                                                                                   \
     assertion_expr;                                                                                                                                                                                                                                                \
-    validate_fail(Clut.current_test_failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                                                        \
+    validate_fail(Clut.current.failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                                                             \
   } while (0)
 
 void test_suite_boolean_and_basic(void) {
@@ -354,12 +354,22 @@ void test_suite_memory(void) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&s1, &s2, 0));
 }
 
-int main(void) {
+void setup_stream_file() {
 #ifdef _WIN32
   g_dev_null = fopen("nul", "w");
 #else
   g_dev_null = fopen("/dev/null", "w");
 #endif
+}
+
+void close_stream_file() {
+  if (g_dev_null)
+    fclose(g_dev_null);
+}
+
+int main(void) {
+  CLUT_BEFORE_ALL(setup_stream_file);
+  CLUT_AFTER_ALL(close_stream_file);
 
   TEST_BEGIN();
 
@@ -374,9 +384,5 @@ int main(void) {
   TEST_RUN(test_suite_within_comparisons);
   TEST_RUN(test_suite_memory);
 
-  int exit_code = TEST_END();
-
-  if (g_dev_null)
-    fclose(g_dev_null);
-  return exit_code;
+  return TEST_END();
 }

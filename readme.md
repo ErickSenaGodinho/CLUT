@@ -27,12 +27,16 @@ int main() {
 
 ## Features
 
-- [ ] Test Execution Hooks & Customization
-    - [ ] setUp
-    - [ ] tearDown
+- [x] Customization
     - [x] Color output
     - [x] Custom test output streams
     - [x] Custom float and double epsilon
+
+- [x] Test Execution Hooks
+    - [x] CLUT_BEFORE_ALL(hook_fn)
+    - [x] CLUT_BEFORE_EACH(hook_fn)
+    - [x] CLUT_AFTER_ALL(hook_fn)
+    - [x] CLUT_AFTER_EACH(hook_fn)
 
 - [x] Boolean Assertions
     - [x] TEST_ASSERT(condition)
