@@ -100,7 +100,17 @@ int main() {
     - [x] TEST_ASSERT_EQUAL_MEMORY_ARRAY(expected, actual, len, num_elements)
 
 - [ ] Array Assertions
-    - [ ] Array comparisons
+    - [x] TEST_ASSERT_EQUAL_CHAR_ARRAY(expected, actual, num_elements)
+    - [x] TEST_ASSERT_EQUAL_INT_ARRAY(expected, actual, num_elements)
+    - [x] TEST_ASSERT_EQUAL_UINT_ARRAY(expected, actual, num_elements)
+    - [x] TEST_ASSERT_EQUAL_FLOAT_ARRAY(expected, actual, num_elements)
+    - [x] TEST_ASSERT_EQUAL_DOUBLE_ARRAY(expected, actual, num_elements)
+    - [ ] TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, num_elements)
+    - [ ] TEST_ASSERT_WITHIN_CHAR_ARRAY(expected, delta, actual, num_elements)
+    - [ ] TEST_ASSERT_WITHIN_INT_ARRAY(expected, delta, actual, num_elements)
+    - [ ] TEST_ASSERT_WITHIN_UINT_ARRAY(expected, delta, actual, num_elements)
+    - [ ] TEST_ASSERT_WITHIN_FLOAT_ARRAY(expected, delta, actual, num_elements)
+    - [ ] TEST_ASSERT_WITHIN_DOUBLE_ARRAY(expected, delta, actual, num_elements) 
 
 ---
 

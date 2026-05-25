@@ -354,6 +354,143 @@ void test_suite_memory(void) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&s1, &s2, 0));
 }
 
+void test_suite_char_array(void) {
+  char exp[] = "ClutTest";
+  char act_ok[] = "ClutTest";
+  char act_diff_end[] = "ClutTesX";
+  char act_diff_start[] = "XlutTest";
+  char act_diff_mid[] = "ClutXest";
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, act_ok, 8));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, exp, 8));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, act_diff_end, 7));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, act_diff_mid, 4));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, act_diff_start, 0));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR_ARRAY(NULL, NULL, 0));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, act_diff_end, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, act_diff_end, 8));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, act_diff_start, 8));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, act_diff_mid, 8));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_CHAR_ARRAY(exp, NULL, 8));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_CHAR_ARRAY(NULL, act_ok, 8));
+}
+
+void test_suite_int_array(void) {
+  int arr1[] = {-10, 20, -30, 40, -50};
+  int arr2[] = {-10, 20, -30, 40, -50};
+  int arr3[] = {-10, -99, -30, 40, -50};
+  int arr4[] = {-10, 20, -30, 40, 99};
+  int arr5[] = {99, 20, -30, 40, -50};
+
+  size_t len5 = 5;
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr2, len5));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr1, len5));
+
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr3, len5));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr4, len5));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr5, len5));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr3, 1));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr4, 4));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(&arr1[2], &arr2[2], 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT_ARRAY(&arr1[1], &arr3[1], 3));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr3, 0));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(NULL, NULL, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, NULL, len5));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT_ARRAY(NULL, arr2, len5));
+}
+
+void test_suite_uint_array(void) {
+  size_t arr1[] = {10, 20, 30, 40, 50};
+  size_t arr2[] = {10, 20, 30, 40, 50};
+  size_t arr3[] = {10, 99, 30, 40, 50};
+  size_t arr4[] = {10, 20, 30, 40, 99};
+  size_t arr5[] = {99, 20, 30, 40, 50};
+
+  size_t len5 = 5;
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr2, len5));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr1, len5));
+
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr3, len5));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr4, len5));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr5, len5));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr3, 1));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr4, 4));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(&arr1[2], &arr2[2], 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT_ARRAY(&arr1[1], &arr3[1], 3));
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr3, 0));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(NULL, NULL, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, NULL, len5));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT_ARRAY(NULL, arr2, len5));
+}
+
+void test_suite_float_array(void) {
+  float sum = 0.0f;
+  for (int i = 0; i < 10; i++) {
+    sum += 0.1f;
+  }
+
+  float exp[] = {1.0f, 5.5f, 10.123f};
+  float act_ok[] = {1.0f, 5.5f, 10.123f};
+  float act_accumulated[] = {sum, 5.5f, 10.123f};
+  float act_diff_start[] = {1.1f, 5.5f, 10.123f};
+  float act_diff_mid[] = {1.0f, 5.501f, 10.123f};
+  float act_diff_end[] = {1.0f, 5.5f, 10.124f};
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_ok, 3));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_accumulated, 3));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_diff_mid, 1));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_diff_end, 2));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(NULL, NULL, 0));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_diff_start, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_diff_start, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_diff_mid, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_diff_end, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, NULL, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_FLOAT_ARRAY(NULL, act_ok, 3));
+}
+
+void test_suite_double_array(void) {
+  double sum = 0.0;
+  for (int i = 0; i < 10000; i++) {
+    sum += 0.1;
+  }
+
+  double exp[] = {1000.0, 0.123456789, 99.99};
+  double act_ok[] = {1000.0, 0.123456789, 99.99};
+  double act_accumulated[] = {sum, 0.123456789, 99.99};
+  double act_diff_start[] = {1000.00001, 0.123456789, 99.99};
+  double act_diff_mid[] = {1000.0, 0.123456780, 99.99};
+  double act_diff_end[] = {1000.0, 0.123456789, 100.0};
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, act_ok, 3));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, act_accumulated, 3));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, act_diff_mid, 1));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, act_diff_end, 2));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(NULL, NULL, 0));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, act_diff_start, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, act_diff_start, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, act_diff_mid, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, act_diff_end, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, NULL, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(NULL, act_ok, 3));
+}
+
 void setup_stream_file() {
 #ifdef _WIN32
   g_dev_null = fopen("nul", "w");
@@ -383,6 +520,11 @@ int main(void) {
   TEST_RUN(test_suite_strings);
   TEST_RUN(test_suite_within_comparisons);
   TEST_RUN(test_suite_memory);
+  TEST_RUN(test_suite_char_array);
+  TEST_RUN(test_suite_int_array);
+  TEST_RUN(test_suite_uint_array);
+  TEST_RUN(test_suite_float_array);
+  TEST_RUN(test_suite_double_array);
 
   return TEST_END();
 }
