@@ -2,18 +2,17 @@
 
 static FILE *g_dev_null = NULL;
 
-#define CLUT_META_TESTING
 #define CLUT_STREAM_DEFAULT stdout
 #define CLUT_STREAM_FAIL g_dev_null
 
 #define CLUT_OUTPUT_COLOR
 #define CLUT_IMPLEMENTATION
-#include "clut.h"
+#include "../clut.h"
 
 void validate_pass(bool assert_condition, const char *macro_expression, const char *func_name, const char *file, int line) {
   if (assert_condition) {
     fprintf(stderr, "%s:%d:%s:", file, line, func_name);
-    fprintf(stderr, CLUT_STR_FAIL ":False-positive FAILURE detected\n");
+    fprintf(stderr, CLUT_STR_FAIL ":False-positive:FAILURE detected\n");
     fprintf(stderr, "  -> Expression: %s\n\n", macro_expression);
     Clut.runner.failures++;
   }
@@ -22,24 +21,22 @@ void validate_pass(bool assert_condition, const char *macro_expression, const ch
 void validate_fail(bool assert_condition, const char *macro_expression, const char *func_name, const char *file, int line) {
   if (!assert_condition) {
     fprintf(stderr, "%s:%d:%s:", file, line, func_name);
-    fprintf(stderr, CLUT_STR_FAIL ":False-positive PASS detected\n");
+    fprintf(stderr, CLUT_STR_FAIL ":False-positive:PASS detected\n");
     fprintf(stderr, "  -> Expression: %s\n\n", macro_expression);
-    Clut.runner.failures++;
+  } else {
+    Clut.current.failed = false;
+    Clut.runner.failures--;
   }
 }
 
 #define VALIDATE_PASS(assertion_expr)                                                                                                                                                                                                                              \
   do {                                                                                                                                                                                                                                                             \
-    Clut.runner.total_tests++;                                                                                                                                                                                                                                     \
-    Clut.current.failed = false;                                                                                                                                                                                                                                   \
     assertion_expr;                                                                                                                                                                                                                                                \
     validate_pass(Clut.current.failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                                                             \
   } while (0)
 
 #define VALIDATE_FAIL(assertion_expr)                                                                                                                                                                                                                              \
   do {                                                                                                                                                                                                                                                             \
-    Clut.runner.total_tests++;                                                                                                                                                                                                                                     \
-    Clut.current.failed = false;                                                                                                                                                                                                                                   \
     assertion_expr;                                                                                                                                                                                                                                                \
     validate_fail(Clut.current.failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                                                             \
   } while (0)

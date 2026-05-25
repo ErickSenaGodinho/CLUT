@@ -1,7 +1,7 @@
 #define CLUT_IMPLEMENTATION
 #define CLUT_OUTPUT_COLOR
 
-#include "clut.h"
+#include "../clut.h"
 
 int CTX_COUNTER;
 

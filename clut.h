@@ -80,17 +80,11 @@ typedef struct {
 #define CLUT_STREAM_FAIL stderr
 #endif
 
-#ifdef CLUT_META_TESTING
-#define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
-  do {                                                                                                                                                                                                                                                             \
-  } while (0)
-#else
 #define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
   do {                                                                                                                                                                                                                                                             \
     if (Clut.current.failed)                                                                                                                                                                                                                                       \
       return;                                                                                                                                                                                                                                                      \
   } while (0)
-#endif
 
 #define CLUT_START_FAILURE_LOG(file, line, msg)                                                                                                                                                                                                                    \
   do {                                                                                                                                                                                                                                                             \
@@ -367,9 +361,7 @@ void ClutTestBegin(const char *file) {
 }
 
 void ClutTestRun(ClutTestFn test_fn, const int line, const char *test_fn_name) {
-#ifndef CLUT_META_TESTING
   Clut.runner.total_tests++;
-#endif
   if (Clut.hooks.before_each)
     Clut.hooks.before_each();
   Clut.current.failed = false;
@@ -561,9 +553,7 @@ void ClutPrintMismatchArray(size_t index) {
 }
 
 void ClutFail() {
-#ifndef CLUT_META_TESTING
   Clut.runner.failures++;
-#endif
   Clut.current.failed = true;
   Clut.runner.stream = CLUT_STREAM_FAIL;
 }
