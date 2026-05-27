@@ -1,6 +1,6 @@
-# CLUT - C Lightweight Unit Testing Framework
+# CLUT - C Language Unit Testing Framework
 
-<p align="center">CLUT is a lightweight, header-only C unit testing framework inspired by JUnit and Unity. It makes writing and running tests simple, with clean, readable output.</p>
+<p align="center">CLUT is a header-only C unit testing framework inspired by JUnit and Unity. It makes writing and running tests simple, with clean, readable output.</p>
 
 <p align="center">
     <img src="https://img.shields.io/github/actions/workflow/status/ErickSenaGodinho/CLUT/ci.yml">
@@ -77,6 +77,19 @@ Output:
 <pre>test_file.c:20:TestStrings:FAIL:Expected Hella to be equal to Hello</pre>
 
 ---
+
+## Assertion Messages
+
+CLUT also supports custom failure messages for clearer test output `*_MESSAGE`
+
+```c
+TEST_ASSERT_EQUAL_INT_MESSAGE(10, result, "Player score should be initialized correctly");
+```
+
+Output:
+<pre>
+game_test.c:18:TestScore:FAIL:Player score should be initialized correctly
+</pre>
 
 ## Project Structure
 
@@ -177,3 +190,4 @@ CLUT/
     - [ ] TEST_ASSERT_WITHIN_UINT_ARRAY(expected, delta, actual, num_elements)
     - [ ] TEST_ASSERT_WITHIN_FLOAT_ARRAY(expected, delta, actual, num_elements)
     - [ ] TEST_ASSERT_WITHIN_DOUBLE_ARRAY(expected, delta, actual, num_elements)
+
