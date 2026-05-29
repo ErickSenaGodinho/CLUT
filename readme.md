@@ -74,7 +74,7 @@ TEST_ASSERT_EQUAL_STRING("Hello", "Hella");
 ```
 
 Output:
-<pre>test_file.c:20:TestStrings:FAIL:Expected Hella to be equal to Hello</pre>
+<pre>test_file.c:20:TestStrings:FAIL:Expected "Hella" to be equal to "Hello"</pre>
 
 ---
 
@@ -184,7 +184,7 @@ CLUT/
     - [x] TEST_ASSERT_EQUAL_UINT_ARRAY(expected, actual, num_elements)
     - [x] TEST_ASSERT_EQUAL_FLOAT_ARRAY(expected, actual, num_elements)
     - [x] TEST_ASSERT_EQUAL_DOUBLE_ARRAY(expected, actual, num_elements)
-    - [ ] TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, num_elements)
+    - [x] TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, num_elements)
     - [ ] TEST_ASSERT_WITHIN_CHAR_ARRAY(expected, delta, actual, num_elements)
     - [ ] TEST_ASSERT_WITHIN_INT_ARRAY(expected, delta, actual, num_elements)
     - [ ] TEST_ASSERT_WITHIN_UINT_ARRAY(expected, delta, actual, num_elements)

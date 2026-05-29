@@ -488,6 +488,35 @@ void test_suite_double_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(NULL, act_ok, 3));
 }
 
+void test_suite_string_array(void) {
+  const char *exp[] = {"clut", "test", "framework"};
+  const char *act_ok[] = {"clut", "test", "framework"};
+  const char *act_diff_start[] = {"XXXX", "test", "framework"};
+  const char *act_diff_mid[] = {"clut", "XXXX", "framework"};
+  const char *act_diff_end[] = {"clut", "test", "XXXXXXXXX"};
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING_ARRAY(exp, act_ok, 3));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING_ARRAY(exp, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING_ARRAY(exp, act_diff_mid, 1));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING_ARRAY(exp, act_diff_end, 2));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING_ARRAY(exp, act_diff_start, 0));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING_ARRAY(NULL, NULL, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING_ARRAY(exp, act_diff_start, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING_ARRAY(exp, act_diff_mid, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING_ARRAY(exp, act_diff_end, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING_ARRAY(exp, NULL, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING_ARRAY(NULL, act_ok, 3));
+
+  const char *exp_null[] = {"clut", NULL, "framework"};
+  const char *act_null[] = {"clut", NULL, "framework"};
+  const char *act_no_null[] = {"clut", "test", "framework"};
+
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING_ARRAY(exp_null, act_null, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING_ARRAY(exp_null, act_no_null, 3));
+  VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING_ARRAY(act_no_null, exp_null, 3));
+}
+
 void setup_stream_file() {
 #ifdef _WIN32
   g_dev_null = fopen("nul", "w");
@@ -522,6 +551,7 @@ int main(void) {
   TEST_RUN(test_suite_uint_array);
   TEST_RUN(test_suite_float_array);
   TEST_RUN(test_suite_double_array);
+  TEST_RUN(test_suite_string_array);
 
   return TEST_END();
 }

@@ -186,6 +186,7 @@ typedef struct {
 #define TEST_ASSERT_EQUAL_UINT_ARRAY(expected, actual, num_elements) ClutTestAssertEqualUintArray((expected), (actual), (num_elements), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_FLOAT_ARRAY(expected, actual, num_elements) ClutTestAssertEqualFloatArray((expected), (actual), (num_elements), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_DOUBLE_ARRAY(expected, actual, num_elements) ClutTestAssertEqualDoubleArray((expected), (actual), (num_elements), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, num_elements) ClutTestAssertEqualStringArray((expected), (actual), (num_elements), __FILE__, __LINE__, NULL)
 
 /* Messages */
 
@@ -246,6 +247,7 @@ typedef struct {
 #define TEST_ASSERT_EQUAL_UINT_ARRAY_MESSAGE(expected, actual, num_elements, msg) ClutTestAssertEqualUintArray((expected), (actual), (num_elements), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_EQUAL_FLOAT_ARRAY_MESSAGE(expected, actual, num_elements, msg) ClutTestAssertEqualFloatArray((expected), (actual), (num_elements), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_EQUAL_DOUBLE_ARRAY_MESSAGE(expected, actual, num_elements, msg) ClutTestAssertEqualDoubleArray((expected), (actual), (num_elements), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_EQUAL_STRING_ARRAY_MESSAGE(expected, actual, num_elements, msg) ClutTestAssertEqualStringArray((expected), (actual), (num_elements), __FILE__, __LINE__, (msg))
 
 void ClutReset();
 void ClutTestBegin(const char *file);
@@ -261,6 +263,7 @@ void ClutPrintInt(int number);
 void ClutPrintUint(size_t number);
 void ClutPrintFloat(float number);
 void ClutPrintDouble(double number);
+void ClutPrintString(const char *str);
 void ClutPrintPtr(void *ptr);
 void ClutPrintHex(int value);
 void ClutPrintf(const char *fmt, ...);
@@ -331,6 +334,7 @@ void ClutTestAssertEqualIntArray(const int *expected, const int *actual, size_t 
 void ClutTestAssertEqualUintArray(const size_t *expected, const size_t *actual, size_t num_elements, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualFloatArray(const float *expected, const float *actual, size_t num_elements, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualDoubleArray(const double *expected, const double *actual, size_t num_elements, const char *file, const int line, const char *msg);
+void ClutTestAssertEqualStringArray(const char **expected, const char **actual, size_t num_elements, const char *file, const int line, const char *msg);
 
 #ifdef CLUT_IMPLEMENTATION
 
@@ -421,6 +425,7 @@ void ClutPrintInt(int number) { fprintf(Clut.runner.stream, "%d", number); }
 void ClutPrintUint(size_t number) { fprintf(Clut.runner.stream, "%zu", number); }
 void ClutPrintFloat(float number) { fprintf(Clut.runner.stream, "%f", number); }
 void ClutPrintDouble(double number) { fprintf(Clut.runner.stream, "%f", number); }
+void ClutPrintString(const char *str) { fprintf(Clut.runner.stream, "\"%s\"", str); }
 void ClutPrintPtr(void *ptr) { fprintf(Clut.runner.stream, "%p", ptr); }
 void ClutPrintHex(int value) { fprintf(Clut.runner.stream, "0x%02X", value); }
 void ClutPrintf(const char *fmt, ...) {
@@ -474,16 +479,16 @@ void ClutPrintExpectedActualDouble(double expected, double actual, const char *o
 
 void ClutPrintExpectedActualString(const char *expected, const char *actual, const char *opStr) {
   ClutPrint(CLUT_STR_EXPECTED);
-  ClutPrint(expected);
+  ClutPrintString(expected);
   ClutPrint(opStr);
-  ClutPrint(actual);
+  ClutPrintString(actual);
 }
 
 void ClutPrintExpectedActualStringLen(const char *expected, const char *actual, size_t len, const char *opSrt) {
   ClutPrint(CLUT_STR_EXPECTED);
-  ClutPrint(expected);
+  ClutPrintString(expected);
   ClutPrint(opSrt);
-  ClutPrint(actual);
+  ClutPrintString(actual);
   ClutPrint(CLUT_STR_UNTIL_LEN);
   ClutPrintInt(len);
 }
@@ -1073,6 +1078,40 @@ void ClutTestAssertEqualDoubleArray(const double *expected, const double *actual
       ClutPrintMismatchArray(index);
       ClutPrintExpectedActualDouble(expected[index], actual[index], CLUT_STR_WAS);
 
+      CLUT_END_FAILURE_LOG();
+      return;
+    }
+  }
+}
+
+void ClutTestAssertEqualStringArray(const char **expected, const char **actual, size_t num_elements, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  CHECK_MEMORY_PRECONDITIONS;
+
+  for (size_t index = 0; index < num_elements; index++) {
+    const char *exp_str = expected[index];
+    const char *act_str = actual[index];
+
+    bool mismatch = false;
+
+    if (exp_str == act_str) {
+      continue;
+    } else if (exp_str == NULL || act_str == NULL) {
+      mismatch = true;
+    } else {
+      for (size_t i = 0; exp_str[i] || act_str[i]; i++) {
+        if (exp_str[i] != act_str[i]) {
+          mismatch = true;
+          break;
+        }
+      }
+    }
+
+    if (mismatch) {
+      CLUT_START_FAILURE_LOG(file, line, msg);
+      ClutPrintMismatchArray(index);
+      ClutPrintExpectedActualString(exp_str, act_str, CLUT_STR_WAS);
       CLUT_END_FAILURE_LOG();
       return;
     }
