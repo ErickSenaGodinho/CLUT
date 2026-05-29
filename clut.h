@@ -188,6 +188,12 @@ typedef struct {
 #define TEST_ASSERT_EQUAL_DOUBLE_ARRAY(expected, actual, num_elements) ClutTestAssertEqualDoubleArray((expected), (actual), (num_elements), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, num_elements) ClutTestAssertEqualStringArray((expected), (actual), (num_elements), __FILE__, __LINE__, NULL)
 
+#define TEST_ASSERT_WITHIN_CHAR_ARRAY(expected, delta, actual, num_elements) ClutTestAssertWithinCharArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_WITHIN_INT_ARRAY(expected, delta, actual, num_elements) ClutTestAssertWithinIntArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_WITHIN_UINT_ARRAY(expected, delta, actual, num_elements) ClutTestAssertWithinUintArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_WITHIN_FLOAT_ARRAY(expected, delta, actual, num_elements) ClutTestAssertWithinFloatArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_WITHIN_DOUBLE_ARRAY(expected, delta, actual, num_elements) ClutTestAssertWithinDoubleArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, NULL)
+
 /* Messages */
 
 #define TEST_ASSERT_MESSAGE(condition, mgs) ClutTestAssert((condition), __FILE__, __LINE__, (msg))
@@ -248,6 +254,12 @@ typedef struct {
 #define TEST_ASSERT_EQUAL_FLOAT_ARRAY_MESSAGE(expected, actual, num_elements, msg) ClutTestAssertEqualFloatArray((expected), (actual), (num_elements), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_EQUAL_DOUBLE_ARRAY_MESSAGE(expected, actual, num_elements, msg) ClutTestAssertEqualDoubleArray((expected), (actual), (num_elements), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_EQUAL_STRING_ARRAY_MESSAGE(expected, actual, num_elements, msg) ClutTestAssertEqualStringArray((expected), (actual), (num_elements), __FILE__, __LINE__, (msg))
+
+#define TEST_ASSERT_WITHIN_CHAR_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinCharArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_WITHIN_INT_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinIntArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_WITHIN_UINT_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinUintArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_WITHIN_FLOAT_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinFloatArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_WITHIN_DOUBLE_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinDoubleArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
 
 void ClutReset();
 void ClutTestBegin(const char *file);
@@ -335,6 +347,12 @@ void ClutTestAssertEqualUintArray(const size_t *expected, const size_t *actual, 
 void ClutTestAssertEqualFloatArray(const float *expected, const float *actual, size_t num_elements, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualDoubleArray(const double *expected, const double *actual, size_t num_elements, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualStringArray(const char **expected, const char **actual, size_t num_elements, const char *file, const int line, const char *msg);
+
+void ClutTestAssertWithinCharArray(const char *expected, char delta, const char *actual, size_t num_elements, const char *file, const int line, const char *msg);
+void ClutTestAssertWithinIntArray(const int *expected, int delta, const int *actual, size_t num_elements, const char *file, const int line, const char *msg);
+void ClutTestAssertWithinUintArray(const size_t *expected, size_t delta, const size_t *actual, size_t num_elements, const char *file, const int line, const char *msg);
+void ClutTestAssertWithinFloatArray(const float *expected, float delta, const float *actual, size_t num_elements, const char *file, const int line, const char *msg);
+void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const double *actual, size_t num_elements, const char *file, const int line, const char *msg);
 
 #ifdef CLUT_IMPLEMENTATION
 
@@ -1112,6 +1130,96 @@ void ClutTestAssertEqualStringArray(const char **expected, const char **actual, 
       CLUT_START_FAILURE_LOG(file, line, msg);
       ClutPrintMismatchArray(index);
       ClutPrintExpectedActualString(exp_str, act_str, CLUT_STR_WAS);
+      CLUT_END_FAILURE_LOG();
+      return;
+    }
+  }
+}
+
+void ClutTestAssertWithinCharArray(const char *expected, char delta, const char *actual, size_t num_elements, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  CHECK_MEMORY_PRECONDITIONS;
+
+  for (size_t index = 0; index < num_elements; index++) {
+    char diff = (actual[index] > expected[index]) ? (actual[index] - expected[index]) : (expected[index] - actual[index]);
+
+    if (diff > delta) {
+      CLUT_START_FAILURE_LOG(file, line, msg);
+      ClutPrintMismatchArray(index);
+      ClutPrintWithinDiffChar(expected[index], delta, diff);
+      CLUT_END_FAILURE_LOG();
+      return;
+    }
+  }
+}
+
+void ClutTestAssertWithinIntArray(const int *expected, int delta, const int *actual, size_t num_elements, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  CHECK_MEMORY_PRECONDITIONS;
+
+  for (size_t index = 0; index < num_elements; index++) {
+    int diff = (actual[index] > expected[index]) ? (actual[index] - expected[index]) : (expected[index] - actual[index]);
+
+    if (diff > delta) {
+      CLUT_START_FAILURE_LOG(file, line, msg);
+      ClutPrintMismatchArray(index);
+      ClutPrintWithinDiffInt(expected[index], delta, diff);
+      CLUT_END_FAILURE_LOG();
+      return;
+    }
+  }
+}
+
+void ClutTestAssertWithinUintArray(const size_t *expected, size_t delta, const size_t *actual, size_t num_elements, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  CHECK_MEMORY_PRECONDITIONS;
+
+  for (size_t index = 0; index < num_elements; index++) {
+    size_t diff = (actual[index] > expected[index]) ? (actual[index] - expected[index]) : (expected[index] - actual[index]);
+
+    if (diff > delta) {
+      CLUT_START_FAILURE_LOG(file, line, msg);
+      ClutPrintMismatchArray(index);
+      ClutPrintWithinDiffUint(expected[index], delta, diff);
+      CLUT_END_FAILURE_LOG();
+      return;
+    }
+  }
+}
+
+void ClutTestAssertWithinFloatArray(const float *expected, float delta, const float *actual, size_t num_elements, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  CHECK_MEMORY_PRECONDITIONS;
+
+  for (size_t index = 0; index < num_elements; index++) {
+    float diff = clut_fabsf(actual[index] - expected[index]);
+
+    if (diff > delta) {
+      CLUT_START_FAILURE_LOG(file, line, msg);
+      ClutPrintMismatchArray(index);
+      ClutPrintWithinDiffFloat(expected[index], delta, diff);
+      CLUT_END_FAILURE_LOG();
+      return;
+    }
+  }
+}
+
+void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const double *actual, size_t num_elements, const char *file, const int line, const char *msg) {
+  RETURN_IF_FAILED;
+
+  CHECK_MEMORY_PRECONDITIONS;
+
+  for (size_t index = 0; index < num_elements; index++) {
+    double diff = clut_fabs(actual[index] - expected[index]);
+
+    if (diff > delta) {
+      CLUT_START_FAILURE_LOG(file, line, msg);
+      ClutPrintMismatchArray(index);
+      ClutPrintWithinDiffDouble(expected[index], delta, diff);
       CLUT_END_FAILURE_LOG();
       return;
     }

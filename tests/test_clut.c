@@ -517,6 +517,91 @@ void test_suite_string_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING_ARRAY(act_no_null, exp_null, 3));
 }
 
+void test_suite_within_char_array(void) {
+  char exp[] = {'2', 'd', 20};
+  char act_ok[] = {'4', 'a', 23};
+  char act_fail[] = {'2', 'd', 26};
+
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 5, act_ok, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 5, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 5, act_fail, 2));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 0, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR_ARRAY(NULL, 5, NULL, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 5, act_fail, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 0, act_ok, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 5, NULL, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_CHAR_ARRAY(NULL, 5, act_ok, 3));
+}
+
+void test_suite_within_int_array(void) {
+  int exp[] = {100, -50, 0, 200};
+  int act_ok[] = {105, -45, 10, 195};
+  int act_fail[] = {105, -45, 11, 195};
+
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, act_ok, 4));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, exp, 4));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, act_fail, 2));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 0, exp, 4));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(NULL, 10, NULL, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, act_fail, 4));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 0, act_ok, 4));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, NULL, 4));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_INT_ARRAY(NULL, 10, act_ok, 4));
+}
+
+void test_suite_within_uint_array(void) {
+  size_t exp[] = {1000, 500, 250};
+  size_t act_ok[] = {1040, 550, 250};
+  size_t act_fail[] = {1040, 551, 250};
+
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_UINT_ARRAY(exp, 50, act_ok, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_UINT_ARRAY(exp, 50, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_UINT_ARRAY(exp, 50, act_fail, 1));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_UINT_ARRAY(exp, 0, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_UINT_ARRAY(NULL, 50, NULL, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_UINT_ARRAY(exp, 50, act_fail, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_UINT_ARRAY(exp, 0, act_ok, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_UINT_ARRAY(exp, 50, NULL, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_UINT_ARRAY(NULL, 50, act_ok, 3));
+}
+
+void test_suite_within_float_array(void) {
+  float exp[] = {1.0f, 5.5f, 10.0f};
+  float act_ok[] = {1.05f, 5.45f, 10.09f};
+  float act_fail[] = {1.05f, 5.45f, 10.11f};
+
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_FLOAT_ARRAY(exp, 0.1f, act_ok, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_FLOAT_ARRAY(exp, 0.1f, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_FLOAT_ARRAY(exp, 0.1f, act_fail, 2));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_FLOAT_ARRAY(exp, 0.0f, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_FLOAT_ARRAY(NULL, 0.1f, NULL, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_FLOAT_ARRAY(exp, 0.1f, act_fail, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_FLOAT_ARRAY(exp, 0.0f, act_ok, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_FLOAT_ARRAY(exp, 0.1f, NULL, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_FLOAT_ARRAY(NULL, 0.1f, act_ok, 3));
+}
+
+void test_suite_within_double_array(void) {
+  double exp[] = {1.0, 5.5, 10.0};
+  double act_ok[] = {1.05, 5.45, 10.09};
+  double act_fail[] = {1.05, 5.45, 10.11};
+
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE_ARRAY(exp, 0.1, act_ok, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE_ARRAY(exp, 0.1, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE_ARRAY(exp, 0.1, act_fail, 2));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE_ARRAY(exp, 0.0, exp, 3));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE_ARRAY(NULL, 0.1, NULL, 0));
+
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_DOUBLE_ARRAY(exp, 0.1, act_fail, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_DOUBLE_ARRAY(exp, 0.0, act_ok, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_DOUBLE_ARRAY(exp, 0.1, NULL, 3));
+  VALIDATE_FAIL(TEST_ASSERT_WITHIN_DOUBLE_ARRAY(NULL, 0.1, act_ok, 3));
+}
+
 void setup_stream_file() {
 #ifdef _WIN32
   g_dev_null = fopen("nul", "w");
@@ -552,6 +637,11 @@ int main(void) {
   TEST_RUN(test_suite_float_array);
   TEST_RUN(test_suite_double_array);
   TEST_RUN(test_suite_string_array);
+  TEST_RUN(test_suite_within_char_array);
+  TEST_RUN(test_suite_within_int_array);
+  TEST_RUN(test_suite_within_uint_array);
+  TEST_RUN(test_suite_within_float_array);
+  TEST_RUN(test_suite_within_double_array);
 
   return TEST_END();
 }
