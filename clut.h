@@ -13,6 +13,22 @@
 #define CLUT_STR_PASSED "PASS"
 #endif
 
+#ifndef CLUT_STREAM_DEFAULT
+#define CLUT_STREAM_DEFAULT stdout
+#endif
+
+#ifndef CLUT_STREAM_FAIL
+#define CLUT_STREAM_FAIL stderr
+#endif
+
+#ifndef CLUT_FLOAT_EPSILON
+#define CLUT_FLOAT_EPSILON 1e-5f
+#endif
+
+#ifndef CLUT_DOUBLE_EPSILON
+#define CLUT_DOUBLE_EPSILON 1e-9
+#endif
+
 #define CLUT_STR_EXPECTED "Expected "
 #define CLUT_STR_RECEIVED " Received "
 #define CLUT_STR_EQUAL " to be equal to "
@@ -31,14 +47,6 @@
 #define CLUT_STR_ARRAY_INDEX_END "] "
 #define CLUT_STR_BYTE_OFFSET ", Byte Offset "
 #define CLUT_STR_WAS " but was "
-
-#ifndef CLUT_FLOAT_EPSILON
-#define CLUT_FLOAT_EPSILON 1e-5f
-#endif
-
-#ifndef CLUT_DOUBLE_EPSILON
-#define CLUT_DOUBLE_EPSILON 1e-9
-#endif
 
 typedef void (*ClutHookFn)();
 typedef void (*ClutTestFn)();
@@ -71,14 +79,6 @@ typedef struct {
   ClutHooks hooks;
   ClutTestState current;
 } ClutData;
-
-#ifndef CLUT_STREAM_DEFAULT
-#define CLUT_STREAM_DEFAULT stdout
-#endif
-
-#ifndef CLUT_STREAM_FAIL
-#define CLUT_STREAM_FAIL stderr
-#endif
 
 #define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
   do {                                                                                                                                                                                                                                                             \
@@ -334,10 +334,12 @@ void ClutTestAssertEqualDoubleArray(const double *expected, const double *actual
 
 #ifdef CLUT_IMPLEMENTATION
 
-#include <math.h>
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+
+static inline float clut_fabsf(float x) { return x < 0.0f ? -x : x; }
+static inline double clut_fabs(double x) { return x < 0.0 ? -x : x; }
 
 ClutData Clut = {};
 
@@ -609,7 +611,7 @@ void ClutTestAssertEqualUint(size_t expected, size_t actual, const char *file, c
 void ClutTestAssertEqualFloat(float expected, float actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
-  if (fabsf(expected - actual) < CLUT_FLOAT_EPSILON) {
+  if (clut_fabsf(expected - actual) < CLUT_FLOAT_EPSILON) {
     return;
   }
 
@@ -621,7 +623,7 @@ void ClutTestAssertEqualFloat(float expected, float actual, const char *file, co
 void ClutTestAssertEqualDouble(double expected, double actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
-  if (fabs(expected - actual) < CLUT_DOUBLE_EPSILON) {
+  if (clut_fabs(expected - actual) < CLUT_DOUBLE_EPSILON) {
     return;
   }
 
@@ -730,7 +732,7 @@ void ClutTestAssertNotEqualUint(size_t expected, size_t actual, const char *file
 void ClutTestAssertNotEqualFloat(float expected, float actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
-  if (fabsf(expected - actual) >= CLUT_FLOAT_EPSILON) {
+  if (clut_fabsf(expected - actual) >= CLUT_FLOAT_EPSILON) {
     return;
   }
 
@@ -742,7 +744,7 @@ void ClutTestAssertNotEqualFloat(float expected, float actual, const char *file,
 void ClutTestAssertNotEqualDouble(double expected, double actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
-  if (fabs(expected - actual) >= CLUT_DOUBLE_EPSILON) {
+  if (clut_fabs(expected - actual) >= CLUT_DOUBLE_EPSILON) {
     return;
   }
 
@@ -920,7 +922,7 @@ void ClutTestAssertWithinUint(size_t expected, size_t delta, size_t actual, cons
 void ClutTestAssertWithinFloat(float expected, float delta, float actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
-  float diff = fabsf(actual - expected);
+  float diff = clut_fabsf(actual - expected);
 
   if (diff <= (delta + CLUT_FLOAT_EPSILON))
     return;
@@ -933,7 +935,7 @@ void ClutTestAssertWithinFloat(float expected, float delta, float actual, const 
 void ClutTestAssertWithinDouble(double expected, double delta, double actual, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
-  double diff = fabs(actual - expected);
+  double diff = clut_fabs(actual - expected);
 
   if (diff <= (delta + CLUT_DOUBLE_EPSILON))
     return;
@@ -1047,7 +1049,7 @@ void ClutTestAssertEqualFloatArray(const float *expected, const float *actual, s
   CHECK_MEMORY_PRECONDITIONS;
 
   for (size_t index = 0; index < num_elements; index++) {
-    if (fabsf(expected[index] - actual[index]) > CLUT_FLOAT_EPSILON) {
+    if (clut_fabsf(expected[index] - actual[index]) > CLUT_FLOAT_EPSILON) {
       CLUT_START_FAILURE_LOG(file, line, msg);
 
       ClutPrintMismatchArray(index);
@@ -1065,7 +1067,7 @@ void ClutTestAssertEqualDoubleArray(const double *expected, const double *actual
   CHECK_MEMORY_PRECONDITIONS;
 
   for (size_t index = 0; index < num_elements; index++) {
-    if (fabs(expected[index] - actual[index]) > CLUT_DOUBLE_EPSILON) {
+    if (clut_fabs(expected[index] - actual[index]) > CLUT_DOUBLE_EPSILON) {
       CLUT_START_FAILURE_LOG(file, line, msg);
 
       ClutPrintMismatchArray(index);
