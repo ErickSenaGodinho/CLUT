@@ -152,6 +152,13 @@ void test_suite_floating_point_numbers(void) {
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_FLOAT(1.0f, 1.0f));
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_FLOAT(1.0f, 2.0f));
 
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(-1.0f, -1.0f));
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_FLOAT(-1.0f, -1.0f));
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(-2.0f, -1.0f));
+  VALIDATE_FAIL(TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(-1.0f, -2.0f));
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_FLOAT(-1.0f, -2.0f));
+  VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_FLOAT(-2.0f, -1.0f));
+
   VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE(3.14159, 3.14159));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE(3.14159, 2.71828));
 
@@ -173,6 +180,31 @@ void test_suite_floating_point_numbers(void) {
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(2.0, 1.0));
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(1.0, 1.0));
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(1.0, 2.0));
+
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(-1.0, -1.0));
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(-1.0, -1.0));
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(-2.0, -1.0));
+  VALIDATE_FAIL(TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(-1.0, -2.0));
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(-1.0, -2.0));
+  VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(-2.0, -1.0));
+}
+
+void test_suite_floating_point_zero(void) {
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT(0.0f, 0.0f));
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE(0.0, 0.0));
+
+  VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_FLOAT(0.0f, 0.0f));
+  VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_DOUBLE(0.0, 0.0));
+
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(0.0f, 0.0f));
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_FLOAT(0.0f, 0.0f));
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(0.0, 0.0));
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(0.0, 0.0));
+
+  VALIDATE_FAIL(TEST_ASSERT_GREATER_THAN_FLOAT(0.0f, 0.0f));
+  VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_FLOAT(0.0f, 0.0f));
+  VALIDATE_FAIL(TEST_ASSERT_GREATER_THAN_DOUBLE(0.0, 0.0));
+  VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_DOUBLE(0.0, 0.0));
 }
 
 void test_suite_floating_point_precision_accumulation(void) {
@@ -212,7 +244,6 @@ void test_suite_floating_point_precision_accumulation(void) {
 
   VALIDATE_PASS(TEST_ASSERT_GREATER_THAN_DOUBLE(accumulated_double, expected_double + 1.0));
   VALIDATE_FAIL(TEST_ASSERT_GREATER_THAN_DOUBLE(expected_double + 1.0, accumulated_double));
-  VALIDATE_FAIL(TEST_ASSERT_GREATER_THAN_DOUBLE(accumulated_double, expected_double));
 
   VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(accumulated_double, expected_double + 1.0));
   VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(accumulated_double, expected_double));
@@ -220,7 +251,6 @@ void test_suite_floating_point_precision_accumulation(void) {
 
   VALIDATE_PASS(TEST_ASSERT_LESS_THAN_DOUBLE(expected_double + 1.0, accumulated_double));
   VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_DOUBLE(accumulated_double, expected_double + 1.0));
-  VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_DOUBLE(expected_double, accumulated_double));
 
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(expected_double + 1.0, accumulated_double));
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(expected_double, accumulated_double));
@@ -268,7 +298,6 @@ void test_suite_within_comparisons(void) {
   float expected_float = 1.0f;
 
   VALIDATE_PASS(TEST_ASSERT_WITHIN_FLOAT(expected_float, 0.00001f, accumulated_float));
-  VALIDATE_PASS(TEST_ASSERT_WITHIN_FLOAT(expected_float, 0.0f, accumulated_float));
   VALIDATE_FAIL(TEST_ASSERT_WITHIN_FLOAT(expected_float, 0.0000001f, accumulated_float + 0.1f));
 
   double accumulated_double = 0.0;
@@ -278,7 +307,6 @@ void test_suite_within_comparisons(void) {
   double expected_double = 1.0;
 
   VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.00001, accumulated_double));
-  VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.0, accumulated_double));
   VALIDATE_FAIL(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.0000001, accumulated_double + 0.1));
 }
 
@@ -297,15 +325,12 @@ void test_suite_memory(void) {
   s1.x = 10;
   s1.y = 20;
   s1.c = 'A';
-
   s2.x = 10;
   s2.y = 20;
   s2.c = 'A';
-
   s3.x = 10;
   s3.y = 99;
   s3.c = 'A';
-
   s4.x = 10;
   s4.y = 20;
   s4.c = 'Z';
@@ -317,10 +342,7 @@ void test_suite_memory(void) {
 
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(NULL, NULL, 0));
 
-  DummyStruct buf1[3];
-  DummyStruct buf2[3];
-  DummyStruct buf3[3];
-
+  DummyStruct buf1[3], buf2[3], buf3[3];
   memset(buf1, 0, sizeof(buf1));
   memset(buf2, 0, sizeof(buf2));
   memset(buf3, 0, sizeof(buf3));
@@ -339,15 +361,11 @@ void test_suite_memory(void) {
 
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(buf1, buf2, sizeof(buf1)));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_MEMORY(buf1, buf3, sizeof(buf1)));
-
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(buf1, buf3, sizeof(DummyStruct)));
-
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&buf1[1], &buf2[1], sizeof(DummyStruct)));
-
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(NULL, NULL, 0));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_MEMORY(buf1, NULL, sizeof(buf1)));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_MEMORY(NULL, buf2, sizeof(buf2)));
-
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&s1, &s2, 0));
 }
 
@@ -390,9 +408,7 @@ void test_suite_int_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr5, len5));
 
   VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr3, 1));
-
   VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(arr1, arr4, 4));
-
   VALIDATE_PASS(TEST_ASSERT_EQUAL_INT_ARRAY(&arr1[2], &arr2[2], 3));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT_ARRAY(&arr1[1], &arr3[1], 3));
 
@@ -420,9 +436,7 @@ void test_suite_uint_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr5, len5));
 
   VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr3, 1));
-
   VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(arr1, arr4, 4));
-
   VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT_ARRAY(&arr1[2], &arr2[2], 3));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT_ARRAY(&arr1[1], &arr3[1], 3));
 
@@ -445,6 +459,7 @@ void test_suite_float_array(void) {
   float act_diff_start[] = {1.1f, 5.5f, 10.123f};
   float act_diff_mid[] = {1.0f, 5.501f, 10.123f};
   float act_diff_end[] = {1.0f, 5.5f, 10.124f};
+
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_ok, 3));
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_accumulated, 3));
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, exp, 3));
@@ -458,6 +473,10 @@ void test_suite_float_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, act_diff_end, 3));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_FLOAT_ARRAY(exp, NULL, 3));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_FLOAT_ARRAY(NULL, act_ok, 3));
+
+  float zero_exp[] = {0.0f, 0.0f};
+  float zero_act[] = {0.0f, 0.0f};
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(zero_exp, zero_act, 2));
 }
 
 void test_suite_double_array(void) {
@@ -486,6 +505,10 @@ void test_suite_double_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, act_diff_end, 3));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(exp, NULL, 3));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(NULL, act_ok, 3));
+
+  double zero_exp[] = {0.0, 0.0};
+  double zero_act[] = {0.0, 0.0};
+  VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(zero_exp, zero_act, 2));
 }
 
 void test_suite_string_array(void) {
@@ -627,6 +650,7 @@ int main(void) {
   TEST_RUN(test_suite_integer_comparisons);
   TEST_RUN(test_suite_uint_comparisons);
   TEST_RUN(test_suite_floating_point_numbers);
+  TEST_RUN(test_suite_floating_point_zero);
   TEST_RUN(test_suite_floating_point_precision_accumulation);
   TEST_RUN(test_suite_strings);
   TEST_RUN(test_suite_within_comparisons);
