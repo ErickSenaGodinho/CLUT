@@ -26,9 +26,13 @@ int main() {
 ```
 Output:
 ```
-basic_usage.c:12:TestAddition:PASS
-------------------------
-1 Tests 0 Failures - Total Time 0.00s
+[ PASS ] TestAddition                                      0.000s
+--------------------------------
+Tests run:  1
+Passed:     1
+Failed:     0
+--------------------------------
+Total time: 0.000s
 ```
 ---
 
@@ -49,47 +53,50 @@ CLUT keeps things simple:
 
 ## Example Output
 
-### Passing Test
-Code:
 ```c
-TEST_ASSERT_EQUAL_INT(5, 5);
+void TestAddition() {
+    TEST_ASSERT_EQUAL_INT(5, 2 + 3);
+}
+
+void TestStrings() {
+    TEST_ASSERT_EQUAL_STRING("Hello", "Hella");
+}
+
+int main() {
+    TEST_BEGIN();
+    TEST_RUN(TestAddition);
+    TEST_RUN(TestStrings);
+    return TEST_END();
+}
 ```
 
 Output:
-<pre>test_file.c:10:TestAddition:PASS</pre>
-
-### Failing Test
-Code:
-```c
-TEST_ASSERT_EQUAL_INT(5, 4);
 ```
-
-Output:
-<pre>test_file.c:12:TestAddition:FAIL:Expected 5 Received 4</pre>
-
-### String Failure
-Code:
-```c
-TEST_ASSERT_EQUAL_STRING("Hello", "Hella");
+[ PASS ] TestAddition                                      0.000s
+[ FAIL ] TestStrings                                       0.000s
+test_strings.c:7:TestStrings:Expected "Hella" to be equal to "Hello"
+--------------------------------
+Tests run:  2
+Passed:     1
+Failed:     1
+--------------------------------
+Total time: 0.000s
 ```
-
-Output:
-<pre>test_file.c:20:TestStrings:FAIL:Expected "Hella" to be equal to "Hello"</pre>
-
 ---
 
 ## Assertion Messages
 
-CLUT also supports custom failure messages for clearer test output `*_MESSAGE`
+CLUT supports custom failure messages for clearer test output using the `*_MESSAGE` variants:
 
 ```c
 TEST_ASSERT_EQUAL_INT_MESSAGE(10, result, "Player score should be initialized correctly");
 ```
 
 Output:
-<pre>
-game_test.c:18:TestScore:FAIL:Player score should be initialized correctly
-</pre>
+```
+[ FAIL ] TestScore                                         0.000s
+game_test.c:18:TestScore:Player score should be initialized correctly
+```
 
 ## Project Structure
 
