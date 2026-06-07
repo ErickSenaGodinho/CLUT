@@ -6,11 +6,23 @@
 #include <stdio.h>
 
 #ifdef CLUT_OUTPUT_COLOR
-#define CLUT_STR_FAIL "\033[31mFAIL\033[0m"
-#define CLUT_STR_PASSED "\033[32mPASS\033[0m"
+#define CLUT_STR_BEGIN_RED_TEXT "\033[31m"
+#define CLUT_STR_BEGIN_BLUE_TEXT "\033[34m"
+#define CLUT_STR_END_COLOR_TEXT "\033[0m"
+#define CLUT_RED_TEXT(text) CLUT_STR_BEGIN_RED_TEXT text CLUT_STR_END_COLOR_TEXT
+#define CLUT_GREEN_TEXT(text) "\033[32m" text CLUT_STR_END_COLOR_TEXT
+#define CLUT_BLUE_TEXT(text) CLUT_STR_BEGIN_BLUE_TEXT text CLUT_STR_END_COLOR_TEXT
+#define CLUT_STR_FAIL CLUT_RED_TEXT("[ FAIL ] ")
+#define CLUT_STR_PASSED CLUT_GREEN_TEXT("[ PASS ] ")
 #else
-#define CLUT_STR_FAIL "FAIL"
-#define CLUT_STR_PASSED "PASS"
+#define CLUT_STR_BEGIN_RED_TEXT ""
+#define CLUT_STR_BEGIN_BLUE_TEXT ""
+#define CLUT_STR_END_COLOR_TEXT ""
+#define CLUT_RED_TEXT(text) text
+#define CLUT_GREEN_TEXT(text) text
+#define CLUT_BLUE_TEXT(text) text
+#define CLUT_STR_FAIL "[ FAIL ] "
+#define CLUT_STR_PASSED "[ PASS ] "
 #endif
 
 #ifndef CLUT_STREAM_DEFAULT
@@ -68,9 +80,8 @@ typedef struct {
 } ClutHooks;
 
 typedef struct {
-  const char *file;
   const char *name;
-
+  long start_time;
   bool failed;
 } ClutTestState;
 
@@ -88,16 +99,22 @@ typedef struct {
 
 #define CLUT_START_FAILURE_LOG(file, line, msg)                                                                                                                                                                                                                    \
   do {                                                                                                                                                                                                                                                             \
+    double end_time = ClutElapsedSeconds(Clut.current.start_time);                                                                                                                                                                                                 \
     ClutFail();                                                                                                                                                                                                                                                    \
-    ClutBeginTestLog((file), (line));                                                                                                                                                                                                                              \
-    ClutPrintFail();                                                                                                                                                                                                                                               \
+    ClutPrint(CLUT_STR_FAIL);                                                                                                                                                                                                                                      \
+    ClutPrint(CLUT_STR_BEGIN_RED_TEXT);                                                                                                                                                                                                                            \
+    ClutPrintf("%-50s", Clut.current.name);                                                                                                                                                                                                                        \
+    ClutPrintTime(end_time);                                                                                                                                                                                                                                       \
+    ClutPrintChar('\n');                                                                                                                                                                                                                                           \
+    ClutPrintTestLocation(file, line);                                                                                                                                                                                                                             \
     if (msg) {                                                                                                                                                                                                                                                     \
       ClutPrint(msg);                                                                                                                                                                                                                                              \
     } else {
 
 #define CLUT_END_FAILURE_LOG()                                                                                                                                                                                                                                     \
   }                                                                                                                                                                                                                                                                \
-  ClutEndTestLog();                                                                                                                                                                                                                                                \
+  ClutPrint(CLUT_STR_END_COLOR_TEXT);                                                                                                                                                                                                                              \
+  ClutPrintChar('\n');                                                                                                                                                                                                                                             \
   }                                                                                                                                                                                                                                                                \
   while (0)
 
@@ -122,8 +139,8 @@ typedef struct {
 #define CLUT_AFTER_ALL(hook_fn) Clut.hooks.after_all = (hook_fn)
 #define CLUT_AFTER_EACH(hook_fn) Clut.hooks.after_each = (hook_fn)
 
-#define TEST_BEGIN() ClutTestBegin(__FILE__)
-#define TEST_RUN(test_fn) ClutTestRun((test_fn), __LINE__, #test_fn)
+#define TEST_BEGIN() ClutTestBegin()
+#define TEST_RUN(test_fn) ClutTestRun((test_fn), #test_fn)
 #define TEST_END() ClutTestEnd()
 
 /* Assertions */
@@ -262,49 +279,10 @@ typedef struct {
 #define TEST_ASSERT_WITHIN_DOUBLE_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinDoubleArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
 
 void ClutReset();
-void ClutTestBegin(const char *file);
-void ClutTestRun(ClutTestFn test_fn, const int line, const char *test_fn_name);
+void ClutTestBegin();
+void ClutTestRun(ClutTestFn test_fn, const char *test_fn_name);
 int ClutTestEnd();
 
-void ClutBeginTestLog(const char *file, const int line);
-void ClutEndTestLog();
-
-void ClutPrint(const char *str);
-void ClutPrintChar(const char c);
-void ClutPrintInt(int number);
-void ClutPrintUint(size_t number);
-void ClutPrintFloat(float number);
-void ClutPrintDouble(double number);
-void ClutPrintString(const char *str);
-void ClutPrintPtr(void *ptr);
-void ClutPrintHex(int value);
-void ClutPrintf(const char *fmt, ...);
-
-void ClutPrintFail();
-void ClutPrintExpectedActualChar(char expected, char actual, const char *opStr);
-void ClutPrintExpectedActualInt(int expected, int actual, const char *opStr);
-void ClutPrintExpectedActualUint(size_t expected, size_t actual, const char *opStr);
-void ClutPrintExpectedActualFloat(float expected, float actual, const char *opStr);
-void ClutPrintExpectedActualDouble(double expected, double actual, const char *opStr);
-void ClutPrintExpectedActualString(const char *expected, const char *actual, const char *opStr);
-void ClutPrintExpectedActualStringLen(const char *expected, const char *actual, size_t len, const char *opStr);
-void ClutPrintExpectedActualPtr(void *expected, void *actual, const char *opStr);
-void ClutPrintExpectedActualHex(int expected, int actual, const char *opStr);
-
-void ClutPrintWithinDiffChar(char expected, char delta, char diff);
-void ClutPrintWithinDiffInt(int expected, int delta, int diff);
-void ClutPrintWithinDiffUint(size_t expected, size_t delta, size_t diff);
-void ClutPrintWithinDiffFloat(float expected, float delta, float diff);
-void ClutPrintWithinDiffDouble(double expected, double delta, double diff);
-
-void ClutPrintMismatchArray(size_t index);
-
-void ClutAssertCompareInternalInt(bool condition, int expected, int actual, const char *file, const int line, const char *msg, const char *opStr);
-void ClutAssertCompareInternalUint(bool condition, size_t expected, size_t actual, const char *file, const int line, const char *msg, const char *opStr);
-void ClutAssertCompareInternalFloat(bool condition, float expected, float actual, const char *file, const int line, const char *msg, const char *opStr);
-void ClutAssertCompareInternalDouble(bool condition, double expected, double actual, const char *file, const int line, const char *msg, const char *opStr);
-
-void ClutFail();
 void ClutTestAssert(bool condition, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualChar(char expected, char actual, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualInt(int expected, int actual, const char *file, const int line, const char *msg);
@@ -385,74 +363,9 @@ static inline bool clut_double_equal(double expected, double actual) {
   return clut_fabs(expected - actual) < clut_fabs(expected) * CLUT_DOUBLE_EPSILON;
 }
 
+static inline double ClutElapsedSeconds(long start) { return ((double)(clock() - start)) / CLOCKS_PER_SEC; }
+
 ClutData Clut = {};
-
-void ClutReset() {
-  Clut.runner.total_tests = 0;
-  Clut.runner.failures = 0;
-  Clut.runner.start_time = 0;
-  Clut.runner.stream = CLUT_STREAM_DEFAULT;
-
-  Clut.current.file = NULL;
-  Clut.current.name = NULL;
-  Clut.current.failed = false;
-}
-
-void ClutTestBegin(const char *file) {
-  ClutReset();
-  if (Clut.hooks.before_all)
-    Clut.hooks.before_all();
-  Clut.current.file = file;
-  Clut.runner.start_time = clock();
-}
-
-void ClutTestRun(ClutTestFn test_fn, const int line, const char *test_fn_name) {
-  Clut.runner.total_tests++;
-  if (Clut.hooks.before_each)
-    Clut.hooks.before_each();
-  Clut.current.failed = false;
-  Clut.current.name = test_fn_name;
-  test_fn();
-  if (!Clut.current.failed) {
-    ClutBeginTestLog(Clut.current.file, line);
-    ClutPrint(CLUT_STR_PASSED);
-    ClutEndTestLog();
-  }
-  if (Clut.hooks.after_each)
-    Clut.hooks.after_each();
-}
-
-int ClutTestEnd() {
-  int end_time = clock();
-  if (Clut.hooks.after_all)
-    Clut.hooks.after_all();
-  if (Clut.runner.total_tests == 0)
-    return Clut.runner.failures;
-
-  double total_time = ((double)(end_time - Clut.runner.start_time)) / CLOCKS_PER_SEC;
-
-  size_t total_tests = Clut.runner.total_tests;
-  size_t failures = Clut.runner.failures;
-
-  ClutReset();
-
-  ClutPrintf("------------------------\n"
-             "%zu Tests %zu Failures - Total Time %.2fs\n",
-             total_tests, failures, total_time);
-
-  return failures;
-}
-
-void ClutBeginTestLog(const char *file, const int line) {
-  ClutPrint(file);
-  ClutPrintChar(':');
-  ClutPrintInt(line);
-  ClutPrintChar(':');
-  ClutPrint(Clut.current.name);
-  ClutPrintChar(':');
-}
-
-void ClutEndTestLog() { ClutPrintChar('\n'); }
 
 void ClutPrint(const char *str) {
   if (str == NULL) {
@@ -475,8 +388,14 @@ void ClutPrintf(const char *fmt, ...) {
   va_end(args);
 }
 
-void ClutPrintFail() {
-  ClutPrint(CLUT_STR_FAIL);
+void ClutPrintTime(double time) { fprintf(Clut.runner.stream, "%.3fs", time); }
+
+void ClutPrintTestLocation(const char *file, const int line) {
+  ClutPrint(file);
+  ClutPrintChar(':');
+  ClutPrintInt(line);
+  ClutPrintChar(':');
+  ClutPrint(Clut.current.name);
   ClutPrintChar(':');
 }
 
@@ -599,6 +518,12 @@ void ClutPrintMismatchArray(size_t index) {
   ClutPrint(CLUT_STR_ARRAY_INDEX_END);
 }
 
+void ClutFail() {
+  Clut.runner.failures++;
+  Clut.current.failed = true;
+  Clut.runner.stream = CLUT_STREAM_FAIL;
+}
+
 void ClutAssertCompareInternalInt(bool condition, int expected, int actual, const char *file, const int line, const char *msg, const char *opStr) {
   RETURN_IF_FAILED;
 
@@ -643,21 +568,70 @@ void ClutAssertCompareInternalDouble(bool condition, double expected, double act
   CLUT_END_FAILURE_LOG();
 }
 
-void ClutFail() {
-  Clut.runner.failures++;
-  Clut.current.failed = true;
-  Clut.runner.stream = CLUT_STREAM_FAIL;
+void ClutReset() {
+  Clut.runner.total_tests = 0;
+  Clut.runner.failures = 0;
+  Clut.runner.start_time = 0;
+  Clut.runner.stream = CLUT_STREAM_DEFAULT;
+
+  Clut.current.name = NULL;
+  Clut.current.failed = false;
+}
+
+void ClutTestBegin() {
+  ClutReset();
+  if (Clut.hooks.before_all)
+    Clut.hooks.before_all();
+  Clut.runner.start_time = clock();
+}
+
+void ClutTestRun(ClutTestFn test_fn, const char *test_fn_name) {
+  Clut.runner.total_tests++;
+  if (Clut.hooks.before_each)
+    Clut.hooks.before_each();
+  Clut.current.name = test_fn_name;
+  Clut.current.start_time = clock();
+  Clut.current.failed = false;
+  test_fn();
+  if (!Clut.current.failed) {
+    double end_time = ClutElapsedSeconds(Clut.current.start_time);
+    ClutPrint(CLUT_STR_PASSED);
+    ClutPrintf("%-50s", Clut.current.name);
+    ClutPrintTime(end_time);
+    ClutPrintChar('\n');
+  }
+  if (Clut.hooks.after_each)
+    Clut.hooks.after_each();
+}
+
+int ClutTestEnd() {
+  double total_time = ClutElapsedSeconds(Clut.runner.start_time);
+  if (Clut.hooks.after_all)
+    Clut.hooks.after_all();
+  if (Clut.runner.total_tests == 0)
+    return Clut.runner.failures;
+
+  size_t total_tests = Clut.runner.total_tests;
+  size_t failures = Clut.runner.failures;
+  size_t passed = total_tests - failures;
+
+  ClutReset();
+  ClutPrint("--------------------------------\n");
+  ClutPrintf(CLUT_BLUE_TEXT("Tests run:  ") CLUT_GREEN_TEXT("%zu\n"), total_tests);
+  ClutPrintf(CLUT_BLUE_TEXT("Passed:     ") CLUT_GREEN_TEXT("%zu\n"), passed);
+  ClutPrintf(CLUT_BLUE_TEXT("Failed:     ") CLUT_RED_TEXT("%zu\n"), failures);
+  ClutPrint("--------------------------------\n");
+  ClutPrintf(CLUT_BLUE_TEXT("Total time: %.3fs\n"), total_time);
+  ClutPrint("\n");
+  return failures;
 }
 
 void ClutTestAssert(bool condition, const char *file, const int line, const char *msg) {
   RETURN_IF_FAILED;
 
   if (!condition) {
-    ClutFail();
-    ClutBeginTestLog(file, line);
-    ClutPrintFail();
-    ClutPrint(msg);
-    ClutEndTestLog();
+    CLUT_START_FAILURE_LOG(file, line, msg);
+    CLUT_END_FAILURE_LOG();
   }
 }
 
