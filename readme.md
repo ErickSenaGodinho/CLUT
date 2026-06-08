@@ -46,6 +46,7 @@ CLUT keeps things simple:
 - No external dependencies
 - Readable test output
 - Hooks for test setup and teardown
+- Support for parameterized tests
 - Designed for small projects and fast iteration
 - CI friendly
 
@@ -83,6 +84,30 @@ Failed:     1
 Total time: 0.000s
 ```
 ---
+
+## Parameterized Tests
+
+`PARAM_TEST` runs the same test against multiple inputs. The type can be whatever the test needs.
+
+```c
+/* Primitive */
+PARAM_TEST(IsPrime, int, { 2, 3, 5, 7, 11, 13, 97 }) {
+    TEST_ASSERT_TRUE(is_prime(input));
+}
+
+/* Struct */
+typedef struct { int value; int min; int max; int expected; } ClampCase;
+
+PARAM_TEST(Clamp, ClampCase, {
+    {  5, 0, 10,  5 },
+    { -3, 0, 10,  0 },
+    { 15, 0, 10, 10 },
+}) {
+    TEST_ASSERT_EQUAL_INT(input.expected, clamp(input.value, input.min, input.max));
+}
+```
+
+> The current input is available as `input` inside the test body.
 
 ## Assertion Messages
 

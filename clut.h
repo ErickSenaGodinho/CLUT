@@ -92,8 +92,19 @@ typedef struct {
 } ClutData;
 
 #define TEST(name)                                                                                                                                                                                                                                                 \
-  void name();                                                                                                                                                                                                                                                     \
-  void name()
+  void name(void);                                                                                                                                                                                                                                                 \
+  void run_##name(void) { name(); }                                                                                                                                                                                                                                \
+  void name(void)
+
+#define PARAM_TEST(name, type, ...)                                                                                                                                                                                                                                \
+  type clut_##name##_input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                    \
+  void name(type input);                                                                                                                                                                                                                                           \
+  void run_##name(void) {                                                                                                                                                                                                                                          \
+    for (size_t i = 0; i < sizeof(clut_##name##_input_arr) / sizeof(clut_##name##_input_arr[0]); ++i) {                                                                                                                                                            \
+      name(clut_##name##_input_arr[i]);                                                                                                                                                                                                                            \
+    }                                                                                                                                                                                                                                                              \
+  }                                                                                                                                                                                                                                                                \
+  void name(type input)
 
 #define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
   do {                                                                                                                                                                                                                                                             \
@@ -144,7 +155,7 @@ typedef struct {
 #define CLUT_AFTER_EACH(hook_fn) Clut.hooks.after_each = (hook_fn)
 
 #define TEST_BEGIN() ClutTestBegin()
-#define TEST_RUN(test_fn) ClutTestRun((test_fn), #test_fn)
+#define TEST_RUN(test_fn) ClutTestRun((run_##test_fn), #test_fn)
 #define TEST_END() ClutTestEnd()
 
 /* Assertions */
@@ -600,14 +611,14 @@ void ClutTestBegin() {
   Clut.runner.start_time = clock();
 }
 
-void ClutTestRun(ClutTestFn test_fn, const char *test_name) {
+void ClutTestRun(ClutTestFn run_test_fn, const char *test_name) {
   Clut.runner.total_tests++;
   if (Clut.hooks.before_each)
     Clut.hooks.before_each();
   Clut.current.name = test_name;
   Clut.current.start_time = clock();
   Clut.current.failed = false;
-  test_fn();
+  run_test_fn();
   if (!Clut.current.failed) {
     double end_time = ClutElapsedSeconds(Clut.current.start_time);
     ClutPrint(CLUT_STR_PASSED);
