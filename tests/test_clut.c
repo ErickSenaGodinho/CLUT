@@ -41,7 +41,7 @@ void validate_fail(bool assert_condition, const char *macro_expression, const ch
     validate_fail(Clut.current.failed, #assertion_expr, __func__, __FILE__, __LINE__);                                                                                                                                                                             \
   } while (0)
 
-void test_suite_boolean_and_basic(void) {
+TEST(suite_boolean_and_basic) {
   int val = 1;
   VALIDATE_PASS(TEST_ASSERT(val == 1));
   VALIDATE_FAIL(TEST_ASSERT(val == 0));
@@ -56,7 +56,7 @@ void test_suite_boolean_and_basic(void) {
   VALIDATE_FAIL(TEST_ASSERT_UNLESS(true));
 }
 
-void test_suite_pointers_and_nullness(void) {
+TEST(suite_pointers_and_nullness) {
   int dummy = 42;
   int *ptr = &dummy;
 
@@ -73,7 +73,7 @@ void test_suite_pointers_and_nullness(void) {
   VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_PTR(ptr, ptr));
 }
 
-void test_suite_char_comparisons(void) {
+TEST(suite_char_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR('\n', '\n'));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_CHAR('A', 'B'));
 
@@ -81,7 +81,7 @@ void test_suite_char_comparisons(void) {
   VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_CHAR('\n', '\n'));
 }
 
-void test_suite_integer_comparisons(void) {
+TEST(suite_integer_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_INT(10, 10));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT(10, 20));
 
@@ -105,7 +105,7 @@ void test_suite_integer_comparisons(void) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_INT(5, 10));
 }
 
-void test_suite_uint_comparisons(void) {
+TEST(suite_uint_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT(10, 10));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT(10, 20));
 
@@ -129,7 +129,7 @@ void test_suite_uint_comparisons(void) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_UINT(5, 10));
 }
 
-void test_suite_floating_point_numbers(void) {
+TEST(suite_floating_point_numbers) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT(3.14f, 3.14f));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_FLOAT(3.14f, 2.71f));
 
@@ -189,7 +189,7 @@ void test_suite_floating_point_numbers(void) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(-2.0, -1.0));
 }
 
-void test_suite_floating_point_zero(void) {
+TEST(suite_floating_point_zero) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT(0.0f, 0.0f));
   VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE(0.0, 0.0));
 
@@ -207,7 +207,7 @@ void test_suite_floating_point_zero(void) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_DOUBLE(0.0, 0.0));
 }
 
-void test_suite_floating_point_precision_accumulation(void) {
+TEST(suite_floating_point_precision_accumulation) {
   float accumulated_float = 0.0f;
   for (int i = 0; i < 10; i++) {
     accumulated_float += 0.1f;
@@ -257,7 +257,7 @@ void test_suite_floating_point_precision_accumulation(void) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(accumulated_double, expected_double + 1.0));
 }
 
-void test_suite_strings(void) {
+TEST(suite_strings) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING("clut", "clut"));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING("clut", "different"));
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING("clut", NULL));
@@ -272,7 +272,7 @@ void test_suite_strings(void) {
   VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_STRING_LEN("clut_framework", "clut_testing", 5));
 }
 
-void test_suite_within_comparisons(void) {
+TEST(suite_within_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 52));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 55));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 45));
@@ -310,7 +310,7 @@ void test_suite_within_comparisons(void) {
   VALIDATE_FAIL(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.0000001, accumulated_double + 0.1));
 }
 
-void test_suite_memory(void) {
+TEST(suite_memory) {
   typedef struct {
     int x;
     int y;
@@ -369,7 +369,7 @@ void test_suite_memory(void) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&s1, &s2, 0));
 }
 
-void test_suite_char_array(void) {
+TEST(suite_char_array) {
   char exp[] = "ClutTest";
   char act_ok[] = "ClutTest";
   char act_diff_end[] = "ClutTesX";
@@ -391,7 +391,7 @@ void test_suite_char_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_CHAR_ARRAY(NULL, act_ok, 8));
 }
 
-void test_suite_int_array(void) {
+TEST(suite_int_array) {
   int arr1[] = {-10, 20, -30, 40, -50};
   int arr2[] = {-10, 20, -30, 40, -50};
   int arr3[] = {-10, -99, -30, 40, -50};
@@ -419,7 +419,7 @@ void test_suite_int_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_INT_ARRAY(NULL, arr2, len5));
 }
 
-void test_suite_uint_array(void) {
+TEST(suite_uint_array) {
   size_t arr1[] = {10, 20, 30, 40, 50};
   size_t arr2[] = {10, 20, 30, 40, 50};
   size_t arr3[] = {10, 99, 30, 40, 50};
@@ -447,7 +447,7 @@ void test_suite_uint_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_UINT_ARRAY(NULL, arr2, len5));
 }
 
-void test_suite_float_array(void) {
+TEST(suite_float_array) {
   float sum = 0.0f;
   for (int i = 0; i < 10; i++) {
     sum += 0.1f;
@@ -479,7 +479,7 @@ void test_suite_float_array(void) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT_ARRAY(zero_exp, zero_act, 2));
 }
 
-void test_suite_double_array(void) {
+TEST(suite_double_array) {
   double sum = 0.0;
   for (int i = 0; i < 10000; i++) {
     sum += 0.1;
@@ -511,7 +511,7 @@ void test_suite_double_array(void) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE_ARRAY(zero_exp, zero_act, 2));
 }
 
-void test_suite_string_array(void) {
+TEST(suite_string_array) {
   const char *exp[] = {"clut", "test", "framework"};
   const char *act_ok[] = {"clut", "test", "framework"};
   const char *act_diff_start[] = {"XXXX", "test", "framework"};
@@ -540,7 +540,7 @@ void test_suite_string_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_EQUAL_STRING_ARRAY(act_no_null, exp_null, 3));
 }
 
-void test_suite_within_char_array(void) {
+TEST(suite_within_char_array) {
   char exp[] = {'2', 'd', 20};
   char act_ok[] = {'4', 'a', 23};
   char act_fail[] = {'2', 'd', 26};
@@ -557,7 +557,7 @@ void test_suite_within_char_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_WITHIN_CHAR_ARRAY(NULL, 5, act_ok, 3));
 }
 
-void test_suite_within_int_array(void) {
+TEST(suite_within_int_array) {
   int exp[] = {100, -50, 0, 200};
   int act_ok[] = {105, -45, 10, 195};
   int act_fail[] = {105, -45, 11, 195};
@@ -574,7 +574,7 @@ void test_suite_within_int_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_WITHIN_INT_ARRAY(NULL, 10, act_ok, 4));
 }
 
-void test_suite_within_uint_array(void) {
+TEST(suite_within_uint_array) {
   size_t exp[] = {1000, 500, 250};
   size_t act_ok[] = {1040, 550, 250};
   size_t act_fail[] = {1040, 551, 250};
@@ -591,7 +591,7 @@ void test_suite_within_uint_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_WITHIN_UINT_ARRAY(NULL, 50, act_ok, 3));
 }
 
-void test_suite_within_float_array(void) {
+TEST(suite_within_float_array) {
   float exp[] = {1.0f, 5.5f, 10.0f};
   float act_ok[] = {1.05f, 5.45f, 10.09f};
   float act_fail[] = {1.05f, 5.45f, 10.11f};
@@ -608,7 +608,7 @@ void test_suite_within_float_array(void) {
   VALIDATE_FAIL(TEST_ASSERT_WITHIN_FLOAT_ARRAY(NULL, 0.1f, act_ok, 3));
 }
 
-void test_suite_within_double_array(void) {
+TEST(suite_within_double_array) {
   double exp[] = {1.0, 5.5, 10.0};
   double act_ok[] = {1.05, 5.45, 10.09};
   double act_fail[] = {1.05, 5.45, 10.11};
@@ -644,28 +644,28 @@ int main(void) {
 
   TEST_BEGIN();
 
-  TEST_RUN(test_suite_boolean_and_basic);
-  TEST_RUN(test_suite_pointers_and_nullness);
-  TEST_RUN(test_suite_char_comparisons);
-  TEST_RUN(test_suite_integer_comparisons);
-  TEST_RUN(test_suite_uint_comparisons);
-  TEST_RUN(test_suite_floating_point_numbers);
-  TEST_RUN(test_suite_floating_point_zero);
-  TEST_RUN(test_suite_floating_point_precision_accumulation);
-  TEST_RUN(test_suite_strings);
-  TEST_RUN(test_suite_within_comparisons);
-  TEST_RUN(test_suite_memory);
-  TEST_RUN(test_suite_char_array);
-  TEST_RUN(test_suite_int_array);
-  TEST_RUN(test_suite_uint_array);
-  TEST_RUN(test_suite_float_array);
-  TEST_RUN(test_suite_double_array);
-  TEST_RUN(test_suite_string_array);
-  TEST_RUN(test_suite_within_char_array);
-  TEST_RUN(test_suite_within_int_array);
-  TEST_RUN(test_suite_within_uint_array);
-  TEST_RUN(test_suite_within_float_array);
-  TEST_RUN(test_suite_within_double_array);
+  TEST_RUN(suite_boolean_and_basic);
+  TEST_RUN(suite_pointers_and_nullness);
+  TEST_RUN(suite_char_comparisons);
+  TEST_RUN(suite_integer_comparisons);
+  TEST_RUN(suite_uint_comparisons);
+  TEST_RUN(suite_floating_point_numbers);
+  TEST_RUN(suite_floating_point_zero);
+  TEST_RUN(suite_floating_point_precision_accumulation);
+  TEST_RUN(suite_strings);
+  TEST_RUN(suite_within_comparisons);
+  TEST_RUN(suite_memory);
+  TEST_RUN(suite_char_array);
+  TEST_RUN(suite_int_array);
+  TEST_RUN(suite_uint_array);
+  TEST_RUN(suite_float_array);
+  TEST_RUN(suite_double_array);
+  TEST_RUN(suite_string_array);
+  TEST_RUN(suite_within_char_array);
+  TEST_RUN(suite_within_int_array);
+  TEST_RUN(suite_within_uint_array);
+  TEST_RUN(suite_within_float_array);
+  TEST_RUN(suite_within_double_array);
 
   return TEST_END();
 }

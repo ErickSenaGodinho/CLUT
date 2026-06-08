@@ -1,6 +1,6 @@
 # CLUT - C Language Unit Testing Framework
 
-<p align="center">CLUT is a header-only C unit testing framework inspired by JUnit and Unity. It makes writing and running tests simple, with clean, readable output.</p>
+<p align="center">CLUT is a single-header C unit testing framework inspired by JUnit and Unity. It makes writing and running tests simple, with clean, readable output.</p>
 
 <p align="center">
     <img src="https://img.shields.io/github/actions/workflow/status/ErickSenaGodinho/CLUT/ci.yml">
@@ -13,20 +13,20 @@
 #define CLUT_OUTPUT_COLOR
 #include "clut.h"
 
-void TestAddition() {
+TEST(Addition) {
     int result = 2 + 3;
     TEST_ASSERT_EQUAL_INT(5, result);
 }
 
 int main() {
     TEST_BEGIN();
-    TEST_RUN(TestAddition);
+    TEST_RUN(Addition);
     return TEST_END();
 }
 ```
 Output:
 ```
-[ PASS ] TestAddition                                      0.000s
+[ PASS ] Addition                                      0.000s
 --------------------------------
 Tests run:  1
 Passed:     1
@@ -54,27 +54,27 @@ CLUT keeps things simple:
 ## Example Output
 
 ```c
-void TestAddition() {
+TEST(Addition) {
     TEST_ASSERT_EQUAL_INT(5, 2 + 3);
 }
 
-void TestStrings() {
+TEST(Strings) {
     TEST_ASSERT_EQUAL_STRING("Hello", "Hella");
 }
 
 int main() {
     TEST_BEGIN();
-    TEST_RUN(TestAddition);
-    TEST_RUN(TestStrings);
+    TEST_RUN(Addition);
+    TEST_RUN(Strings);
     return TEST_END();
 }
 ```
 
 Output:
 ```
-[ PASS ] TestAddition                                      0.000s
-[ FAIL ] TestStrings                                       0.000s
-test_strings.c:7:TestStrings:Expected "Hella" to be equal to "Hello"
+[ PASS ] Addition                                      0.000s
+[ FAIL ] Strings                                       0.000s
+test_strings.c:7:Strings:Expected "Hella" to be equal to "Hello"
 --------------------------------
 Tests run:  2
 Passed:     1
@@ -94,8 +94,8 @@ TEST_ASSERT_EQUAL_INT_MESSAGE(10, result, "Player score should be initialized co
 
 Output:
 ```
-[ FAIL ] TestScore                                         0.000s
-game_test.c:18:TestScore:Player score should be initialized correctly
+[ FAIL ] Score                                         0.000s
+game_test.c:18:Score:Player score should be initialized correctly
 ```
 
 ## Project Structure

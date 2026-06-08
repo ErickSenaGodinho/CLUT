@@ -91,6 +91,10 @@ typedef struct {
   ClutTestState current;
 } ClutData;
 
+#define TEST(name)                                                                                                                                                                                                                                                 \
+  void name();                                                                                                                                                                                                                                                     \
+  void name()
+
 #define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
   do {                                                                                                                                                                                                                                                             \
     if (Clut.current.failed)                                                                                                                                                                                                                                       \
@@ -280,7 +284,7 @@ typedef struct {
 
 void ClutReset();
 void ClutTestBegin();
-void ClutTestRun(ClutTestFn test_fn, const char *test_fn_name);
+void ClutTestRun(ClutTestFn test_fn, const char *test_name);
 int ClutTestEnd();
 
 void ClutTestAssert(bool condition, const char *file, const int line, const char *msg);
@@ -520,8 +524,8 @@ void ClutPrintMismatchArray(size_t index) {
 
 void ClutFail() {
   Clut.runner.failures++;
-  Clut.current.failed = true;
   Clut.runner.stream = CLUT_STREAM_FAIL;
+  Clut.current.failed = true;
 }
 
 void ClutAssertCompareChar(bool condition, char expected, char actual, const char *file, const int line, const char *msg, const char *opStr) {
@@ -596,11 +600,11 @@ void ClutTestBegin() {
   Clut.runner.start_time = clock();
 }
 
-void ClutTestRun(ClutTestFn test_fn, const char *test_fn_name) {
+void ClutTestRun(ClutTestFn test_fn, const char *test_name) {
   Clut.runner.total_tests++;
   if (Clut.hooks.before_each)
     Clut.hooks.before_each();
-  Clut.current.name = test_fn_name;
+  Clut.current.name = test_name;
   Clut.current.start_time = clock();
   Clut.current.failed = false;
   test_fn();
