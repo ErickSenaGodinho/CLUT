@@ -83,6 +83,7 @@ typedef struct {
   const char *name;
   long start_time;
   bool failed;
+  int param_index;
 } ClutTestState;
 
 typedef struct {
@@ -100,9 +101,14 @@ typedef struct {
   type clut_##name##_input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                    \
   void name(type input);                                                                                                                                                                                                                                           \
   void run_##name(void) {                                                                                                                                                                                                                                          \
-    for (size_t i = 0; i < sizeof(clut_##name##_input_arr) / sizeof(clut_##name##_input_arr[0]); ++i) {                                                                                                                                                            \
+    size_t n = sizeof(clut_##name##_input_arr) / sizeof(clut_##name##_input_arr[0]);                                                                                                                                                                               \
+    for (size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                               \
+      Clut.current.param_index = (int)i;                                                                                                                                                                                                                           \
       name(clut_##name##_input_arr[i]);                                                                                                                                                                                                                            \
+      if (Clut.current.failed)                                                                                                                                                                                                                                     \
+        break;                                                                                                                                                                                                                                                     \
     }                                                                                                                                                                                                                                                              \
+    Clut.current.param_index = -1;                                                                                                                                                                                                                                 \
   }                                                                                                                                                                                                                                                                \
   void name(type input)
 
@@ -411,6 +417,9 @@ void ClutPrintTestLocation(const char *file, const int line) {
   ClutPrintInt(line);
   ClutPrintChar(':');
   ClutPrint(Clut.current.name);
+  if (Clut.current.param_index >= 0) {
+    ClutPrintf("[%d]", Clut.current.param_index);
+  }
   ClutPrintChar(':');
 }
 
