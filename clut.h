@@ -117,51 +117,6 @@ typedef struct {
   }                                                                                                                                                                                                                                                                \
   void name(type input)
 
-#define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
-  do {                                                                                                                                                                                                                                                             \
-    if (Clut.current.failed)                                                                                                                                                                                                                                       \
-      return;                                                                                                                                                                                                                                                      \
-  } while (0)
-
-#define CLUT_START_FAILURE_LOG(file, line, msg)                                                                                                                                                                                                                    \
-  do {                                                                                                                                                                                                                                                             \
-    double end_time = ClutElapsedSeconds(Clut.current.start_time);                                                                                                                                                                                                 \
-    ClutFail();                                                                                                                                                                                                                                                    \
-    if (!Clut.current.header_printed) {                                                                                                                                                                                                                            \
-      Clut.current.header_printed = true;                                                                                                                                                                                                                          \
-      ClutPrint(CLUT_STR_FAIL);                                                                                                                                                                                                                                    \
-      ClutPrint(CLUT_STR_BEGIN_RED_TEXT);                                                                                                                                                                                                                          \
-      ClutPrintTestNameWithTime(end_time);                                                                                                                                                                                                                         \
-    }                                                                                                                                                                                                                                                              \
-    ClutPrint(CLUT_STR_BEGIN_RED_TEXT);                                                                                                                                                                                                                            \
-    ClutPrintTestLocation(file, line);                                                                                                                                                                                                                             \
-    if (msg) {                                                                                                                                                                                                                                                     \
-      ClutPrint(msg);                                                                                                                                                                                                                                              \
-    } else {
-
-#define CLUT_END_FAILURE_LOG()                                                                                                                                                                                                                                     \
-  }                                                                                                                                                                                                                                                                \
-  ClutPrint(CLUT_STR_END_COLOR_TEXT);                                                                                                                                                                                                                              \
-  ClutPrintChar('\n');                                                                                                                                                                                                                                             \
-  }                                                                                                                                                                                                                                                                \
-  while (0)
-
-#define CHECK_MEMORY_PRECONDITIONS                                                                                                                                                                                                                                 \
-  do {                                                                                                                                                                                                                                                             \
-    if (num_elements == 0)                                                                                                                                                                                                                                         \
-      return;                                                                                                                                                                                                                                                      \
-                                                                                                                                                                                                                                                                   \
-    if (expected == actual)                                                                                                                                                                                                                                        \
-      return;                                                                                                                                                                                                                                                      \
-                                                                                                                                                                                                                                                                   \
-    if (expected == NULL || actual == NULL) {                                                                                                                                                                                                                      \
-      CLUT_START_FAILURE_LOG(file, line, msg);                                                                                                                                                                                                                     \
-      ClutPrint(CLUT_STR_MEMORY_NULL);                                                                                                                                                                                                                             \
-      CLUT_END_FAILURE_LOG();                                                                                                                                                                                                                                      \
-      return;                                                                                                                                                                                                                                                      \
-    }                                                                                                                                                                                                                                                              \
-  } while (0)
-
 #define CLUT_BEFORE_ALL(hook_fn) Clut.hooks.before_all = (hook_fn)
 #define CLUT_BEFORE_EACH(hook_fn) Clut.hooks.before_each = (hook_fn)
 #define CLUT_AFTER_ALL(hook_fn) Clut.hooks.after_all = (hook_fn)
@@ -376,6 +331,51 @@ void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+
+#define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
+  do {                                                                                                                                                                                                                                                             \
+    if (Clut.current.failed)                                                                                                                                                                                                                                       \
+      return;                                                                                                                                                                                                                                                      \
+  } while (0)
+
+#define CLUT_START_FAILURE_LOG(file, line, msg)                                                                                                                                                                                                                    \
+  do {                                                                                                                                                                                                                                                             \
+    double end_time = ClutElapsedSeconds(Clut.current.start_time);                                                                                                                                                                                                 \
+    ClutFail();                                                                                                                                                                                                                                                    \
+    if (!Clut.current.header_printed) {                                                                                                                                                                                                                            \
+      Clut.current.header_printed = true;                                                                                                                                                                                                                          \
+      ClutPrint(CLUT_STR_FAIL);                                                                                                                                                                                                                                    \
+      ClutPrint(CLUT_STR_BEGIN_RED_TEXT);                                                                                                                                                                                                                          \
+      ClutPrintTestNameWithTime(end_time);                                                                                                                                                                                                                         \
+    }                                                                                                                                                                                                                                                              \
+    ClutPrint(CLUT_STR_BEGIN_RED_TEXT);                                                                                                                                                                                                                            \
+    ClutPrintTestLocation(file, line);                                                                                                                                                                                                                             \
+    if (msg) {                                                                                                                                                                                                                                                     \
+      ClutPrint(msg);                                                                                                                                                                                                                                              \
+    } else {
+
+#define CLUT_END_FAILURE_LOG()                                                                                                                                                                                                                                     \
+  }                                                                                                                                                                                                                                                                \
+  ClutPrint(CLUT_STR_END_COLOR_TEXT);                                                                                                                                                                                                                              \
+  ClutPrintChar('\n');                                                                                                                                                                                                                                             \
+  }                                                                                                                                                                                                                                                                \
+  while (0)
+
+#define CHECK_MEMORY_PRECONDITIONS                                                                                                                                                                                                                                 \
+  do {                                                                                                                                                                                                                                                             \
+    if (num_elements == 0)                                                                                                                                                                                                                                         \
+      return;                                                                                                                                                                                                                                                      \
+                                                                                                                                                                                                                                                                   \
+    if (expected == actual)                                                                                                                                                                                                                                        \
+      return;                                                                                                                                                                                                                                                      \
+                                                                                                                                                                                                                                                                   \
+    if (expected == NULL || actual == NULL) {                                                                                                                                                                                                                      \
+      CLUT_START_FAILURE_LOG(file, line, msg);                                                                                                                                                                                                                     \
+      ClutPrint(CLUT_STR_MEMORY_NULL);                                                                                                                                                                                                                             \
+      CLUT_END_FAILURE_LOG();                                                                                                                                                                                                                                      \
+      return;                                                                                                                                                                                                                                                      \
+    }                                                                                                                                                                                                                                                              \
+  } while (0)
 
 static inline float clut_fabsf(float x) { return x < 0.0f ? -x : x; }
 static inline double clut_fabs(double x) { return x < 0.0 ? -x : x; }

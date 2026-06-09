@@ -32,7 +32,6 @@ void validate_fail(bool assert_condition, const char *macro_expression, const ch
     fprintf(stderr, "%s", CLUT_STR_END_COLOR_TEXT);
   } else {
     Clut.current.failed = false;
-    Clut.current.header_printed = false;
   }
 }
 
