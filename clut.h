@@ -65,6 +65,7 @@ typedef void (*ClutTestFn)();
 
 typedef struct {
   size_t total_tests;
+  size_t passed;
   size_t failures;
 
   long start_time;
@@ -83,6 +84,7 @@ typedef struct {
   const char *name;
   long start_time;
   bool failed;
+  bool header_printed;
   int param_index;
 } ClutTestState;
 
@@ -102,13 +104,16 @@ typedef struct {
   void name(type input);                                                                                                                                                                                                                                           \
   void run_##name(void) {                                                                                                                                                                                                                                          \
     size_t n = sizeof(clut_##name##_input_arr) / sizeof(clut_##name##_input_arr[0]);                                                                                                                                                                               \
+    bool failed = false;                                                                                                                                                                                                                                           \
     for (size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                               \
       Clut.current.param_index = (int)i;                                                                                                                                                                                                                           \
       name(clut_##name##_input_arr[i]);                                                                                                                                                                                                                            \
-      if (Clut.current.failed)                                                                                                                                                                                                                                     \
-        break;                                                                                                                                                                                                                                                     \
+      if (Clut.current.failed) {                                                                                                                                                                                                                                   \
+        failed = true;                                                                                                                                                                                                                                             \
+        Clut.current.failed = false;                                                                                                                                                                                                                               \
+      }                                                                                                                                                                                                                                                            \
     }                                                                                                                                                                                                                                                              \
-    Clut.current.param_index = -1;                                                                                                                                                                                                                                 \
+    Clut.current.failed = failed;                                                                                                                                                                                                                                  \
   }                                                                                                                                                                                                                                                                \
   void name(type input)
 
@@ -122,11 +127,13 @@ typedef struct {
   do {                                                                                                                                                                                                                                                             \
     double end_time = ClutElapsedSeconds(Clut.current.start_time);                                                                                                                                                                                                 \
     ClutFail();                                                                                                                                                                                                                                                    \
-    ClutPrint(CLUT_STR_FAIL);                                                                                                                                                                                                                                      \
+    if (!Clut.current.header_printed) {                                                                                                                                                                                                                            \
+      Clut.current.header_printed = true;                                                                                                                                                                                                                          \
+      ClutPrint(CLUT_STR_FAIL);                                                                                                                                                                                                                                    \
+      ClutPrint(CLUT_STR_BEGIN_RED_TEXT);                                                                                                                                                                                                                          \
+      ClutPrintTestNameWithTime(end_time);                                                                                                                                                                                                                         \
+    }                                                                                                                                                                                                                                                              \
     ClutPrint(CLUT_STR_BEGIN_RED_TEXT);                                                                                                                                                                                                                            \
-    ClutPrintf("%-50s", Clut.current.name);                                                                                                                                                                                                                        \
-    ClutPrintTime(end_time);                                                                                                                                                                                                                                       \
-    ClutPrintChar('\n');                                                                                                                                                                                                                                           \
     ClutPrintTestLocation(file, line);                                                                                                                                                                                                                             \
     if (msg) {                                                                                                                                                                                                                                                     \
       ClutPrint(msg);                                                                                                                                                                                                                                              \
@@ -300,6 +307,7 @@ typedef struct {
 #define TEST_ASSERT_WITHIN_DOUBLE_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinDoubleArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
 
 void ClutReset();
+void ClutTestReset();
 void ClutTestBegin();
 void ClutTestRun(ClutTestFn test_fn, const char *test_name);
 int ClutTestEnd();
@@ -410,6 +418,12 @@ void ClutPrintf(const char *fmt, ...) {
 }
 
 void ClutPrintTime(double time) { fprintf(Clut.runner.stream, "%.3fs", time); }
+
+void ClutPrintTestNameWithTime(double end_time) {
+  ClutPrintf("%-50s", Clut.current.name);
+  ClutPrintTime(end_time);
+  ClutPrintChar('\n');
+}
 
 void ClutPrintTestLocation(const char *file, const int line) {
   ClutPrint(file);
@@ -543,7 +557,6 @@ void ClutPrintMismatchArray(size_t index) {
 }
 
 void ClutFail() {
-  Clut.runner.failures++;
   Clut.runner.stream = CLUT_STREAM_FAIL;
   Clut.current.failed = true;
 }
@@ -608,9 +621,14 @@ void ClutReset() {
   Clut.runner.failures = 0;
   Clut.runner.start_time = 0;
   Clut.runner.stream = CLUT_STREAM_DEFAULT;
+  ClutTestReset();
+}
 
+void ClutTestReset() {
   Clut.current.name = NULL;
   Clut.current.failed = false;
+  Clut.current.header_printed = false;
+  Clut.current.param_index = -1;
 }
 
 void ClutTestBegin() {
@@ -621,19 +639,20 @@ void ClutTestBegin() {
 }
 
 void ClutTestRun(ClutTestFn run_test_fn, const char *test_name) {
+  ClutTestReset();
   Clut.runner.total_tests++;
   if (Clut.hooks.before_each)
     Clut.hooks.before_each();
   Clut.current.name = test_name;
   Clut.current.start_time = clock();
-  Clut.current.failed = false;
   run_test_fn();
-  if (!Clut.current.failed) {
+  if (Clut.current.failed) {
+    Clut.runner.failures++;
+  } else {
     double end_time = ClutElapsedSeconds(Clut.current.start_time);
     ClutPrint(CLUT_STR_PASSED);
-    ClutPrintf("%-50s", Clut.current.name);
-    ClutPrintTime(end_time);
-    ClutPrintChar('\n');
+    ClutPrintTestNameWithTime(end_time);
+    Clut.runner.passed++;
   }
   if (Clut.hooks.after_each)
     Clut.hooks.after_each();
@@ -648,7 +667,7 @@ int ClutTestEnd() {
 
   size_t total_tests = Clut.runner.total_tests;
   size_t failures = Clut.runner.failures;
-  size_t passed = total_tests - failures;
+  size_t passed = Clut.runner.passed;
 
   ClutReset();
   ClutPrint("--------------------------------\n");

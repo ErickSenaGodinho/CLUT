@@ -2,7 +2,7 @@
 
 static FILE *g_dev_null = NULL;
 
-#define CLUT_STREAM_DEFAULT stdout
+#define CLUT_STREAM_DEFAULT g_dev_null
 #define CLUT_STREAM_FAIL g_dev_null
 
 #define CLUT_OUTPUT_COLOR
@@ -11,21 +11,28 @@ static FILE *g_dev_null = NULL;
 
 void validate_pass(bool assert_condition, const char *macro_expression, const char *func_name, const char *file, int line) {
   if (assert_condition) {
-    fprintf(stderr, "%s:%d:%s:", file, line, func_name);
-    fprintf(stderr, CLUT_STR_FAIL ":False-positive:FAILURE detected\n");
+    fprintf(stderr, CLUT_STR_FAIL);
+    fprintf(stderr, "%s", CLUT_STR_BEGIN_RED_TEXT);
+    fprintf(stderr, "%s\n", func_name);
+    fprintf(stderr, "%s:%d:", file, line);
+    fprintf(stderr, ":False-positive:FAILURE detected\n");
     fprintf(stderr, "  -> Expression: %s\n\n", macro_expression);
-    Clut.runner.failures++;
+    fprintf(stderr, "%s", CLUT_STR_END_COLOR_TEXT);
   }
 }
 
 void validate_fail(bool assert_condition, const char *macro_expression, const char *func_name, const char *file, int line) {
   if (!assert_condition) {
-    fprintf(stderr, "%s:%d:%s:", file, line, func_name);
-    fprintf(stderr, CLUT_STR_FAIL ":False-positive:PASS detected\n");
+    fprintf(stderr, CLUT_STR_FAIL);
+    fprintf(stderr, "%s", CLUT_STR_BEGIN_RED_TEXT);
+    fprintf(stderr, "%s\n", func_name);
+    fprintf(stderr, "%s:%d:", file, line);
+    fprintf(stderr, ":False-positive:PASS detected\n");
     fprintf(stderr, "  -> Expression: %s\n\n", macro_expression);
+    fprintf(stderr, "%s", CLUT_STR_END_COLOR_TEXT);
   } else {
     Clut.current.failed = false;
-    Clut.runner.failures--;
+    Clut.current.header_printed = false;
   }
 }
 
