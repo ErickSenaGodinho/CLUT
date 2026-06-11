@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Color / text macros */
 #ifdef CLUT_OUTPUT_COLOR
 #define CLUT_STR_BEGIN_RED_TEXT "\033[31m"
 #define CLUT_STR_BEGIN_BLUE_TEXT "\033[34m"
@@ -25,6 +26,7 @@
 #define CLUT_STR_PASSED "[ PASS ] "
 #endif
 
+/* Streams / epsilons */
 #ifndef CLUT_STREAM_DEFAULT
 #define CLUT_STREAM_DEFAULT stdout
 #endif
@@ -41,6 +43,7 @@
 #define CLUT_DOUBLE_EPSILON 1e-9
 #endif
 
+/* Assertion message strings */
 #define CLUT_STR_EXPECTED "Expected "
 #define CLUT_STR_RECEIVED " Received "
 #define CLUT_STR_EQUAL " to be equal to "
@@ -60,9 +63,11 @@
 #define CLUT_STR_BYTE_OFFSET ", Byte Offset "
 #define CLUT_STR_WAS " but was "
 
+/* Function-pointer types */
 typedef void (*ClutHookFn)();
 typedef void (*ClutTestFn)();
 
+/* Core data structures */
 typedef struct {
   size_t total_tests;
   size_t passed;
@@ -92,6 +97,7 @@ typedef struct {
   ClutTestState current;
 } ClutData;
 
+/* TEST / REPEATED_TEST / PARAM_TEST macros */
 #define TEST(name)                                                                                                                                                                                                                                                 \
   void name(void);                                                                                                                                                                                                                                                 \
   void run_##name(void) { name(); }                                                                                                                                                                                                                                \
@@ -139,6 +145,7 @@ typedef struct {
   }                                                                                                                                                                                                                                                                \
   void name(type input)
 
+/* Hook-registration macros */
 #define CLUT_BEFORE_ALL(hook_fn) Clut.hooks.before_all = (hook_fn)
 #define CLUT_BEFORE_EACH(hook_fn) Clut.hooks.before_each = (hook_fn)
 #define CLUT_AFTER_ALL(hook_fn) Clut.hooks.after_all = (hook_fn)
@@ -149,7 +156,6 @@ typedef struct {
 #define TEST_END() ClutTestEnd()
 
 /* Assertions */
-
 #define TEST_ASSERT(condition) ClutTestAssert((condition), __FILE__, __LINE__, "Expression Is False -> " #condition)
 #define TEST_ASSERT_TRUE(condition) ClutTestAssert((condition), __FILE__, __LINE__, "Expected True But Was False -> " #condition)
 #define TEST_ASSERT_FALSE(condition) ClutTestAssert(!(condition), __FILE__, __LINE__, "Expected False But Was True -> " #condition)
@@ -217,7 +223,6 @@ typedef struct {
 #define TEST_ASSERT_WITHIN_DOUBLE_ARRAY(expected, delta, actual, num_elements) ClutTestAssertWithinDoubleArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, NULL)
 
 /* Messages */
-
 #define TEST_ASSERT_MESSAGE(condition, mgs) ClutTestAssert((condition), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_TRUE_MESSAGE(condition, msg) ClutTestAssert((condition), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_FALSE_MESSAGE(condition, msg) ClutTestAssert(!(condition), __FILE__, __LINE__, (msg))
@@ -283,8 +288,7 @@ typedef struct {
 #define TEST_ASSERT_WITHIN_FLOAT_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinFloatArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_WITHIN_DOUBLE_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinDoubleArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
 
-void ClutReset();
-void ClutTestReset();
+/* Public API Declarations */
 void ClutTestBegin();
 void ClutTestRun(ClutTestFn test_fn, const char *test_name);
 int ClutTestEnd();
@@ -636,18 +640,18 @@ void ClutAssertCompareDouble(bool condition, double expected, double actual, con
   CLUT_END_FAILURE_LOG();
 }
 
-void ClutReset() {
-  Clut.runner.total_tests = 0;
-  Clut.runner.failures = 0;
-  Clut.runner.start_time = 0;
-  ClutTestReset();
-}
-
 void ClutTestReset() {
   Clut.current.name = NULL;
   Clut.current.failed = false;
   Clut.current.header_printed = false;
   Clut.current.iteration_index = -1;
+}
+
+void ClutReset() {
+  Clut.runner.total_tests = 0;
+  Clut.runner.failures = 0;
+  Clut.runner.start_time = 0;
+  ClutTestReset();
 }
 
 void ClutTestBegin() {
@@ -1189,5 +1193,5 @@ void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const
   }
 }
 
-#endif
-#endif
+#endif /* CLUT_IMPLEMENTATION */
+#endif /* INCLUDE_CLUT_H */
