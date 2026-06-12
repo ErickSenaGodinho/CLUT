@@ -11,7 +11,6 @@ static FILE *g_dev_null = NULL;
 
 void validate_pass(bool assert_condition, const char *macro_expression, const char *func_name, const char *file, int line) {
   if (assert_condition) {
-    fprintf(stderr, CLUT_STR_FAIL);
     fprintf(stderr, "%s", CLUT_STR_BEGIN_RED_TEXT);
     fprintf(stderr, "%s\n", func_name);
     fprintf(stderr, "%s:%d:", file, line);
@@ -23,7 +22,6 @@ void validate_pass(bool assert_condition, const char *macro_expression, const ch
 
 void validate_fail(bool assert_condition, const char *macro_expression, const char *func_name, const char *file, int line) {
   if (!assert_condition) {
-    fprintf(stderr, CLUT_STR_FAIL);
     fprintf(stderr, "%s", CLUT_STR_BEGIN_RED_TEXT);
     fprintf(stderr, "%s\n", func_name);
     fprintf(stderr, "%s:%d:", file, line);
