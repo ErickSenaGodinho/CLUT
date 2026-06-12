@@ -20,7 +20,7 @@ jobs:
         sudo apt-get install -y gcc
 
     - name: Compile tests
-      run: gcc -o run_tests tests/*.c -lm
+      run: gcc -o run_tests tests/*.c -lm -DCLUT_OUTPUT_GITHUB
 
     - name: Run tests
       run: ./run_tests
