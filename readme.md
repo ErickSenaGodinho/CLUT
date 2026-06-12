@@ -44,9 +44,9 @@ CLUT keeps things simple:
 
 - Single header integration
 - No external dependencies
-- Readable test output
+- Multiple output modes
 - Hooks for test setup and teardown
-- Support for parameterized tests
+- Support for repeated and parameterized tests
 - Designed for small projects and fast iteration
 - CI friendly
 
@@ -71,7 +71,7 @@ int main() {
 }
 ```
 
-Output:
+Output - Default:
 ```
 [ PASS ] Addition                                      0.000s
 [ FAIL ] Strings                                       0.000s
@@ -83,7 +83,44 @@ Failed:     1
 --------------------------------
 Total time: 0.000s
 ```
+
+Output - GitHub Actions:
+```
+::notice title=PASS::Addition (0.000s)
+::error file=test_strings.c,line=7,title=Strings::Expected "Hella" to be equal to "Hello"
+::notice title=FAIL::Strings (0.000s)
+::notice title=Suite Results::Tests=2 Passed=1 Failed=1 Time=0.000s
+```
 ---
+
+## Repeated Tests
+
+`REPEATED_TEST` runs the same test multiple times. Each iteration receives `input`:
+
+- `input.current_repetition` → current iteration (1..N)
+- `input.total_repetitions` → total runs
+
+### Without threshold
+
+```c
+REPEATED_TEST(EvenNumbers, 10) {
+    TEST_ASSERT_TRUE(input.current_repetition % 2 == 0);
+}
+```
+
+- Runs all iterations
+- Marks test as failed if any iteration fails 
+
+### With threshold
+
+```c
+REPEATED_TEST_WITH_THRESHOLD(EvenNumbers, 100, 3) {
+    TEST_ASSERT_TRUE(input.current_repetition % 2 == 0);
+}
+```
+
+- Stops early after reaching the failure threshold
+- Useful for fast failure detection
 
 ## Parameterized Tests
 
