@@ -39,6 +39,20 @@
 #define CLUT_DOUBLE_EPSILON 1e-9
 #endif
 
+/* Abort / long-jump */
+#ifndef CLUT_NO_LONG_JUMP
+#include <setjmp.h>
+#define CLUT_USE_LONG_JUMP
+#endif
+
+#ifndef CLUT_ABORT
+#ifdef CLUT_USE_LONG_JUMP
+#define CLUT_ABORT longjmp(Clut.current.jmp_buffer, 1)
+#else
+#define CLUT_ABORT return
+#endif // CLUT_USE_LONG_JUMP
+#endif // CLUT_ABORT
+
 /* Assertion message strings */
 #define CLUT_STR_EXPECTED "Expected "
 #define CLUT_STR_RECEIVED " Received "
@@ -108,6 +122,9 @@ typedef struct {
   long start_time;
   bool failed;
   int iteration_index;
+#ifdef CLUT_USE_LONG_JUMP
+  jmp_buf jmp_buffer;
+#endif
 } ClutTestState;
 
 typedef struct {
@@ -117,9 +134,21 @@ typedef struct {
 } ClutData;
 
 /* TEST / REPEATED_TEST / PARAM_TEST macros */
+#ifdef CLUT_USE_LONG_JUMP
+#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
+  if (setjmp(Clut.current.jmp_buffer) == 0) {                                                                                                                                                                                                                      \
+    call;                                                                                                                                                                                                                                                          \
+  }
+#else
+#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
+  {                                                                                                                                                                                                                                                                \
+    call;                                                                                                                                                                                                                                                          \
+  }
+#endif
+
 #define TEST(name)                                                                                                                                                                                                                                                 \
   void name(void);                                                                                                                                                                                                                                                 \
-  void run_##name(void) { name(); }                                                                                                                                                                                                                                \
+  void run_##name(void) { CLUT_RUN_GUARDED(name()) }                                                                                                                                                                                                               \
   void name(void)
 
 typedef struct {
@@ -136,7 +165,7 @@ typedef struct {
       clut_sb_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
       Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
       input.current_repetition = i;                                                                                                                                                                                                                                \
-      name(input);                                                                                                                                                                                                                                                 \
+      CLUT_RUN_GUARDED(name(input));                                                                                                                                                                                                                               \
       if (Clut.current.failed) {                                                                                                                                                                                                                                   \
         failed = true;                                                                                                                                                                                                                                             \
         Clut.current.failed = false;                                                                                                                                                                                                                               \
@@ -155,7 +184,7 @@ typedef struct {
       clut_sb_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
       Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
       input.current_repetition = i;                                                                                                                                                                                                                                \
-      name(input);                                                                                                                                                                                                                                                 \
+      CLUT_RUN_GUARDED(name(input));                                                                                                                                                                                                                               \
       if (Clut.current.failed) {                                                                                                                                                                                                                                   \
         failures++;                                                                                                                                                                                                                                                \
         if (failures >= failureThreshold) {                                                                                                                                                                                                                        \
@@ -176,7 +205,7 @@ typedef struct {
     for (size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                               \
       clut_sb_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
       Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
-      name(clut_##name##_input_arr[i]);                                                                                                                                                                                                                            \
+      CLUT_RUN_GUARDED(name(clut_##name##_input_arr[i]));                                                                                                                                                                                                          \
       if (Clut.current.failed) {                                                                                                                                                                                                                                   \
         failed = true;                                                                                                                                                                                                                                             \
         Clut.current.failed = false;                                                                                                                                                                                                                               \
@@ -606,8 +635,9 @@ static void clut_append_message_array_prefix(size_t index) {
 
 #define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
   do {                                                                                                                                                                                                                                                             \
-    if (Clut.current.failed)                                                                                                                                                                                                                                       \
-      return;                                                                                                                                                                                                                                                      \
+    if (Clut.current.failed) {                                                                                                                                                                                                                                     \
+      CLUT_ABORT;                                                                                                                                                                                                                                                  \
+    }                                                                                                                                                                                                                                                              \
   } while (0)
 
 #define CLUT_ASSERT_COMPARE(append_fn, condition, expected, actual, file, line, msg, op_str)                                                                                                                                                                       \
