@@ -87,8 +87,8 @@ Total time: 0.000s
 Output - GitHub Actions:
 ```
 ::notice title=PASS::Addition (0.000s)
-::error file=test_strings.c,line=7,title=Strings::Expected "Hella" to be equal to "Hello"
 ::notice title=FAIL::Strings (0.000s)
+::error file=test_strings.c,line=7,title=Strings::Expected "Hella" to be equal to "Hello"
 ::notice title=Suite Results::Tests=2 Passed=1 Failed=1 Time=0.000s
 ```
 ---

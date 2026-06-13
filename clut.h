@@ -495,7 +495,6 @@ static inline bool clut_double_equal(double expected, double actual) {
 static inline double ClutElapsedSeconds(long start) { return ((double)(clock() - start)) / CLOCKS_PER_SEC; }
 
 /* Log Helpers */
-
 static void clut_log_record_capture(ClutLogRecord *record, const char *file, int line) {
   record->file = file;
   record->line = line;
@@ -504,39 +503,40 @@ static void clut_log_record_capture(ClutLogRecord *record, const char *file, int
 
 #ifdef CLUT_OUTPUT_GITHUB
 static void clut_backend_github_on_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "::notice title=PASS::%s (%.3fs)\n", test_name, elapsed_seconds); }
-static void clut_backend_github_on_fail_header(void) {
+static void clut_backend_github_on_fail_header() {
   double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
-  clut_sb_appendf(&Clut.runner.output, "::notice title=FAIL::%s (%.3fs)\n", Clut.current.name, elapsed_seconds);
+  fprintf(CLUT_STREAM_FAIL, "::notice title=FAIL::%s (%.3fs)\n", Clut.current.name, elapsed_seconds);
 }
-static void clut_backend_github_append_failure(const ClutLogRecord *record) { clut_sb_appendf(&Clut.runner.output, "::error file=%s,line=%d,title=%s::%s\n", record->file, record->line, Clut.current.name, clut_sb_cstr(&Clut.runner.test_message)); }
-static void clut_backend_github_flush_failures(void) { fprintf(CLUT_STREAM_FAIL, "%s", clut_sb_cstr(&Clut.runner.output)); }
+static void clut_backend_github_append_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) { clut_sb_appendf(output, "::error file=%s,line=%d,title=%s::%s\n", record->file, record->line, Clut.current.name, clut_sb_cstr(test_message)); }
+static void clut_backend_github_flush_failures(ClutSB *output) { fprintf(CLUT_STREAM_FAIL, "%s", clut_sb_cstr(output)); }
 static void clut_backend_github_on_suite_end(const ClutSuiteResult *result) {
   fprintf(CLUT_STREAM_DEFAULT, "::notice title=Suite Results::Tests=%zu Passed=%zu Failed=%zu Time=%.3fs\n", result->total_tests, result->passed, result->failures, result->total_seconds);
 }
 #define clut_dispatch_pass(test_name, elapsed_seconds) clut_backend_github_on_pass((test_name), (elapsed_seconds))
 #define clut_dispatch_fail_header() clut_backend_github_on_fail_header()
-#define clut_dispatch_fail_append(record) clut_backend_github_append_failure((record))
-#define clut_dispatch_fail_flush() clut_backend_github_flush_failures()
+#define clut_dispatch_fail_append(record, output, test_message) clut_backend_github_append_failure((record), (output), (test_message))
+#define clut_dispatch_fail_flush(output) clut_backend_github_flush_failures((output))
 #define clut_dispatch_suite_end(result) clut_backend_github_on_suite_end((result))
 #else /* default */
 static void clut_backend_default_on_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "%s%-50s%.3fs\n", CLUT_GREEN_TEXT("[ PASS ] "), test_name, elapsed_seconds); }
-static void clut_backend_default_on_fail_header(void) {
-  FILE *stream = CLUT_STREAM_FAIL;
+static void clut_backend_default_on_fail_header() {
   double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
-  fprintf(stream, "%s%s%-50s%.3fs%s\n", CLUT_RED_TEXT("[ FAIL ] "), CLUT_STR_BEGIN_RED_TEXT, Clut.current.name, elapsed_seconds, CLUT_STR_END_COLOR_TEXT);
+  fprintf(CLUT_STREAM_FAIL, "%s%s%-50s%.3fs%s\n", CLUT_RED_TEXT("[ FAIL ] "), CLUT_STR_BEGIN_RED_TEXT, Clut.current.name, elapsed_seconds, CLUT_STR_END_COLOR_TEXT);
 }
-static void clut_backend_default_append_failure(const ClutLogRecord *record) {
-  clut_sb_append(&Clut.runner.output, CLUT_STR_BEGIN_RED_TEXT);
-  clut_sb_appendf(&Clut.runner.output, "%s:%d:%s", record->file, record->line, Clut.current.name);
+
+static void clut_backend_default_append_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
+  clut_sb_append(output, CLUT_STR_BEGIN_RED_TEXT);
+  clut_sb_appendf(output, "%s:%d:%s", record->file, record->line, Clut.current.name);
   if (record->iteration_index >= 0) {
-    clut_sb_appendf(&Clut.runner.output, "[%d]", record->iteration_index);
+    clut_sb_appendf(output, "[%d]", record->iteration_index);
   }
-  clut_sb_appendc(&Clut.runner.output, ':');
-  clut_sb_append(&Clut.runner.output, clut_sb_cstr(&Clut.runner.test_message));
-  clut_sb_append(&Clut.runner.output, CLUT_STR_END_COLOR_TEXT);
-  clut_sb_appendc(&Clut.runner.output, '\n');
+  clut_sb_appendc(output, ':');
+  clut_sb_append(output, clut_sb_cstr(test_message));
+  clut_sb_append(output, CLUT_STR_END_COLOR_TEXT);
+  clut_sb_appendc(output, '\n');
 }
-static void clut_backend_default_flush_failures(void) { fprintf(CLUT_STREAM_FAIL, "%s", clut_sb_cstr(&Clut.runner.output)); }
+
+static void clut_backend_default_flush_failures(ClutSB *output) { fprintf(CLUT_STREAM_FAIL, "%s", clut_sb_cstr(output)); }
 static void clut_backend_default_on_suite_end(const ClutSuiteResult *result) {
   FILE *stream = CLUT_STREAM_DEFAULT;
   fprintf(stream, "--------------------------------\n");
@@ -550,8 +550,8 @@ static void clut_backend_default_on_suite_end(const ClutSuiteResult *result) {
 
 #define clut_dispatch_pass(test_name, elapsed_seconds) clut_backend_default_on_pass((test_name), (elapsed_seconds))
 #define clut_dispatch_fail_header() clut_backend_default_on_fail_header()
-#define clut_dispatch_fail_append(record) clut_backend_default_append_failure((record))
-#define clut_dispatch_fail_flush() clut_backend_default_flush_failures()
+#define clut_dispatch_fail_append(record, output, test_message) clut_backend_default_append_failure((record), (output), (test_message))
+#define clut_dispatch_fail_flush(output) clut_backend_default_flush_failures((output))
 #define clut_dispatch_suite_end(result) clut_backend_default_on_suite_end((result))
 #endif
 
@@ -559,7 +559,7 @@ static void clut_record_failure(const char *file, int line) {
   Clut.current.failed = true;
   ClutLogRecord record;
   clut_log_record_capture(&record, file, line);
-  clut_dispatch_fail_append(&record);
+  clut_dispatch_fail_append(&record, &Clut.runner.output, &Clut.runner.test_message);
 }
 
 static void clut_append_message(const char *msg) { clut_sb_append(&Clut.runner.test_message, msg); }
@@ -687,7 +687,7 @@ void ClutTestRun(ClutTestFn run_test_fn, const char *test_name) {
 
   if (Clut.current.failed) {
     clut_dispatch_fail_header();
-    clut_dispatch_fail_flush();
+    clut_dispatch_fail_flush(&Clut.runner.output);
     Clut.runner.failures++;
   } else {
     clut_dispatch_pass(test_name, ClutElapsedSeconds(Clut.current.start_time));
