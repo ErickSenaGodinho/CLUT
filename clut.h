@@ -234,6 +234,8 @@ typedef struct {
 #define TEST_ASSERT_NULL(pointer) ClutTestAssert(((pointer) == NULL), __FILE__, __LINE__, "Expected NULL")
 #define TEST_ASSERT_NOT_NULL(pointer) ClutTestAssert(((pointer) != NULL), __FILE__, __LINE__, "Expected Non-NULL")
 
+#define TEST_FAIL(msg) ClutTestAssert(0, __FILE__, __LINE__, (msg))
+
 #define TEST_ASSERT_EQUAL_CHAR(expected, actual) ClutTestAssertEqualChar((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_INT(expected, actual) ClutTestAssertEqualInt((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_UINT(expected, actual) ClutTestAssertEqualUint((expected), (actual), __FILE__, __LINE__, NULL)
@@ -747,6 +749,7 @@ int ClutTestEnd(void) {
 }
 
 void ClutTestAssert(bool condition, const char *file, int line, const char *msg) {
+  RETURN_IF_FAILED;
   if (!condition) {
     clut_append_message(msg);
     clut_record_failure(file, line);

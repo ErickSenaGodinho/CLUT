@@ -191,6 +191,7 @@ CLUT/
     - [x] TEST_ASSERT_TRUE(condition)
     - [x] TEST_ASSERT_FALSE(condition)
     - [x] TEST_ASSERT_UNLESS(condition)
+    - [x] TEST_FAIL(message)
 
 - [x] Pointer Assertions
     - [x] TEST_ASSERT_NULL(pointer)

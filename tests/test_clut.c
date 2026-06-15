@@ -113,6 +113,8 @@ TEST(suite_boolean_and_basic) {
   VALIDATE_PASS(TEST_ASSERT_UNLESS(false));
   VALIDATE_FAIL_MSG(TEST_ASSERT_UNLESS(true), "Expression Is True -> true");
 
+  VALIDATE_FAIL_MSG(TEST_FAIL("Test Failed"), "Test Failed");
+
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_MESSAGE(false, "custom assert"), "custom assert");
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_TRUE_MESSAGE(false, "custom true"), "custom true");
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_FALSE_MESSAGE(true, "custom false"), "custom false");
