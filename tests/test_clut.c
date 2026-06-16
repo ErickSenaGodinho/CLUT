@@ -147,7 +147,7 @@ TEST(suite_char_comparisons) {
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_CHAR('A', 'B'), "Expected 'B' (0x42) Received 'A' (0x41)");
 
   VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_CHAR('A', 'B'));
-  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_CHAR('\n', '\n'), "Expected '\n' (0x0A) to not be equal to '\n' (0x0A)");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_CHAR('\n', '\n'), "Expected '\\n' (0x0A) to not be equal to '\\n' (0x0A)");
 
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_CHAR_MESSAGE('A', 'B', "custom eq char"), "custom eq char");
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_CHAR_MESSAGE('\n', '\n', "custom neq char"), "custom neq char");
@@ -378,8 +378,8 @@ TEST(suite_within_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 52));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 55));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 45));
-  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR(50, 5, 56), "Expected '2' (0x32) within +/- '\x05' (0x05) but actual diff was '\x06' (0x06)");
-  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR(50, 5, 44), "Expected '2' (0x32) within +/- '\x05' (0x05) but actual diff was '\x06' (0x06)");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR(50, 5, 56), "Expected '2' (0x32) within +/- 5 but actual diff was 6");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR(50, 5, 44), "Expected '2' (0x32) within +/- 5 but actual diff was 6");
 
   VALIDATE_PASS(TEST_ASSERT_WITHIN_INT(100, 10, 105));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_INT(100, 10, 110));
@@ -650,8 +650,8 @@ TEST(suite_within_char_array) {
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 0, exp, 3));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR_ARRAY(NULL, 5, NULL, 0));
 
-  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 5, act_fail, 3), "Array mismatch at Element [2] Expected '\x14' (0x14) within +/- '\x05' (0x05) but actual diff was '\x06' (0x06)");
-  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 0, act_ok, 3), "Array mismatch at Element [0] Expected '2' (0x32) within +/- '\x00' (0x00) but actual diff was '\x02' (0x02)");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 5, act_fail, 3), "Array mismatch at Element [2] Expected '\\x14' (0x14) within +/- 5 but actual diff was 6");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 0, act_ok, 3), "Array mismatch at Element [0] Expected '2' (0x32) within +/- 0 but actual diff was 2");
   VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR_ARRAY(exp, 5, NULL, 3), "One of the pointers is NULL");
   VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR_ARRAY(NULL, 5, act_ok, 3), "One of the pointers is NULL");
 
@@ -742,6 +742,7 @@ void before_all() {
 void after_each() {
   if (Clut.current.failed) {
     clut_dispatch_fail_flush(&output);
+    clut_sb_clear(&output);
   }
 }
 
