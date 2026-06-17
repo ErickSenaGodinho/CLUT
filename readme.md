@@ -202,6 +202,10 @@ CLUT/
 - [x] Char Assertions
     - [x] TEST_ASSERT_EQUAL_CHAR(expected, actual)
     - [x] TEST_ASSERT_NOT_EQUAL_CHAR(expected, actual)
+    - [x] TEST_ASSERT_GREATER_THAN_CHAR(threshold, actual)
+    - [x] TEST_ASSERT_LESS_THAN_CHAR(threshold, actual)
+    - [x] TEST_ASSERT_GREATER_OR_EQUAL_CHAR(threshold, actual)
+    - [x] TEST_ASSERT_LESS_OR_EQUAL_CHAR(threshold, actual)
     - [x] TEST_ASSERT_WITHIN_CHAR(expected, delta, actual)
 
 - [x] Integer Assertions
