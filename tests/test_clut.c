@@ -149,8 +149,32 @@ TEST(suite_char_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_CHAR('A', 'B'));
   VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_CHAR('\n', '\n'), "Expected '\\n' (0x0A) to not be equal to '\\n' (0x0A)");
 
+  VALIDATE_PASS(TEST_ASSERT_GREATER_THAN_CHAR('A', 'B'));
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_THAN_CHAR('B', 'A'), "Expected 'A' (0x41) to be greater than 'B' (0x42)");
+
+  VALIDATE_FAIL(TEST_ASSERT_GREATER_THAN_CHAR('A', 'A'));
+
+  VALIDATE_PASS(TEST_ASSERT_LESS_THAN_CHAR('B', 'A'));
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_THAN_CHAR('A', 'B'), "Expected 'B' (0x42) to be less than 'A' (0x41)");
+
+  VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_CHAR('A', 'A'));
+
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_CHAR('A', 'B'));
+  VALIDATE_PASS(TEST_ASSERT_GREATER_OR_EQUAL_CHAR('A', 'A'));
+
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_OR_EQUAL_CHAR('B', 'A'), "Expected 'A' (0x41) to be greater or equal than 'B' (0x42)");
+
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_CHAR('B', 'A'));
+  VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_CHAR('A', 'A'));
+
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_OR_EQUAL_CHAR('A', 'B'), "Expected 'B' (0x42) to be less or equal than 'A' (0x41)");
+
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_CHAR_MESSAGE('A', 'B', "custom eq char"), "custom eq char");
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_CHAR_MESSAGE('\n', '\n', "custom neq char"), "custom neq char");
+  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_THAN_CHAR_MESSAGE('B', 'A', "custom gt char"), "custom gt char");
+  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_THAN_CHAR_MESSAGE('A', 'B', "custom lt char"), "custom lt char");
+  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_OR_EQUAL_CHAR_MESSAGE('B', 'A', "custom gte char"), "custom gte char");
+  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_CHAR_MESSAGE('A', 'B', "custom lte char"), "custom lte char");
 }
 
 TEST(suite_integer_comparisons) {

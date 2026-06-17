@@ -254,6 +254,11 @@ typedef struct {
 #define TEST_ASSERT_NOT_EQUAL_STRING_LEN(expected, actual, len) ClutTestAssertNotEqualStringLen((expected), (actual), (len), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_NOT_EQUAL_PTR(expected, actual) ClutTestAssertNotEqualPtr((expected), (actual), __FILE__, __LINE__, NULL)
 
+#define TEST_ASSERT_GREATER_THAN_CHAR(expected, actual) ClutTestAssertCharGreaterThan((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_LESS_THAN_CHAR(expected, actual) ClutTestAssertCharLessThan((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_GREATER_OR_EQUAL_CHAR(expected, actual) ClutTestAssertCharGreaterOrEqual((expected), (actual), __FILE__, __LINE__, NULL)
+#define TEST_ASSERT_LESS_OR_EQUAL_CHAR(expected, actual) ClutTestAssertCharLessOrEqual((expected), (actual), __FILE__, __LINE__, NULL)
+
 #define TEST_ASSERT_GREATER_THAN_INT(expected, actual) ClutTestAssertIntGreaterThan((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_LESS_THAN_INT(expected, actual) ClutTestAssertIntLessThan((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_GREATER_OR_EQUAL_INT(expected, actual) ClutTestAssertIntGreaterOrEqual((expected), (actual), __FILE__, __LINE__, NULL)
@@ -319,6 +324,11 @@ typedef struct {
 #define TEST_ASSERT_NOT_EQUAL_STRING_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualString((expected), (actual), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_NOT_EQUAL_STRING_LEN_MESSAGE(expected, actual, len, msg) ClutTestAssertNotEqualStringLen((expected), (actual), (len), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_NOT_EQUAL_PTR_MESSAGE(expected, actual, msg) ClutTestAssertNotEqualPtr((expected), (actual), __FILE__, __LINE__, (msg))
+
+#define TEST_ASSERT_GREATER_THAN_CHAR_MESSAGE(expected, actual, msg) ClutTestAssertCharGreaterThan((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_LESS_THAN_CHAR_MESSAGE(expected, actual, msg) ClutTestAssertCharLessThan((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_GREATER_OR_EQUAL_CHAR_MESSAGE(expected, actual, msg) ClutTestAssertCharGreaterOrEqual((expected), (actual), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_LESS_OR_EQUAL_CHAR_MESSAGE(expected, actual, msg) ClutTestAssertCharLessOrEqual((expected), (actual), __FILE__, __LINE__, (msg))
 
 #define TEST_ASSERT_GREATER_THAN_INT_MESSAGE(threshold, actual, msg) ClutTestAssertIntGreaterThan((threshold), (actual), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_LESS_THAN_INT_MESSAGE(threshold, actual, msg) ClutTestAssertIntLessThan((threshold), (actual), __FILE__, __LINE__, (msg))
@@ -922,6 +932,11 @@ void ClutTestAssertNotEqualPtr(void *expected, void *actual, const char *file, i
   }
   clut_record_failure(file, line);
 }
+
+void ClutTestAssertCharGreaterThan(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
+void ClutTestAssertCharGreaterOrEqual(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, actual >= threshold, actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg); }
+void ClutTestAssertCharLessThan(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
+void ClutTestAssertCharLessOrEqual(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, actual <= threshold, actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg); }
 
 void ClutTestAssertIntGreaterThan(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_int, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
 void ClutTestAssertIntGreaterOrEqual(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_int, actual >= threshold, actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg); }
