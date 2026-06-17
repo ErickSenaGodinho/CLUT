@@ -144,7 +144,7 @@ TEST(suite_pointers_and_nullness) {
 
 TEST(suite_char_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR('\n', '\n'));
-  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_CHAR('A', 'B'), "Expected 'B' (0x42) Received 'A' (0x41)");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_CHAR('A', 'B'), "Expected 'A' (0x41) Received 'B' (0x42)");
 
   VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_CHAR('A', 'B'));
   VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_CHAR('\n', '\n'), "Expected '\\n' (0x0A) to not be equal to '\\n' (0x0A)");
@@ -155,7 +155,7 @@ TEST(suite_char_comparisons) {
 
 TEST(suite_integer_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_INT(10, 10));
-  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_INT(10, 20), "Expected 20 Received 10");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_INT(10, 20), "Expected 10 Received 20");
 
   VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_INT(10, 20));
   VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_INT(10, 10), "Expected 10 to not be equal to 10");
@@ -186,7 +186,7 @@ TEST(suite_integer_comparisons) {
 
 TEST(suite_uint_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT(10, 10));
-  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_UINT(10, 20), "Expected 20 Received 10");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_UINT(10, 20), "Expected 10 Received 20");
 
   VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_UINT(10, 20));
   VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_UINT(10, 10), "Expected 10 to not be equal to 10");
@@ -217,7 +217,7 @@ TEST(suite_uint_comparisons) {
 
 TEST(suite_floating_point_numbers) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT(3.14f, 3.14f));
-  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_FLOAT(3.14f, 2.71f), "Expected 2.71000 Received 3.14000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_FLOAT(3.14f, 2.71f), "Expected 3.14000 Received 2.71000");
 
   VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_FLOAT(3.14f, 2.71f));
   VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_FLOAT(3.14f, 3.14f), "Expected 3.14000 to not be equal to 3.14000");
@@ -246,7 +246,7 @@ TEST(suite_floating_point_numbers) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_FLOAT(-2.0f, -1.0f));
 
   VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE(3.14159, 3.14159));
-  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_DOUBLE(3.14159, 2.71828), "Expected 2.718280000 Received 3.141590000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_DOUBLE(3.14159, 2.71828), "Expected 3.141590000 Received 2.718280000");
 
   VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_DOUBLE(3.14159, 2.71828));
   VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_DOUBLE(3.14159, 3.14159), "Expected 3.141590000 to not be equal to 3.141590000");
@@ -363,10 +363,10 @@ TEST(suite_strings) {
   VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_STRING("clut", "clut"), "Expected \"clut\" to not be equal to \"clut\"");
 
   VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING_LEN("clut_framework", "clut_testing", 5));
-  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_STRING_LEN("clut_framework", "clut_testing", 10), "Expected \"clut_framework\" to be equal to \"clut_testing\" until length 10");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_STRING_LEN("clut_framework", "clut_testing", 10), "Expected \"clut_testing\" to be equal to \"clut_framework\" until length 10");
 
   VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_STRING_LEN("clut_framework", "clut_testing", 10));
-  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_STRING_LEN("clut_framework", "clut_testing", 5), "Expected \"clut_framework\" to not be equal to \"clut_testing\" until length 5");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_STRING_LEN("clut_framework", "clut_testing", 5), "Expected \"clut_testing\" to not be equal to \"clut_framework\" until length 5");
 
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_STRING_MESSAGE("clut", "different", "custom eq string"), "custom eq string");
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_STRING_MESSAGE("clut", "clut", "custom neq string"), "custom neq string");
