@@ -5,6 +5,11 @@
 
 int CTX_COUNTER;
 
+BEFORE_ALL_HOOK(setup_counter) { CTX_COUNTER = 5; }
+BEFORE_EACH_HOOK(increment_counter) { CTX_COUNTER += 2; }
+AFTER_EACH_HOOK(decrement_counter) { CTX_COUNTER -= 1; }
+AFTER_ALL_HOOK(reset_counter) { CTX_COUNTER = 0; }
+
 int add(int a, int b) { return a + b; }
 float divide(float a, float b) { return b != 0.0f ? a / b : 0.0f; }
 char *say_hello() { return "Hello"; }
@@ -52,16 +57,11 @@ TEST(test_context) {
   TEST_ASSERT_EQUAL_INT(10, CTX_COUNTER);        // Not validated due to previous failure
 }
 
-void before_all() { CTX_COUNTER = 5; }
-void before_each() { CTX_COUNTER += 2; }
-void after_each() { CTX_COUNTER -= 1; }
-void after_all() { CTX_COUNTER = 0; }
-
-int main() {
-  CLUT_BEFORE_ALL(before_all);
-  CLUT_BEFORE_EACH(before_each);
-  CLUT_AFTER_EACH(after_each);
-  CLUT_AFTER_ALL(after_all);
+int main(void) {
+  REGISTER_BEFORE_ALL(setup_counter);
+  REGISTER_BEFORE_EACH(increment_counter);
+  REGISTER_AFTER_EACH(decrement_counter);
+  REGISTER_AFTER_ALL(reset_counter);
 
   TEST_BEGIN();
 

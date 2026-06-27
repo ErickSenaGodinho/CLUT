@@ -758,27 +758,27 @@ TEST(suite_within_double_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_DOUBLE_ARRAY_MESSAGE(exp, 0.1, act_fail, 3, "custom within double array"), "custom within double array");
 }
 
-void before_all() {
+BEFORE_ALL_HOOK(setup) {
   clut_sb_init(&output);
   clut_sb_init(&test_message);
 }
 
-void after_each() {
+AFTER_EACH_HOOK(dispatch_fail_flush) {
   if (Clut.current.failed) {
     clut_dispatch_fail_flush(&output);
     clut_sb_clear(&output);
   }
 }
 
-void after_all() {
+AFTER_ALL_HOOK(teardown) {
   clut_sb_free(&output);
   clut_sb_free(&test_message);
 }
 
 int main(void) {
-  CLUT_BEFORE_ALL(before_all);
-  CLUT_AFTER_EACH(after_each);
-  CLUT_AFTER_ALL(after_all);
+  REGISTER_BEFORE_ALL(setup);
+  REGISTER_AFTER_EACH(dispatch_fail_flush);
+  REGISTER_AFTER_ALL(teardown);
 
   TEST_BEGIN();
 

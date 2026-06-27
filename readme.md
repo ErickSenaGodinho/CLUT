@@ -181,10 +181,17 @@ CLUT/
 ## API Reference
 
 - Test Execution Hooks
-    - CLUT_BEFORE_ALL(hook_fn)
-    - CLUT_BEFORE_EACH(hook_fn)
-    - CLUT_AFTER_ALL(hook_fn)
-    - CLUT_AFTER_EACH(hook_fn)
+    - Hook Definition
+        - BEFORE_ALL_HOOK(name)
+        - BEFORE_EACH_HOOK(name)
+        - AFTER_ALL_HOOK(name)
+        - AFTER_EACH_HOOK(name)
+
+    - Hook Registration
+        - REGISTER_BEFORE_ALL(hook)
+        - REGISTER_BEFORE_EACH(hook)
+        - REGISTER_AFTER_ALL(hook)
+        - REGISTER_AFTER_EACH(hook)
 
 - Boolean Assertions
     - TEST_ASSERT(condition)

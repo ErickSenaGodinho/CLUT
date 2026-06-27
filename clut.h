@@ -5,23 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Color / text macros */
-#ifdef CLUT_OUTPUT_COLOR
-#define CLUT_STR_BEGIN_RED_TEXT "\033[31m"
-#define CLUT_STR_BEGIN_BLUE_TEXT "\033[34m"
-#define CLUT_STR_END_COLOR_TEXT "\033[0m"
-#define CLUT_RED_TEXT(text) CLUT_STR_BEGIN_RED_TEXT text CLUT_STR_END_COLOR_TEXT
-#define CLUT_GREEN_TEXT(text) "\033[32m" text CLUT_STR_END_COLOR_TEXT
-#define CLUT_BLUE_TEXT(text) CLUT_STR_BEGIN_BLUE_TEXT text CLUT_STR_END_COLOR_TEXT
-#else
-#define CLUT_STR_BEGIN_RED_TEXT ""
-#define CLUT_STR_BEGIN_BLUE_TEXT ""
-#define CLUT_STR_END_COLOR_TEXT ""
-#define CLUT_RED_TEXT(text) text
-#define CLUT_GREEN_TEXT(text) text
-#define CLUT_BLUE_TEXT(text) text
-#endif
-
 /* Streams / epsilons */
 #ifndef CLUT_STREAM_DEFAULT
 #define CLUT_STREAM_DEFAULT stdout
@@ -135,8 +118,11 @@ typedef struct {
 
 /* TEST / REPEATED_TEST / PARAM_TEST macros */
 #ifdef CLUT_USE_LONG_JUMP
+
+void *ClutGetJumpBuffer(void);
+
 #define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
-  if (setjmp(Clut.current.jmp_buffer) == 0) {                                                                                                                                                                                                                      \
+  if (setjmp(ClutGetJumpBuffer()) == 0) {                                                                                                                                                                                                                          \
     call;                                                                                                                                                                                                                                                          \
   }
 #else
@@ -215,11 +201,23 @@ typedef struct {
   }                                                                                                                                                                                                                                                                \
   void name(type input)
 
-/* Hook-registration macros */
-#define CLUT_BEFORE_ALL(hook_fn) Clut.hooks.before_all = (hook_fn)
-#define CLUT_BEFORE_EACH(hook_fn) Clut.hooks.before_each = (hook_fn)
-#define CLUT_AFTER_ALL(hook_fn) Clut.hooks.after_all = (hook_fn)
-#define CLUT_AFTER_EACH(hook_fn) Clut.hooks.after_each = (hook_fn)
+/* Hook definition / Hook registration macros */
+#define CLUT_HOOK_NAME(name, suffix) clut_##name##_##suffix
+#define CLUT_HOOK_DECL(name, suffix) void CLUT_HOOK_NAME(name, suffix)(void)
+
+#define CLUT_HOOK_DEFINE(name, suffix)                                                                                                                                                                                                                             \
+  CLUT_HOOK_DECL(name, suffix);                                                                                                                                                                                                                                    \
+  CLUT_HOOK_DECL(name, suffix)
+
+#define BEFORE_ALL_HOOK(name) CLUT_HOOK_DEFINE(name, before_all)
+#define BEFORE_EACH_HOOK(name) CLUT_HOOK_DEFINE(name, before_each)
+#define AFTER_ALL_HOOK(name) CLUT_HOOK_DEFINE(name, after_all)
+#define AFTER_EACH_HOOK(name) CLUT_HOOK_DEFINE(name, after_each)
+
+#define REGISTER_BEFORE_ALL(hook) ClutSetBeforeAll(CLUT_HOOK_NAME(hook, before_all))
+#define REGISTER_BEFORE_EACH(hook) ClutSetBeforeEach(CLUT_HOOK_NAME(hook, before_each))
+#define REGISTER_AFTER_ALL(hook) ClutSetAfterAll(CLUT_HOOK_NAME(hook, after_all))
+#define REGISTER_AFTER_EACH(hook) ClutSetAfterEach(CLUT_HOOK_NAME(hook, after_each))
 
 /* Test lifecycle macros */
 #define TEST_BEGIN() ClutTestBegin()
@@ -372,6 +370,12 @@ typedef struct {
 #define TEST_ASSERT_WITHIN_DOUBLE_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutTestAssertWithinDoubleArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
 
 /* Public API Declarations */
+
+void ClutSetBeforeAll(ClutHookFn hook_fn);
+void ClutSetBeforeEach(ClutHookFn hook_fn);
+void ClutSetAfterAll(ClutHookFn hook_fn);
+void ClutSetAfterEach(ClutHookFn hook_fn);
+
 void ClutTestBegin();
 void ClutTestRun(ClutTestFn test_fn, const char *test_name);
 int ClutTestEnd();
@@ -435,6 +439,8 @@ void ClutTestAssertWithinUintArray(const size_t *expected, size_t delta, const s
 void ClutTestAssertWithinFloatArray(const float *expected, float delta, const float *actual, size_t num_elements, const char *file, const int line, const char *msg);
 void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const double *actual, size_t num_elements, const char *file, const int line, const char *msg);
 
+#endif /* INCLUDE_CLUT_H */
+
 #ifdef CLUT_IMPLEMENTATION
 
 #include <ctype.h>
@@ -454,10 +460,29 @@ void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const
 #define CLUT_FREE free
 #endif
 
+/* Color macros */
+#ifdef CLUT_OUTPUT_COLOR
+#define CLUT_STR_BEGIN_RED_TEXT "\033[31m"
+#define CLUT_STR_BEGIN_BLUE_TEXT "\033[34m"
+#define CLUT_STR_END_COLOR_TEXT "\033[0m"
+#define CLUT_RED_TEXT(text) CLUT_STR_BEGIN_RED_TEXT text CLUT_STR_END_COLOR_TEXT
+#define CLUT_GREEN_TEXT(text) "\033[32m" text CLUT_STR_END_COLOR_TEXT
+#define CLUT_BLUE_TEXT(text) CLUT_STR_BEGIN_BLUE_TEXT text CLUT_STR_END_COLOR_TEXT
+#else
+#define CLUT_STR_BEGIN_RED_TEXT ""
+#define CLUT_STR_BEGIN_BLUE_TEXT ""
+#define CLUT_STR_END_COLOR_TEXT ""
+#define CLUT_RED_TEXT(text) text
+#define CLUT_GREEN_TEXT(text) text
+#define CLUT_BLUE_TEXT(text) text
+#endif
+
 extern ClutData Clut;
 
-#ifdef CLUT_IMPLEMENTATION
 ClutData Clut = {0};
+
+#ifdef CLUT_USE_LONG_JUMP
+void *ClutGetJumpBuffer(void) { return (void *)Clut.current.jmp_buffer; }
 #endif
 
 /* String Builder Implementation */
@@ -724,6 +749,11 @@ static void clut_append_message_array_prefix(size_t index) {
       return;                                                                                                                                                                                                                                                      \
     }                                                                                                                                                                                                                                                              \
   } while (0)
+
+void ClutSetBeforeAll(ClutHookFn hook_fn) { Clut.hooks.before_all = hook_fn; }
+void ClutSetBeforeEach(ClutHookFn hook_fn) { Clut.hooks.before_each = hook_fn; }
+void ClutSetAfterAll(ClutHookFn hook_fn) { Clut.hooks.after_all = hook_fn; }
+void ClutSetAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each = hook_fn; }
 
 void ClutTestReset(void) {
   Clut.current.name = NULL;
@@ -1185,4 +1215,3 @@ void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const
 }
 
 #endif /* CLUT_IMPLEMENTATION */
-#endif /* INCLUDE_CLUT_H */
