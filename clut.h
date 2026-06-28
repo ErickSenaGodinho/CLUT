@@ -28,14 +28,6 @@
 #define CLUT_USE_LONG_JUMP
 #endif
 
-#ifndef CLUT_ABORT
-#ifdef CLUT_USE_LONG_JUMP
-#define CLUT_ABORT longjmp(Clut.current.jmp_buffer, 1)
-#else
-#define CLUT_ABORT return
-#endif // CLUT_USE_LONG_JUMP
-#endif // CLUT_ABORT
-
 /* Assertion message strings */
 #define CLUT_STR_EXPECTED "Expected "
 #define CLUT_STR_RECEIVED " Received "
@@ -80,8 +72,15 @@ typedef struct {
 } ClutLogRecord;
 
 /* Function-pointer types */
+
+typedef struct {
+  size_t current_repetition;
+  size_t total_repetitions;
+} ClutRepeatedTestInput;
+
 typedef void (*ClutHookFn)();
 typedef void (*ClutTestFn)();
+typedef void (*ClutRepeatedTestFn)(ClutRepeatedTestInput);
 
 /* Core data structures */
 typedef struct {
@@ -117,81 +116,32 @@ typedef struct {
 } ClutData;
 
 /* TEST / REPEATED_TEST / PARAM_TEST macros */
-#ifdef CLUT_USE_LONG_JUMP
-
-void *ClutGetJumpBuffer(void);
-
-#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
-  if (setjmp(ClutGetJumpBuffer()) == 0) {                                                                                                                                                                                                                          \
-    call;                                                                                                                                                                                                                                                          \
-  }
-#else
-#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
-  {                                                                                                                                                                                                                                                                \
-    call;                                                                                                                                                                                                                                                          \
-  }
-#endif
 
 #define TEST(name)                                                                                                                                                                                                                                                 \
   void name(void);                                                                                                                                                                                                                                                 \
-  void run_##name(void) { CLUT_RUN_GUARDED(name()) }                                                                                                                                                                                                               \
+  void run_##name(void) { ClutRunTest(name); }                                                                                                                                                                                                                     \
   void name(void)
 
-typedef struct {
-  size_t current_repetition;
-  size_t total_repetitions;
-} ClutRepeatedTestInput;
-
-#define REPEATED_TEST(name, value)                                                                                                                                                                                                                                 \
+#define REPEATED_TEST(name, total_repetitions)                                                                                                                                                                                                                     \
   void name(ClutRepeatedTestInput input);                                                                                                                                                                                                                          \
-  void run_##name(void) {                                                                                                                                                                                                                                          \
-    ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = value};                                                                                                                                                                             \
-    volatile bool failed = false;                                                                                                                                                                                                                                  \
-    for (volatile size_t i = 1; i <= value; ++i) {                                                                                                                                                                                                                 \
-      clut_sb_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
-      Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
-      input.current_repetition = i;                                                                                                                                                                                                                                \
-      CLUT_RUN_GUARDED(name(input));                                                                                                                                                                                                                               \
-      if (Clut.current.failed) {                                                                                                                                                                                                                                   \
-        failed = true;                                                                                                                                                                                                                                             \
-        Clut.current.failed = false;                                                                                                                                                                                                                               \
-      }                                                                                                                                                                                                                                                            \
-    }                                                                                                                                                                                                                                                              \
-    Clut.current.failed = failed;                                                                                                                                                                                                                                  \
-  }                                                                                                                                                                                                                                                                \
+  void run_##name(void) { ClutRunRepeatedTest(name, total_repetitions); }                                                                                                                                                                                          \
   void name(ClutRepeatedTestInput input)
 
-#define REPEATED_TEST_WITH_THRESHOLD(name, value, failureThreshold)                                                                                                                                                                                                \
+#define REPEATED_TEST_WITH_THRESHOLD(name, total_repetitions, failure_threshold)                                                                                                                                                                                   \
   void name(ClutRepeatedTestInput input);                                                                                                                                                                                                                          \
-  void run_##name(void) {                                                                                                                                                                                                                                          \
-    ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = value};                                                                                                                                                                             \
-    size_t failures = 0;                                                                                                                                                                                                                                           \
-    for (size_t i = 1; i <= value; ++i) {                                                                                                                                                                                                                          \
-      clut_sb_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
-      Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
-      input.current_repetition = i;                                                                                                                                                                                                                                \
-      CLUT_RUN_GUARDED(name(input));                                                                                                                                                                                                                               \
-      if (Clut.current.failed) {                                                                                                                                                                                                                                   \
-        failures++;                                                                                                                                                                                                                                                \
-        if (failures >= failureThreshold) {                                                                                                                                                                                                                        \
-          break;                                                                                                                                                                                                                                                   \
-        }                                                                                                                                                                                                                                                          \
-        Clut.current.failed = false;                                                                                                                                                                                                                               \
-      }                                                                                                                                                                                                                                                            \
-    }                                                                                                                                                                                                                                                              \
-  }                                                                                                                                                                                                                                                                \
+  void run_##name(void) { ClutRunRepeatedTestWithThreshold(name, total_repetitions, failure_threshold); }                                                                                                                                                          \
   void name(ClutRepeatedTestInput input)
 
 #define PARAM_TEST(name, type, ...)                                                                                                                                                                                                                                \
   void name(type input);                                                                                                                                                                                                                                           \
   void run_##name(void) {                                                                                                                                                                                                                                          \
-    type name##_input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                         \
-    size_t n = sizeof(name##_input_arr) / sizeof(name##_input_arr[0]);                                                                                                                                                                                             \
+    type input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                                \
+    size_t n = sizeof(input_arr) / sizeof(input_arr[0]);                                                                                                                                                                                                           \
     volatile bool failed = false;                                                                                                                                                                                                                                  \
     for (volatile size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                      \
       clut_sb_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
       Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
-      CLUT_RUN_GUARDED(name(name##_input_arr[i]));                                                                                                                                                                                                                 \
+      CLUT_RUN_GUARDED(name(input_arr[i]));                                                                                                                                                                                                                        \
       if (Clut.current.failed) {                                                                                                                                                                                                                                   \
         failed = true;                                                                                                                                                                                                                                             \
         Clut.current.failed = false;                                                                                                                                                                                                                               \
@@ -380,6 +330,10 @@ void ClutTestBegin();
 void ClutTestRun(ClutTestFn test_fn, const char *test_name);
 int ClutTestEnd();
 
+void ClutRunTest(ClutTestFn test_fn);
+void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t total_repetitions);
+void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_t total_repetitions, size_t failure_threshold);
+
 void ClutTestAssert(bool condition, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualChar(char expected, char actual, const char *file, const int line, const char *msg);
 void ClutTestAssertEqualInt(int expected, int actual, const char *file, const int line, const char *msg);
@@ -480,10 +434,6 @@ void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const
 extern ClutData Clut;
 
 ClutData Clut = {0};
-
-#ifdef CLUT_USE_LONG_JUMP
-void *ClutGetJumpBuffer(void) { return (void *)Clut.current.jmp_buffer; }
-#endif
 
 /* String Builder Implementation */
 static void clut_sb_grow(ClutSB *sb, size_t needed) {
@@ -704,6 +654,14 @@ static void clut_append_message_array_prefix(size_t index) {
     append_num((diff));                                                                                                                                                                                                                                            \
   } while (0)
 
+#ifndef CLUT_ABORT
+#ifdef CLUT_USE_LONG_JUMP
+#define CLUT_ABORT longjmp(Clut.current.jmp_buffer, 1)
+#else
+#define CLUT_ABORT return
+#endif // CLUT_USE_LONG_JUMP
+#endif // CLUT_ABORT
+
 #define RETURN_IF_FAILED                                                                                                                                                                                                                                           \
   do {                                                                                                                                                                                                                                                             \
     if (Clut.current.failed) {                                                                                                                                                                                                                                     \
@@ -820,6 +778,55 @@ int ClutTestEnd(void) {
   int failures = (int)Clut.runner.failures;
   ClutRunnerReset();
   return failures;
+}
+
+#ifdef CLUT_USE_LONG_JUMP
+
+#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
+  if (setjmp(Clut.current.jmp_buffer) == 0) {                                                                                                                                                                                                                      \
+    call;                                                                                                                                                                                                                                                          \
+  }
+#else
+#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
+  {                                                                                                                                                                                                                                                                \
+    call;                                                                                                                                                                                                                                                          \
+  }
+#endif
+
+void ClutRunTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()); }
+
+void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t total_repetitions) {
+  volatile ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = total_repetitions};
+  volatile bool failed = false;
+  for (volatile size_t i = 1; i <= total_repetitions; ++i) {
+    clut_sb_clear(&Clut.runner.test_message);
+    Clut.current.iteration_index = (int)i;
+    input.current_repetition = i;
+    CLUT_RUN_GUARDED(test_fn(input));
+    if (Clut.current.failed) {
+      failed = true;
+      Clut.current.failed = false;
+    }
+  }
+  Clut.current.failed = failed;
+}
+
+void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_t total_repetitions, size_t failure_threshold) {
+  volatile ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = total_repetitions};
+  volatile size_t failures = 0;
+  for (volatile size_t i = 1; i <= total_repetitions; ++i) {
+    clut_sb_clear(&Clut.runner.test_message);
+    Clut.current.iteration_index = (int)i;
+    input.current_repetition = i;
+    CLUT_RUN_GUARDED(test_fn(input));
+    if (Clut.current.failed) {
+      failures++;
+      if (failures >= failure_threshold) {
+        break;
+      }
+      Clut.current.failed = false;
+    }
+  }
 }
 
 void ClutTestAssert(bool condition, const char *file, int line, const char *msg) {
