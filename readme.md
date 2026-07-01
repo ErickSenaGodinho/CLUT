@@ -10,7 +10,6 @@
 ## Basic Usage
 ```c
 #define CLUT_IMPLEMENTATION
-#define CLUT_OUTPUT_COLOR
 #include "clut.h"
 
 TEST(Addition) {
