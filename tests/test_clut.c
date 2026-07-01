@@ -99,7 +99,7 @@ static inline void clut_preserve_end(bool prev_failed, bool validation_failed) {
     clut_preserve_end(__prev_failed, __validation_failed);                                                                                                                                                                                                         \
   } while (0)
 
-TEST(suite_boolean_and_basic) {
+TEST(test_boolean_and_basic) {
   int val = 1;
   VALIDATE_PASS(TEST_ASSERT(val == 1));
   VALIDATE_FAIL_MSG(TEST_ASSERT(val == 0), "Expression Is False -> val == 0");
@@ -121,7 +121,7 @@ TEST(suite_boolean_and_basic) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_UNLESS_MESSAGE(true, "custom unless"), "custom unless");
 }
 
-TEST(suite_pointers_and_nullness) {
+TEST(test_pointers_and_nullness) {
   int dummy = 42;
   int *ptr = &dummy;
 
@@ -142,7 +142,7 @@ TEST(suite_pointers_and_nullness) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_PTR_MESSAGE(ptr, ptr, "custom ptr"), "custom ptr");
 }
 
-TEST(suite_char_comparisons) {
+TEST(test_char_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR('\n', '\n'));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_CHAR('A', 'B'), "Expected 'A' (0x41) Received 'B' (0x42)");
 
@@ -177,7 +177,7 @@ TEST(suite_char_comparisons) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_CHAR_MESSAGE('A', 'B', "custom lte char"), "custom lte char");
 }
 
-TEST(suite_integer_comparisons) {
+TEST(test_integer_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_INT(10, 10));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_INT(10, 20), "Expected 10 Received 20");
 
@@ -208,7 +208,7 @@ TEST(suite_integer_comparisons) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_INT_MESSAGE(5, 10, "custom lte int"), "custom lte int");
 }
 
-TEST(suite_uint_comparisons) {
+TEST(test_uint_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT(10, 10));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_UINT(10, 20), "Expected 10 Received 20");
 
@@ -239,7 +239,7 @@ TEST(suite_uint_comparisons) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_UINT_MESSAGE(5, 10, "custom lte uint"), "custom lte uint");
 }
 
-TEST(suite_floating_point_numbers) {
+TEST(test_floating_point_numbers) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT(3.14f, 3.14f));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_FLOAT(3.14f, 2.71f), "Expected 3.14000 Received 2.71000");
 
@@ -312,7 +312,7 @@ TEST(suite_floating_point_numbers) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE_MESSAGE(1.0, 2.0, "custom lte double"), "custom lte double");
 }
 
-TEST(suite_floating_point_zero) {
+TEST(test_floating_point_zero) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT(0.0f, 0.0f));
   VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE(0.0, 0.0));
 
@@ -330,7 +330,7 @@ TEST(suite_floating_point_zero) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_DOUBLE(0.0, 0.0));
 }
 
-TEST(suite_floating_point_precision_accumulation) {
+TEST(test_floating_point_precision_accumulation) {
   float accumulated_float = 0.0f;
   for (int i = 0; i < 10; i++)
     accumulated_float += 0.1f;
@@ -378,7 +378,7 @@ TEST(suite_floating_point_precision_accumulation) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(accumulated_double, expected_double + 1.0));
 }
 
-TEST(suite_strings) {
+TEST(test_strings) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING("clut", "clut"));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_STRING("clut", "different"), "Expected \"different\" to be equal to \"clut\"");
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_STRING("clut", NULL), "Expected (null) to be equal to \"clut\"");
@@ -398,7 +398,7 @@ TEST(suite_strings) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_STRING_LEN_MESSAGE("clut_framework", "clut_testing", 5, "custom neq string len"), "custom neq string len");
 }
 
-TEST(suite_within_comparisons) {
+TEST(test_within_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 52));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 55));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 45));
@@ -441,7 +441,7 @@ TEST(suite_within_comparisons) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_DOUBLE_MESSAGE(expected_double, 0.0000001, accumulated_double + 0.1, "custom within double"), "custom within double");
 }
 
-TEST(suite_memory) {
+TEST(test_memory) {
   typedef struct {
     int x;
     int y;
@@ -490,7 +490,7 @@ TEST(suite_memory) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_MEMORY_ARRAY_MESSAGE(buf1, buf3, sizeof(DummyStruct), 3, "custom memory array"), "custom memory array");
 }
 
-TEST(suite_char_array) {
+TEST(test_char_array) {
   char exp[] = "ClutTest";
   char act_ok[] = "ClutTest";
   char act_diff_end[] = "ClutTesX";
@@ -514,7 +514,7 @@ TEST(suite_char_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_CHAR_ARRAY_MESSAGE(exp, act_diff_end, 8, "custom char array"), "custom char array");
 }
 
-TEST(suite_int_array) {
+TEST(test_int_array) {
   int arr1[] = {-10, 20, -30, 40, -50};
   int arr2[] = {-10, 20, -30, 40, -50};
   int arr3[] = {-10, -99, -30, 40, -50};
@@ -540,7 +540,7 @@ TEST(suite_int_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(arr1, arr3, 5, "custom int array"), "custom int array");
 }
 
-TEST(suite_uint_array) {
+TEST(test_uint_array) {
   size_t arr1[] = {10, 20, 30, 40, 50};
   size_t arr2[] = {10, 20, 30, 40, 50};
   size_t arr3[] = {10, 99, 30, 40, 50};
@@ -566,7 +566,7 @@ TEST(suite_uint_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_UINT_ARRAY_MESSAGE(arr1, arr3, 5, "custom uint array"), "custom uint array");
 }
 
-TEST(suite_float_array) {
+TEST(test_float_array) {
   float sum = 0.0f;
   for (int i = 0; i < 10; i++)
     sum += 0.1f;
@@ -599,7 +599,7 @@ TEST(suite_float_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_FLOAT_ARRAY_MESSAGE(exp, act_diff_start, 3, "custom float array"), "custom float array");
 }
 
-TEST(suite_double_array) {
+TEST(test_double_array) {
   double sum = 0.0;
   for (int i = 0; i < 10000; i++)
     sum += 0.1;
@@ -632,7 +632,7 @@ TEST(suite_double_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_DOUBLE_ARRAY_MESSAGE(exp, act_diff_start, 3, "custom double array"), "custom double array");
 }
 
-TEST(suite_string_array) {
+TEST(test_string_array) {
   const char *exp[] = {"clut", "test", "framework"};
   const char *act_ok[] = {"clut", "test", "framework"};
   const char *act_diff_start[] = {"XXXX", "test", "framework"};
@@ -663,7 +663,7 @@ TEST(suite_string_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_STRING_ARRAY_MESSAGE(exp, act_diff_start, 3, "custom string array"), "custom string array");
 }
 
-TEST(suite_within_char_array) {
+TEST(test_within_char_array) {
   char exp[] = {'2', 'd', 20};
   char act_ok[] = {'4', 'a', 23};
   char act_fail[] = {'2', 'd', 26};
@@ -682,7 +682,7 @@ TEST(suite_within_char_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_CHAR_ARRAY_MESSAGE(exp, 5, act_fail, 3, "custom within char array"), "custom within char array");
 }
 
-TEST(suite_within_int_array) {
+TEST(test_within_int_array) {
   int exp[] = {100, -50, 0, 200};
   int act_ok[] = {105, -45, 10, 195};
   int act_fail[] = {105, -45, 11, 195};
@@ -701,7 +701,7 @@ TEST(suite_within_int_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_INT_ARRAY_MESSAGE(exp, 10, act_fail, 4, "custom within int array"), "custom within int array");
 }
 
-TEST(suite_within_uint_array) {
+TEST(test_within_uint_array) {
   size_t exp[] = {1000, 500, 250};
   size_t act_ok[] = {1040, 550, 250};
   size_t act_fail[] = {1040, 551, 250};
@@ -720,7 +720,7 @@ TEST(suite_within_uint_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_UINT_ARRAY_MESSAGE(exp, 50, act_fail, 3, "custom within uint array"), "custom within uint array");
 }
 
-TEST(suite_within_float_array) {
+TEST(test_within_float_array) {
   float exp[] = {1.0f, 5.5f, 10.0f};
   float act_ok[] = {1.05f, 5.45f, 10.09f};
   float act_fail[] = {1.05f, 5.45f, 10.11f};
@@ -739,7 +739,7 @@ TEST(suite_within_float_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_FLOAT_ARRAY_MESSAGE(exp, 0.1f, act_fail, 3, "custom within float array"), "custom within float array");
 }
 
-TEST(suite_within_double_array) {
+TEST(test_within_double_array) {
   double exp[] = {1.0, 5.5, 10.0};
   double act_ok[] = {1.05, 5.45, 10.09};
   double act_fail[] = {1.05, 5.45, 10.11};
@@ -776,34 +776,38 @@ AFTER_ALL_HOOK(teardown) {
 }
 
 int main(void) {
-  REGISTER_BEFORE_ALL(setup);
-  REGISTER_AFTER_EACH(dispatch_fail_flush);
-  REGISTER_AFTER_ALL(teardown);
+  RUNNER_BEGIN();
 
-  TEST_BEGIN();
+  SUITE_BEGIN();
 
-  TEST_RUN(suite_boolean_and_basic);
-  TEST_RUN(suite_pointers_and_nullness);
-  TEST_RUN(suite_char_comparisons);
-  TEST_RUN(suite_integer_comparisons);
-  TEST_RUN(suite_uint_comparisons);
-  TEST_RUN(suite_floating_point_numbers);
-  TEST_RUN(suite_floating_point_zero);
-  TEST_RUN(suite_floating_point_precision_accumulation);
-  TEST_RUN(suite_strings);
-  TEST_RUN(suite_within_comparisons);
-  TEST_RUN(suite_memory);
-  TEST_RUN(suite_char_array);
-  TEST_RUN(suite_int_array);
-  TEST_RUN(suite_uint_array);
-  TEST_RUN(suite_float_array);
-  TEST_RUN(suite_double_array);
-  TEST_RUN(suite_string_array);
-  TEST_RUN(suite_within_char_array);
-  TEST_RUN(suite_within_int_array);
-  TEST_RUN(suite_within_uint_array);
-  TEST_RUN(suite_within_float_array);
-  TEST_RUN(suite_within_double_array);
+  SET_BEFORE_ALL(setup);
+  SET_AFTER_EACH(dispatch_fail_flush);
+  SET_AFTER_ALL(teardown);
 
-  return TEST_END();
+  RUN_TEST(test_boolean_and_basic);
+  RUN_TEST(test_pointers_and_nullness);
+  RUN_TEST(test_char_comparisons);
+  RUN_TEST(test_integer_comparisons);
+  RUN_TEST(test_uint_comparisons);
+  RUN_TEST(test_floating_point_numbers);
+  RUN_TEST(test_floating_point_zero);
+  RUN_TEST(test_floating_point_precision_accumulation);
+  RUN_TEST(test_strings);
+  RUN_TEST(test_within_comparisons);
+  RUN_TEST(test_memory);
+  RUN_TEST(test_char_array);
+  RUN_TEST(test_int_array);
+  RUN_TEST(test_uint_array);
+  RUN_TEST(test_float_array);
+  RUN_TEST(test_double_array);
+  RUN_TEST(test_string_array);
+  RUN_TEST(test_within_char_array);
+  RUN_TEST(test_within_int_array);
+  RUN_TEST(test_within_uint_array);
+  RUN_TEST(test_within_float_array);
+  RUN_TEST(test_within_double_array);
+
+  SUITE_END();
+
+  return RUNNER_END();
 }

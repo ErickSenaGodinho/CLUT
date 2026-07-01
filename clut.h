@@ -72,7 +72,6 @@ typedef struct {
 } ClutLogRecord;
 
 /* Function-pointer types */
-
 typedef struct {
   size_t current_repetition;
   size_t total_repetitions;
@@ -88,6 +87,10 @@ typedef struct {
   size_t passed;
   size_t failures;
   long start_time;
+} ClutSuite;
+
+typedef struct {
+  size_t global_failures;
   ClutSB output;
   ClutSB test_message;
 } ClutRunner;
@@ -110,16 +113,16 @@ typedef struct {
 } ClutTestState;
 
 typedef struct {
+  ClutSuite suite;
   ClutRunner runner;
   ClutHooks hooks;
   ClutTestState current;
 } ClutData;
 
 /* TEST / REPEATED_TEST / PARAM_TEST macros */
-
 #define TEST(name)                                                                                                                                                                                                                                                 \
   void name(void);                                                                                                                                                                                                                                                 \
-  void run_##name(void) { ClutRunTest(name); }                                                                                                                                                                                                                     \
+  void run_##name(void) { ClutRunSimpleTest(name); }                                                                                                                                                                                                               \
   void name(void)
 
 #define REPEATED_TEST(name, total_repetitions)                                                                                                                                                                                                                     \
@@ -151,6 +154,15 @@ typedef struct {
   }                                                                                                                                                                                                                                                                \
   void name(type input)
 
+/* Test Runner lifecycle macros */
+#define RUNNER_BEGIN() ClutRunnerBegin()
+#define RUNNER_END() ClutRunnerEnd()
+
+/* Test Suite lifecycle macros */
+#define SUITE_BEGIN() ClutSuiteBegin()
+#define RUN_TEST(test_fn) ClutRunTest((run_##test_fn), #test_fn)
+#define SUITE_END() ClutSuiteEnd()
+
 /* Hook definition / Hook registration macros */
 #define CLUT_HOOK_NAME(name, suffix) clut_##name##_##suffix
 #define CLUT_HOOK_DECL(name, suffix) void CLUT_HOOK_NAME(name, suffix)(void)
@@ -164,15 +176,10 @@ typedef struct {
 #define AFTER_ALL_HOOK(name) CLUT_HOOK_DEFINE(name, after_all)
 #define AFTER_EACH_HOOK(name) CLUT_HOOK_DEFINE(name, after_each)
 
-#define REGISTER_BEFORE_ALL(hook) ClutSetBeforeAll(CLUT_HOOK_NAME(hook, before_all))
-#define REGISTER_BEFORE_EACH(hook) ClutSetBeforeEach(CLUT_HOOK_NAME(hook, before_each))
-#define REGISTER_AFTER_ALL(hook) ClutSetAfterAll(CLUT_HOOK_NAME(hook, after_all))
-#define REGISTER_AFTER_EACH(hook) ClutSetAfterEach(CLUT_HOOK_NAME(hook, after_each))
-
-/* Test lifecycle macros */
-#define TEST_BEGIN() ClutTestBegin()
-#define TEST_RUN(test_fn) ClutTestRun((run_##test_fn), #test_fn)
-#define TEST_END() ClutTestEnd()
+#define SET_BEFORE_ALL(hook) ClutSetBeforeAll(CLUT_HOOK_NAME(hook, before_all))
+#define SET_BEFORE_EACH(hook) ClutSetBeforeEach(CLUT_HOOK_NAME(hook, before_each))
+#define SET_AFTER_ALL(hook) ClutSetAfterAll(CLUT_HOOK_NAME(hook, after_all))
+#define SET_AFTER_EACH(hook) ClutSetAfterEach(CLUT_HOOK_NAME(hook, after_each))
 
 /* Assertions */
 #define TEST_ASSERT(condition) ClutTestAssert((condition), __FILE__, __LINE__, "Expression Is False -> " #condition)
@@ -321,16 +328,19 @@ typedef struct {
 
 /* Public API Declarations */
 
+void ClutRunnerBegin();
+int ClutRunnerEnd();
+
+void ClutSuiteBegin();
+void ClutRunTest(ClutTestFn test_fn, const char *test_name);
+void ClutSuiteEnd();
+
 void ClutSetBeforeAll(ClutHookFn hook_fn);
 void ClutSetBeforeEach(ClutHookFn hook_fn);
 void ClutSetAfterAll(ClutHookFn hook_fn);
 void ClutSetAfterEach(ClutHookFn hook_fn);
 
-void ClutTestBegin();
-void ClutTestRun(ClutTestFn test_fn, const char *test_name);
-int ClutTestEnd();
-
-void ClutRunTest(ClutTestFn test_fn);
+void ClutRunSimpleTest(ClutTestFn test_fn);
 void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t total_repetitions);
 void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_t total_repetitions, size_t failure_threshold);
 
@@ -708,12 +718,26 @@ static void clut_append_message_array_prefix(size_t index) {
     }                                                                                                                                                                                                                                                              \
   } while (0)
 
-void ClutSetBeforeAll(ClutHookFn hook_fn) { Clut.hooks.before_all = hook_fn; }
-void ClutSetBeforeEach(ClutHookFn hook_fn) { Clut.hooks.before_each = hook_fn; }
-void ClutSetAfterAll(ClutHookFn hook_fn) { Clut.hooks.after_all = hook_fn; }
-void ClutSetAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each = hook_fn; }
+static void ClutRunnerReset() { Clut.runner.global_failures = 0; }
 
-void ClutTestReset(void) {
+void ClutRunnerBegin() { ClutRunnerReset(); }
+int ClutRunnerEnd() { return Clut.runner.global_failures > 255 ? 255 : (int)Clut.runner.global_failures; }
+
+static void ClutSuiteReset(void) {
+  Clut.suite.total_tests = 0;
+  Clut.suite.failures = 0;
+  Clut.suite.passed = 0;
+  Clut.suite.start_time = 0;
+}
+
+static void ClutHooksReset() {
+  Clut.hooks.before_all = NULL;
+  Clut.hooks.before_each = NULL;
+  Clut.hooks.after_all = NULL;
+  Clut.hooks.after_each = NULL;
+}
+
+static void ClutTestReset(void) {
   Clut.current.name = NULL;
   Clut.current.failed = false;
   Clut.current.iteration_index = -1;
@@ -721,25 +745,19 @@ void ClutTestReset(void) {
   clut_sb_clear(&Clut.runner.test_message);
 }
 
-void ClutRunnerReset(void) {
-  Clut.runner.total_tests = 0;
-  Clut.runner.failures = 0;
-  Clut.runner.passed = 0;
-  Clut.runner.start_time = 0;
-}
-
-void ClutTestBegin(void) {
-  ClutRunnerReset();
+void ClutSuiteBegin(void) {
   clut_sb_init(&Clut.runner.output);
   clut_sb_init(&Clut.runner.test_message);
-  if (Clut.hooks.before_all)
-    Clut.hooks.before_all();
-  Clut.runner.start_time = clock();
+  Clut.suite.start_time = clock();
 }
 
-void ClutTestRun(ClutTestFn run_test_fn, const char *test_name) {
+void ClutRunTest(ClutTestFn run_test_fn, const char *test_name) {
   ClutTestReset();
-  Clut.runner.total_tests++;
+
+  if (Clut.suite.total_tests == 0 && Clut.hooks.before_all)
+    Clut.hooks.before_all();
+
+  Clut.suite.total_tests++;
 
   if (Clut.hooks.before_each)
     Clut.hooks.before_each();
@@ -752,33 +770,45 @@ void ClutTestRun(ClutTestFn run_test_fn, const char *test_name) {
   if (Clut.current.failed) {
     clut_dispatch_fail_header();
     clut_dispatch_fail_flush(&Clut.runner.output);
-    Clut.runner.failures++;
+    Clut.suite.failures++;
   } else {
     clut_dispatch_pass(test_name, ClutElapsedSeconds(Clut.current.start_time));
-    Clut.runner.passed++;
+    Clut.suite.passed++;
   }
 
   if (Clut.hooks.after_each)
     Clut.hooks.after_each();
 }
 
-int ClutTestEnd(void) {
-  double total_time = ClutElapsedSeconds(Clut.runner.start_time);
+void ClutSuiteEnd(void) {
+  if (Clut.suite.total_tests == 0) {
+    ClutSuiteReset();
+    ClutHooksReset();
+    clut_sb_free(&Clut.runner.output);
+    clut_sb_free(&Clut.runner.test_message);
+    return;
+  }
+
+  double total_time = ClutElapsedSeconds(Clut.suite.start_time);
+
   if (Clut.hooks.after_all)
     Clut.hooks.after_all();
-  if (Clut.runner.total_tests == 0)
-    return (int)Clut.runner.failures;
 
-  ClutSuiteResult result = {Clut.runner.total_tests, Clut.runner.passed, Clut.runner.failures, total_time};
+  ClutSuiteResult result = {Clut.suite.total_tests, Clut.suite.passed, Clut.suite.failures, total_time};
   clut_dispatch_suite_end(&result);
 
   clut_sb_free(&Clut.runner.output);
   clut_sb_free(&Clut.runner.test_message);
 
-  int failures = (int)Clut.runner.failures;
-  ClutRunnerReset();
-  return failures;
+  Clut.runner.global_failures += Clut.suite.failures;
+  ClutSuiteReset();
+  ClutHooksReset();
 }
+
+void ClutSetBeforeAll(ClutHookFn hook_fn) { Clut.hooks.before_all = hook_fn; }
+void ClutSetBeforeEach(ClutHookFn hook_fn) { Clut.hooks.before_each = hook_fn; }
+void ClutSetAfterAll(ClutHookFn hook_fn) { Clut.hooks.after_all = hook_fn; }
+void ClutSetAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each = hook_fn; }
 
 #ifdef CLUT_USE_LONG_JUMP
 
@@ -793,7 +823,7 @@ int ClutTestEnd(void) {
   }
 #endif
 
-void ClutRunTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()); }
+void ClutRunSimpleTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()); }
 
 void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t total_repetitions) {
   volatile ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = total_repetitions};

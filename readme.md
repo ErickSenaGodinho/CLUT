@@ -14,14 +14,16 @@
 #include "clut.h"
 
 TEST(Addition) {
-    int result = 2 + 3;
-    TEST_ASSERT_EQUAL_INT(5, result);
+  int result = 2 + 3;
+  TEST_ASSERT_EQUAL_INT(5, result);
 }
 
 int main() {
-    TEST_BEGIN();
-    TEST_RUN(Addition);
-    return TEST_END();
+  RUNNER_BEGIN();
+    SUITE_BEGIN();
+      RUN_TEST(Addition);
+    SUITE_END();
+  return RUNNER_END();
 }
 ```
 Output:
@@ -56,18 +58,20 @@ CLUT keeps things simple:
 
 ```c
 TEST(Addition) {
-    TEST_ASSERT_EQUAL_INT(5, 2 + 3);
+  TEST_ASSERT_EQUAL_INT(5, 2 + 3);
 }
 
 TEST(Strings) {
-    TEST_ASSERT_EQUAL_STRING("Hello", "Hella");
+  TEST_ASSERT_EQUAL_STRING("Hello", "Hella");
 }
 
 int main() {
-    TEST_BEGIN();
-    TEST_RUN(Addition);
-    TEST_RUN(Strings);
-    return TEST_END();
+  RUNNER_BEGIN();
+    SUITE_BEGIN();
+      RUN_TEST(Addition);
+      RUN_TEST(Strings);
+    SUITE_END();
+  return RUNNER_END();
 }
 ```
 
@@ -104,7 +108,7 @@ Output - GitHub Actions:
 
 ```c
 REPEATED_TEST(EvenNumbers, 10) {
-    TEST_ASSERT_TRUE(input.current_repetition % 2 == 0);
+  TEST_ASSERT_TRUE(input.current_repetition % 2 == 0);
 }
 ```
 
@@ -115,7 +119,7 @@ REPEATED_TEST(EvenNumbers, 10) {
 
 ```c
 REPEATED_TEST_WITH_THRESHOLD(EvenNumbers, 100, 3) {
-    TEST_ASSERT_TRUE(input.current_repetition % 2 == 0);
+  TEST_ASSERT_TRUE(input.current_repetition % 2 == 0);
 }
 ```
 
@@ -129,7 +133,7 @@ REPEATED_TEST_WITH_THRESHOLD(EvenNumbers, 100, 3) {
 ```c
 /* Primitive */
 PARAM_TEST(IsPrime, int, { 2, 3, 5, 7, 11, 13, 97 }) {
-    TEST_ASSERT_TRUE(is_prime(input));
+  TEST_ASSERT_TRUE(is_prime(input));
 }
 
 /* Struct */
@@ -140,7 +144,7 @@ PARAM_TEST(Clamp, ClampCase, {
     { -3, 0, 10,  0 },
     { 15, 0, 10, 10 },
 }) {
-    TEST_ASSERT_EQUAL_INT(input.expected, clamp(input.value, input.min, input.max));
+  TEST_ASSERT_EQUAL_INT(input.expected, clamp(input.value, input.min, input.max));
 }
 ```
 
@@ -188,10 +192,10 @@ CLUT/
         - AFTER_EACH_HOOK(name)
 
     - Hook Registration
-        - REGISTER_BEFORE_ALL(hook)
-        - REGISTER_BEFORE_EACH(hook)
-        - REGISTER_AFTER_ALL(hook)
-        - REGISTER_AFTER_EACH(hook)
+        - SET_BEFORE_ALL(hook)
+        - SET_BEFORE_EACH(hook)
+        - SET_AFTER_ALL(hook)
+        - SET_AFTER_EACH(hook)
 
 - Boolean Assertions
     - TEST_ASSERT(condition)

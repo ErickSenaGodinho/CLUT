@@ -58,19 +58,23 @@ TEST(test_context) {
 }
 
 int main(void) {
-  REGISTER_BEFORE_ALL(setup_counter);
-  REGISTER_BEFORE_EACH(increment_counter);
-  REGISTER_AFTER_EACH(decrement_counter);
-  REGISTER_AFTER_ALL(reset_counter);
+  RUNNER_BEGIN();
 
-  TEST_BEGIN();
+  SUITE_BEGIN();
 
-  TEST_RUN(test_add);         // Passed: all assertions passed
-  TEST_RUN(test_divide);      // Passed: all assertions passed
-  TEST_RUN(test_strings);     // Passed: all assertions passed
-  TEST_RUN(test_pointers);    // Passed: all assertions passed
-  TEST_RUN(test_comparisons); // Passed: all assertions passed
-  TEST_RUN(test_context);     // Failed: one assertion failed
+  SET_BEFORE_ALL(setup_counter);
+  SET_BEFORE_EACH(increment_counter);
+  SET_AFTER_EACH(decrement_counter);
+  SET_AFTER_ALL(reset_counter);
 
-  return TEST_END();
+  RUN_TEST(test_add);         // Passed: all assertions passed
+  RUN_TEST(test_divide);      // Passed: all assertions passed
+  RUN_TEST(test_strings);     // Passed: all assertions passed
+  RUN_TEST(test_pointers);    // Passed: all assertions passed
+  RUN_TEST(test_comparisons); // Passed: all assertions passed
+  RUN_TEST(test_context);     // Failed: one assertion failed
+
+  SUITE_END();
+
+  return RUNNER_END();
 }
