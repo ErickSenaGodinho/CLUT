@@ -406,6 +406,7 @@ void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const
 #endif /* INCLUDE_CLUT_H */
 
 #ifdef CLUT_IMPLEMENTATION
+#ifndef CLUT_IMPLEMENTATION_INCLUDED
 
 #include <ctype.h>
 #include <stdarg.h>
@@ -1251,4 +1252,5 @@ void ClutTestAssertWithinDoubleArray(const double *expected, double delta, const
   }
 }
 
+#endif /* CLUT_IMPLEMENTATION_INCLUDED */
 #endif /* CLUT_IMPLEMENTATION */
