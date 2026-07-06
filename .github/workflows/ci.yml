@@ -19,8 +19,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc
 
-    - name: Compile tests
-      run: gcc -o run_tests tests/*.c -lm -DCLUT_OUTPUT_GITHUB
+    - name: Compile runner generator
+      run: gcc -o runner_generator runner_generator.c
+
+    - name: Generate test runner
+      run: ./runner_generator -o tests/runner_test_clut.c tests/test_basic.h tests/test_numeric.h tests/test_string.h tests/test_arrays.h
+
+    - name: Compile test runner
+      run: gcc -o tests/runner_test_clut tests/runner_test_clut.c -DCLUT_OUTPUT_GITHUB
 
     - name: Run tests
-      run: ./run_tests
+      run: ./tests/runner_test_clut

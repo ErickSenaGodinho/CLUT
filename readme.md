@@ -168,14 +168,11 @@ game_test.c:18:Score:Player score should be initialized correctly
 ```text
 CLUT/
 ├── .github/
-│   └── workflows/
-│       └── ci.yml
 ├── examples/
-│   └── basic_usage.c
 ├── tests/
-│   └── test_clut.c
 ├── clut.h
 ├── readme.md
+├── runner_generator.c
 └── LICENSE
 ```
 
