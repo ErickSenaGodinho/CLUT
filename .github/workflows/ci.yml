@@ -20,7 +20,7 @@ jobs:
         sudo apt-get install -y gcc
 
     - name: Compile runner generator
-      run: gcc -o runner_generator runner_generator.c
+      run: gcc -o runner_generator tools/runner_generator.c
 
     - name: Generate test runner
       run: ./runner_generator -o tests/runner_test_clut.c tests/test_basic.h tests/test_numeric.h tests/test_string.h tests/test_arrays.h

@@ -35,6 +35,15 @@ Failed:     0
 --------------------------------
 Total time: 0.000s
 ```
+
+Don't want to write that `main()` by hand? Let `runner_generator` build it for you from your test files:
+
+```sh
+runner_generator -o build/test_runner.c tests/test_numbers.h
+```
+
+See [docs/runner_generator.md](docs/runner_generator.md) for details.
+
 ---
 
 ## Why CLUT?
@@ -48,226 +57,42 @@ CLUT keeps things simple:
 - Multiple output modes
 - Hooks for test setup and teardown
 - Support for repeated and parameterized tests
+- Optional CLI tool to auto-generate the test runner from your test files
 - Designed for small projects and fast iteration
 - CI friendly
 
 ---
 
-## Example Output
+## Documentation
 
-```c
-TEST(Addition) {
-  TEST_ASSERT_EQUAL_INT(5, 2 + 3);
-}
+| Guide | What's in it |
+|---|---|
+| [docs/guide.md](docs/guide.md) | Repeated tests, parameterized tests, custom assertion messages, output modes |
+| [docs/api-reference.md](docs/api-reference.md) | Every macro CLUT exposes: runner/suite, test definitions, hooks, assertions |
+| [docs/runner_generator.md](docs/runner_generator.md) | The `runner_generator` CLI tool: what it solves, usage, flags |
 
-TEST(Strings) {
-  TEST_ASSERT_EQUAL_STRING("Hello", "Hella");
-}
-
-int main() {
-  RUNNER_BEGIN();
-    SUITE_BEGIN();
-      RUN_TEST(Addition);
-      RUN_TEST(Strings);
-    SUITE_END();
-  return RUNNER_END();
-}
-```
-
-Output - Default:
-```
-[ PASS ] Addition                                      0.000s
-[ FAIL ] Strings                                       0.000s
-test_strings.c:7:Strings:Expected "Hella" to be equal to "Hello"
---------------------------------
-Tests run:  2
-Passed:     1
-Failed:     1
---------------------------------
-Total time: 0.000s
-```
-
-Output - GitHub Actions:
-```
-::notice title=PASS::Addition (0.000s)
-::notice title=FAIL::Strings (0.000s)
-::error file=test_strings.c,line=7,title=Strings::Expected "Hella" to be equal to "Hello"
-::notice title=Suite Results::Tests=2 Passed=1 Failed=1 Time=0.000s
-```
 ---
-
-## Repeated Tests
-
-`REPEATED_TEST` runs the same test multiple times. Each iteration receives `input`:
-
-- `input.current_repetition` → current iteration (1..N)
-- `input.total_repetitions` → total runs
-
-### Without threshold
-
-```c
-REPEATED_TEST(EvenNumbers, 10) {
-  TEST_ASSERT_TRUE(input.current_repetition % 2 == 0);
-}
-```
-
-- Runs all iterations
-- Marks test as failed if any iteration fails 
-
-### With threshold
-
-```c
-REPEATED_TEST_WITH_THRESHOLD(EvenNumbers, 100, 3) {
-  TEST_ASSERT_TRUE(input.current_repetition % 2 == 0);
-}
-```
-
-- Stops early after reaching the failure threshold
-- Useful for fast failure detection
-
-## Parameterized Tests
-
-`PARAM_TEST` runs the same test against multiple inputs. The type can be whatever the test needs.
-
-```c
-/* Primitive */
-PARAM_TEST(IsPrime, int, { 2, 3, 5, 7, 11, 13, 97 }) {
-  TEST_ASSERT_TRUE(is_prime(input));
-}
-
-/* Struct */
-typedef struct { int value; int min; int max; int expected; } ClampCase;
-
-PARAM_TEST(Clamp, ClampCase, {
-    {  5, 0, 10,  5 },
-    { -3, 0, 10,  0 },
-    { 15, 0, 10, 10 },
-}) {
-  TEST_ASSERT_EQUAL_INT(input.expected, clamp(input.value, input.min, input.max));
-}
-```
-
-> The current input is available as `input` inside the test body.
-
-## Assertion Messages
-
-CLUT supports custom failure messages for clearer test output using the `*_MESSAGE` variants:
-
-```c
-TEST_ASSERT_EQUAL_INT_MESSAGE(10, result, "Player score should be initialized correctly");
-```
-
-Output:
-```
-[ FAIL ] Score                                         0.000s
-game_test.c:18:Score:Player score should be initialized correctly
-```
 
 ## Project Structure
 
 ```text
 CLUT/
 ├── .github/
+├── docs/
+│   ├── guide.md
+│   ├── api-reference.md
+│   └── runner_generator.md/
 ├── examples/
 ├── tests/
+├── tools/
+│   └── runner_generator.c
 ├── clut.h
 ├── readme.md
-├── runner_generator.c
 └── LICENSE
 ```
 
 ---
 
-## API Reference
+## License
 
-- Test Execution Hooks
-    - Hook Definition
-        - BEFORE_ALL_HOOK(name)
-        - BEFORE_EACH_HOOK(name)
-        - AFTER_ALL_HOOK(name)
-        - AFTER_EACH_HOOK(name)
-
-    - Hook Registration
-        - SET_BEFORE_ALL(hook)
-        - SET_BEFORE_EACH(hook)
-        - SET_AFTER_ALL(hook)
-        - SET_AFTER_EACH(hook)
-
-- Boolean Assertions
-    - TEST_ASSERT(condition)
-    - TEST_ASSERT_TRUE(condition)
-    - TEST_ASSERT_FALSE(condition)
-    - TEST_ASSERT_UNLESS(condition)
-    - TEST_FAIL(message)
-
-- Pointer Assertions
-    - TEST_ASSERT_NULL(pointer)
-    - TEST_ASSERT_NOT_NULL(pointer)
-    - TEST_ASSERT_EQUAL_PTR(expected, actual)
-    - TEST_ASSERT_NOT_EQUAL_PTR(expected, actual)
-
-- Char Assertions
-    - TEST_ASSERT_EQUAL_CHAR(expected, actual)
-    - TEST_ASSERT_NOT_EQUAL_CHAR(expected, actual)
-    - TEST_ASSERT_GREATER_THAN_CHAR(threshold, actual)
-    - TEST_ASSERT_LESS_THAN_CHAR(threshold, actual)
-    - TEST_ASSERT_GREATER_OR_EQUAL_CHAR(threshold, actual)
-    - TEST_ASSERT_LESS_OR_EQUAL_CHAR(threshold, actual)
-    - TEST_ASSERT_WITHIN_CHAR(expected, delta, actual)
-
-- Integer Assertions
-    - TEST_ASSERT_EQUAL_INT(expected, actual)
-    - TEST_ASSERT_NOT_EQUAL_INT(expected, actual)
-    - TEST_ASSERT_GREATER_THAN_INT(threshold, actual)
-    - TEST_ASSERT_LESS_THAN_INT(threshold, actual)
-    - TEST_ASSERT_GREATER_OR_EQUAL_INT(threshold, actual)
-    - TEST_ASSERT_LESS_OR_EQUAL_INT(threshold, actual)
-    - TEST_ASSERT_WITHIN_INT(expected, delta, actual)
-
-- Unsigned Integer Assertions
-    - TEST_ASSERT_EQUAL_UINT(expected, actual)
-    - TEST_ASSERT_NOT_EQUAL_UINT(expected, actual)
-    - TEST_ASSERT_GREATER_THAN_UINT(threshold, actual)
-    - TEST_ASSERT_LESS_THAN_UINT(threshold, actual)
-    - TEST_ASSERT_GREATER_OR_EQUAL_UINT(threshold, actual)
-    - TEST_ASSERT_LESS_OR_EQUAL_UINT(threshold, actual)
-    - TEST_ASSERT_WITHIN_UINT(expected, delta, actual)
-
-- Floating Point Assertions
-    - TEST_ASSERT_EQUAL_FLOAT(expected, actual)
-    - TEST_ASSERT_NOT_EQUAL_FLOAT(expected, actual)
-    - TEST_ASSERT_GREATER_THAN_FLOAT(threshold, actual)
-    - TEST_ASSERT_LESS_THAN_FLOAT(threshold, actual)
-    - TEST_ASSERT_GREATER_OR_EQUAL_FLOAT(threshold, actual)
-    - TEST_ASSERT_LESS_OR_EQUAL_FLOAT(threshold, actual)
-    - TEST_ASSERT_WITHIN_FLOAT(expected, delta, actual)
-    - TEST_ASSERT_EQUAL_DOUBLE(expected, actual)
-    - TEST_ASSERT_NOT_EQUAL_DOUBLE(expected, actual)
-    - TEST_ASSERT_GREATER_THAN_DOUBLE(threshold, actual)
-    - TEST_ASSERT_LESS_THAN_DOUBLE(threshold, actual)
-    - TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE(threshold, actual)
-    - TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(threshold, actual)
-    - TEST_ASSERT_WITHIN_DOUBLE(expected, delta, actual)
-
-- String Assertions
-    - TEST_ASSERT_EQUAL_STRING(expected, actual)
-    - TEST_ASSERT_EQUAL_STRING_LEN(expected, actual, len)
-    - TEST_ASSERT_NOT_EQUAL_STRING(expected, actual)
-    - TEST_ASSERT_NOT_EQUAL_STRING_LEN(expected, actual, len)
-
-- Memory Assertions (Comparing structs directly may be affected by padding and uninitialized bytes)
-    - TEST_ASSERT_EQUAL_MEMORY(expected, actual, len)
-    - TEST_ASSERT_EQUAL_MEMORY_ARRAY(expected, actual, len, num_elements)
-
-- Array Assertions
-    - TEST_ASSERT_EQUAL_CHAR_ARRAY(expected, actual, num_elements)
-    - TEST_ASSERT_EQUAL_INT_ARRAY(expected, actual, num_elements)
-    - TEST_ASSERT_EQUAL_UINT_ARRAY(expected, actual, num_elements)
-    - TEST_ASSERT_EQUAL_FLOAT_ARRAY(expected, actual, num_elements)
-    - TEST_ASSERT_EQUAL_DOUBLE_ARRAY(expected, actual, num_elements)
-    - TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, num_elements)
-    - TEST_ASSERT_WITHIN_CHAR_ARRAY(expected, delta, actual, num_elements)
-    - TEST_ASSERT_WITHIN_INT_ARRAY(expected, delta, actual, num_elements)
-    - TEST_ASSERT_WITHIN_UINT_ARRAY(expected, delta, actual, num_elements)
-    - TEST_ASSERT_WITHIN_FLOAT_ARRAY(expected, delta, actual, num_elements)
-    - TEST_ASSERT_WITHIN_DOUBLE_ARRAY(expected, delta, actual, num_elements)
+See [LICENSE](LICENSE).
