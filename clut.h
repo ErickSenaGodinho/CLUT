@@ -129,31 +129,34 @@ typedef struct {
 } ClutData;
 
 /* TEST / REPEATED_TEST / PARAM_TEST macros */
+#define CLUT_TEST_NAME(name) clut_test_##name
+#define CLUT_RUN_TEST_NAME(name) clut_run_test_##name
+
 #define TEST(name)                                                                                                                                                                                                                                                 \
-  void name(void);                                                                                                                                                                                                                                                 \
-  void run_##name(void) { ClutRunSimpleTest(name); }                                                                                                                                                                                                               \
-  void name(void)
+  void CLUT_TEST_NAME(name)(void);                                                                                                                                                                                                                                 \
+  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunSimpleTest(CLUT_TEST_NAME(name)); }                                                                                                                                                                                 \
+  void CLUT_TEST_NAME(name)(void)
 
 #define REPEATED_TEST(name, repetitions)                                                                                                                                                                                                                           \
-  void name(ClutRepeatedTestInput input);                                                                                                                                                                                                                          \
-  void run_##name(void) { ClutRunRepeatedTest(name, repetitions); }                                                                                                                                                                                                \
-  void name(ClutRepeatedTestInput input)
+  void CLUT_TEST_NAME(name)(ClutRepeatedTestInput input);                                                                                                                                                                                                          \
+  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunRepeatedTest(CLUT_TEST_NAME(name), repetitions); }                                                                                                                                                                  \
+  void CLUT_TEST_NAME(name)(ClutRepeatedTestInput input)
 
 #define REPEATED_TEST_WITH_THRESHOLD(name, repetitions, failure_threshold)                                                                                                                                                                                         \
-  void name(ClutRepeatedTestInput input);                                                                                                                                                                                                                          \
-  void run_##name(void) { ClutRunRepeatedTestWithThreshold(name, repetitions, failure_threshold); }                                                                                                                                                                \
-  void name(ClutRepeatedTestInput input)
+  void CLUT_TEST_NAME(name)(ClutRepeatedTestInput input);                                                                                                                                                                                                          \
+  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunRepeatedTestWithThreshold(CLUT_TEST_NAME(name), repetitions, failure_threshold); }                                                                                                                                  \
+  void CLUT_TEST_NAME(name)(ClutRepeatedTestInput input)
 
 #define PARAM_TEST(name, type, ...)                                                                                                                                                                                                                                \
-  void name(type input);                                                                                                                                                                                                                                           \
-  void run_##name(void) {                                                                                                                                                                                                                                          \
+  void CLUT_TEST_NAME(name)(type input);                                                                                                                                                                                                                           \
+  void CLUT_RUN_TEST_NAME(name)(void) {                                                                                                                                                                                                                            \
     type input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                                \
     size_t n = sizeof(input_arr) / sizeof(input_arr[0]);                                                                                                                                                                                                           \
     volatile bool failed = false;                                                                                                                                                                                                                                  \
     for (volatile size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                      \
       clut_sb_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
       Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
-      CLUT_RUN_GUARDED(name(input_arr[i]));                                                                                                                                                                                                                        \
+      CLUT_RUN_GUARDED(CLUT_TEST_NAME(name)(input_arr[i]));                                                                                                                                                                                                        \
       if (Clut.current.failed) {                                                                                                                                                                                                                                   \
         failed = true;                                                                                                                                                                                                                                             \
         Clut.current.failed = false;                                                                                                                                                                                                                               \
@@ -161,7 +164,7 @@ typedef struct {
     }                                                                                                                                                                                                                                                              \
     Clut.current.failed = failed;                                                                                                                                                                                                                                  \
   }                                                                                                                                                                                                                                                                \
-  void name(type input)
+  void CLUT_TEST_NAME(name)(type input)
 
 /* Test Runner lifecycle macros */
 #define RUNNER_BEGIN() ClutRunnerBegin()
@@ -169,7 +172,7 @@ typedef struct {
 
 /* Test Suite lifecycle macros */
 #define SUITE_BEGIN() ClutSuiteBegin()
-#define RUN_TEST(test_fn) ClutRunTest((run_##test_fn), #test_fn)
+#define RUN_TEST(test_name) ClutRunTest(CLUT_RUN_TEST_NAME(test_name), #test_name)
 #define SUITE_END() ClutSuiteEnd()
 
 /* Hook definition / Hook registration macros */
