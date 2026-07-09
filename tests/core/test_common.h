@@ -2,7 +2,7 @@
 #define CLUT_TEST_COMMON_H
 
 #define CLUT_IMPLEMENTATION
-#include "../clut.h"
+#include "../../clut.h"
 
 ClutSB test_message;
 ClutSB output;
