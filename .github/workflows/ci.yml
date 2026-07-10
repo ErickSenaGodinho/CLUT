@@ -22,11 +22,20 @@ jobs:
     - name: Compile runner generator
       run: gcc -o runner_generator tools/runner_generator.c
 
-    - name: Generate test core runner
+    - name: Generate core test runner
       run: ./runner_generator -o tests/core/runner_test_core.c tests/core/test_basic.h tests/core/test_numeric.h tests/core/test_string.h tests/core/test_arrays.h
 
-    - name: Compile test core runner
+    - name: Compile core test runner
       run: gcc -o tests/core/runner_test_core tests/core/runner_test_core.c -DCLUT_OUTPUT_GITHUB
 
     - name: Run core tests
       run: ./tests/core/runner_test_core
+
+    - name: Generate generator test runner
+      run: ./runner_generator -o tests/runner_generator/runner_test_generator.c tests/runner_generator/test_lexer.h tests/runner_generator/test_parser.h tests/runner_generator/test_path_utilities.h
+
+    - name: Compile generator test runner
+      run: gcc -o tests/runner_generator/runner_test_generator tests/runner_generator/runner_test_generator.c -DCLUT_OUTPUT_GITHUB
+
+    - name: Run generator tests
+      run: ./tests/runner_generator/runner_test_generator
