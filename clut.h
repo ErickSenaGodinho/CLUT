@@ -149,21 +149,7 @@ typedef struct {
 
 #define PARAM_TEST(name, type, ...)                                                                                                                                                                                                                                \
   void CLUT_TEST_NAME(name)(type input);                                                                                                                                                                                                                           \
-  void CLUT_RUN_TEST_NAME(name)(void) {                                                                                                                                                                                                                            \
-    type input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                                \
-    size_t n = sizeof(input_arr) / sizeof(input_arr[0]);                                                                                                                                                                                                           \
-    volatile bool failed = false;                                                                                                                                                                                                                                  \
-    for (volatile size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                      \
-      clut_sb_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
-      Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
-      CLUT_RUN_GUARDED(CLUT_TEST_NAME(name)(input_arr[i]));                                                                                                                                                                                                        \
-      if (Clut.current.failed) {                                                                                                                                                                                                                                   \
-        failed = true;                                                                                                                                                                                                                                             \
-        Clut.current.failed = false;                                                                                                                                                                                                                               \
-      }                                                                                                                                                                                                                                                            \
-    }                                                                                                                                                                                                                                                              \
-    Clut.current.failed = failed;                                                                                                                                                                                                                                  \
-  }                                                                                                                                                                                                                                                                \
+  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunParamTest(CLUT_TEST_NAME(name), type, __VA_ARGS__); }                                                                                                                                                               \
   void CLUT_TEST_NAME(name)(type input)
 
 /* Test Runner lifecycle macros */
@@ -355,6 +341,7 @@ CLUT_API void ClutSetAfterEach(ClutHookFn hook_fn);
 CLUT_API void ClutRunSimpleTest(ClutTestFn test_fn);
 CLUT_API void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t repetitions);
 CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold);
+#define ClutRunParamTest(test_fn, type, ...)
 
 CLUT_API void ClutTestAssert(bool condition, const char *file, const int line, const char *msg);
 CLUT_API void ClutTestAssertEqualChar(char expected, char actual, const char *file, const int line, const char *msg);
@@ -870,6 +857,24 @@ CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_
     }
   }
 }
+
+#undef ClutRunParamTest
+#define ClutRunParamTest(test_fn, type, ...)                                                                                                                                                                                                                       \
+  do {                                                                                                                                                                                                                                                             \
+    type input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                                \
+    size_t n = sizeof(input_arr) / sizeof(input_arr[0]);                                                                                                                                                                                                           \
+    volatile bool failed = false;                                                                                                                                                                                                                                  \
+    for (volatile size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                      \
+      clut_sb_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
+      Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
+      CLUT_RUN_GUARDED(test_fn(input_arr[i]));                                                                                                                                                                                                                     \
+      if (Clut.current.failed) {                                                                                                                                                                                                                                   \
+        failed = true;                                                                                                                                                                                                                                             \
+        Clut.current.failed = false;                                                                                                                                                                                                                               \
+      }                                                                                                                                                                                                                                                            \
+    }                                                                                                                                                                                                                                                              \
+    Clut.current.failed = failed;                                                                                                                                                                                                                                  \
+  } while (0)
 
 CLUT_API void ClutTestAssert(bool condition, const char *file, int line, const char *msg) {
   RETURN_IF_FAILED;
