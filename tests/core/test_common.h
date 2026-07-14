@@ -8,27 +8,27 @@ ClutSB test_message;
 ClutSB output;
 
 BEFORE_ALL_HOOK(setup) {
-  clut_sb_init(&output);
-  clut_sb_init(&test_message);
+  test_message = (ClutSB){0};
+  output = (ClutSB){0};
 }
 
 AFTER_EACH_HOOK(dispatch_fail_flush) {
   if (Clut.current.failed) {
     clut_dispatch_fail_flush(&output);
-    clut_sb_clear(&output);
+    clut_da_clear(&output);
   }
 }
 
 AFTER_ALL_HOOK(teardown) {
-  clut_sb_free(&output);
-  clut_sb_free(&test_message);
+  clut_da_free(&output);
+  clut_da_free(&test_message);
 }
 
 static void record_failure(const char *file, int line) {
   ClutLogRecord record;
   clut_log_record_capture(&record, file, line);
   clut_dispatch_fail_append(&record, &output, &test_message);
-  clut_sb_clear(&test_message);
+  clut_da_clear(&test_message);
 }
 
 static bool clut_validate_pass(bool failed, const char *expr, const char *file, int line) {
@@ -39,8 +39,8 @@ static bool clut_validate_pass(bool failed, const char *expr, const char *file, 
     clut_sb_append(&test_message, "\n  msg : ");
     clut_sb_append(&test_message, clut_msg);
     record_failure(file, line);
-    clut_sb_clear(&Clut.runner.output);
-    clut_sb_clear(&Clut.runner.test_message);
+    clut_da_clear(&Clut.runner.output);
+    clut_da_clear(&Clut.runner.test_message);
     return true;
   }
   return false;
@@ -63,13 +63,13 @@ static bool clut_validate_fail(bool failed, const char *expr, const char *expect
       clut_sb_append(&test_message, "\n  actual  : ");
       clut_sb_append(&test_message, actual_msg);
       record_failure(file, line);
-      clut_sb_clear(&Clut.runner.output);
-      clut_sb_clear(&Clut.runner.test_message);
+      clut_da_clear(&Clut.runner.output);
+      clut_da_clear(&Clut.runner.test_message);
       return true;
     }
   }
-  clut_sb_clear(&Clut.runner.output);
-  clut_sb_clear(&Clut.runner.test_message);
+  clut_da_clear(&Clut.runner.output);
+  clut_da_clear(&Clut.runner.test_message);
   return false;
 }
 

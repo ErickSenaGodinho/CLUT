@@ -90,17 +90,29 @@ typedef void (*ClutRepeatedTestFn)(ClutRepeatedTestInput);
 
 /* Core data structures */
 typedef struct {
-  size_t total_tests;
-  size_t passed;
-  size_t failures;
-  long start_time;
-} ClutSuite;
-
-typedef struct {
   size_t global_failures;
   ClutSB output;
   ClutSB test_message;
 } ClutRunner;
+
+typedef struct {
+  ClutTestFn fn;
+  const char *name;
+} ClutPendingTest;
+
+typedef struct {
+  ClutPendingTest *items;
+  size_t count;
+  size_t capacity;
+} ClutPendingTests;
+
+typedef struct {
+  size_t total_tests;
+  size_t passed;
+  size_t failures;
+  long start_time;
+  ClutPendingTests pending_tests;
+} ClutSuite;
 
 typedef struct {
   ClutHookFn before_all;
@@ -156,7 +168,7 @@ typedef struct {
 
 /* Test Suite lifecycle macros */
 #define SUITE_BEGIN() ClutSuiteBegin()
-#define RUN_TEST(test_name) ClutRunTest(CLUT_RUN_TEST_NAME(test_name), #test_name)
+#define RUN_TEST(test_name) ClutSuiteAddTest(CLUT_RUN_TEST_NAME(test_name), #test_name)
 #define SUITE_END() ClutSuiteEnd()
 
 /* Hook definition / Hook registration macros */
@@ -328,7 +340,7 @@ CLUT_API void ClutRunnerBegin();
 CLUT_API int ClutRunnerEnd();
 
 CLUT_API void ClutSuiteBegin();
-CLUT_API void ClutRunTest(ClutTestFn test_fn, const char *test_name);
+CLUT_API void ClutSuiteAddTest(ClutTestFn test_fn, const char *test_name);
 CLUT_API void ClutSuiteEnd();
 
 CLUT_API void ClutSetBeforeAll(ClutHookFn hook_fn);
@@ -472,7 +484,18 @@ CLUT_API void ClutTestAssertWithinDoubleArray(const double *expected, double del
 
 #define clut_da_foreach(Type, it, da) for (Type *it = (da)->items; it < (da)->items + (da)->count; ++it)
 
-#define clut_da_free(da) CLUT_FREE((da).items)
+#define clut_da_free(da)                                                                                                                                                                                                                                           \
+  do {                                                                                                                                                                                                                                                             \
+    CLUT_FREE((da)->items);                                                                                                                                                                                                                                        \
+    (da)->items = NULL;                                                                                                                                                                                                                                            \
+    (da)->count = 0;                                                                                                                                                                                                                                               \
+    (da)->capacity = 0;                                                                                                                                                                                                                                            \
+  } while (0)
+
+#define clut_da_clear(da)                                                                                                                                                                                                                                          \
+  do {                                                                                                                                                                                                                                                             \
+    (da)->count = 0;                                                                                                                                                                                                                                               \
+  } while (0)
 
 /* String Builder Implementation */
 static void clut_sb_append(ClutSB *sb, const char *str) {
@@ -496,21 +519,6 @@ static void clut_sb_appendf(ClutSB *sb, const char *fmt, ...) {
   vsnprintf(sb->items + sb->count, (size_t)n + 1, fmt, args);
   va_end(args);
   sb->count += (size_t)n;
-}
-
-static void clut_sb_init(ClutSB *sb) {
-  sb->items = NULL;
-  sb->count = 0;
-  sb->capacity = 0;
-}
-
-static void clut_sb_clear(ClutSB *sb) { sb->count = 0; }
-
-static void clut_sb_free(ClutSB *sb) {
-  clut_da_free(*sb);
-  sb->items = NULL;
-  sb->count = 0;
-  sb->capacity = 0;
 }
 
 static const char *clut_sb_cstr(ClutSB *sb) {
@@ -734,46 +742,44 @@ static void clut_append_message_array_prefix(size_t index) {
     }                                                                                                                                                                                                                                                              \
   } while (0)
 
-static void ClutRunnerReset() { Clut.runner.global_failures = 0; }
+CLUT_API void ClutRunnerBegin() { Clut.runner = (ClutRunner){0}; }
 
-CLUT_API void ClutRunnerBegin() { ClutRunnerReset(); }
-CLUT_API int ClutRunnerEnd() { return Clut.runner.global_failures > 255 ? 255 : (int)Clut.runner.global_failures; }
+CLUT_API int ClutRunnerEnd() {
+  clut_da_free(&Clut.runner.output);
+  clut_da_free(&Clut.runner.test_message);
+  clut_da_free(&Clut.suite.pending_tests);
+  return Clut.runner.global_failures > 255 ? 255 : (int)Clut.runner.global_failures;
+}
 
-static void ClutSuiteReset(void) {
+static void clut_suite_clear(void) {
   Clut.suite.total_tests = 0;
-  Clut.suite.failures = 0;
   Clut.suite.passed = 0;
+  Clut.suite.failures = 0;
   Clut.suite.start_time = 0;
-}
-
-static void ClutHooksReset() {
-  Clut.hooks.before_all = NULL;
-  Clut.hooks.before_each = NULL;
-  Clut.hooks.after_all = NULL;
-  Clut.hooks.after_each = NULL;
-}
-
-static void ClutTestReset(void) {
-  Clut.current.name = NULL;
-  Clut.current.failed = false;
-  Clut.current.iteration_index = -1;
-  clut_sb_clear(&Clut.runner.output);
-  clut_sb_clear(&Clut.runner.test_message);
+  clut_da_clear(&Clut.suite.pending_tests);
 }
 
 CLUT_API void ClutSuiteBegin(void) {
-  clut_sb_init(&Clut.runner.output);
-  clut_sb_init(&Clut.runner.test_message);
-  Clut.suite.start_time = clock();
+  clut_suite_clear();
+  Clut.hooks = (ClutHooks){0};
 }
 
-CLUT_API void ClutRunTest(ClutTestFn run_test_fn, const char *test_name) {
-  ClutTestReset();
+CLUT_API void ClutSuiteAddTest(ClutTestFn run_test_fn, const char *test_name) {
+  ClutPendingTest pending_test = (ClutPendingTest){run_test_fn, test_name};
+  clut_da_append(&Clut.suite.pending_tests, pending_test);
+  Clut.suite.total_tests = Clut.suite.pending_tests.count;
+}
 
-  if (Clut.suite.total_tests == 0 && Clut.hooks.before_all)
-    Clut.hooks.before_all();
+static void clut_test_reset(void) {
+  Clut.current.name = NULL;
+  Clut.current.failed = false;
+  Clut.current.iteration_index = -1;
+  clut_da_clear(&Clut.runner.output);
+  clut_da_clear(&Clut.runner.test_message);
+}
 
-  Clut.suite.total_tests++;
+static void clut_run_pending_test(ClutTestFn run_test_fn, const char *test_name) {
+  clut_test_reset();
 
   if (Clut.hooks.before_each)
     Clut.hooks.before_each();
@@ -798,12 +804,15 @@ CLUT_API void ClutRunTest(ClutTestFn run_test_fn, const char *test_name) {
 
 CLUT_API void ClutSuiteEnd(void) {
   if (Clut.suite.total_tests == 0) {
-    ClutSuiteReset();
-    ClutHooksReset();
-    clut_sb_free(&Clut.runner.output);
-    clut_sb_free(&Clut.runner.test_message);
     return;
   }
+
+  Clut.suite.start_time = clock();
+
+  if (Clut.hooks.before_all)
+    Clut.hooks.before_all();
+
+  clut_da_foreach(ClutPendingTest, test, &Clut.suite.pending_tests) { clut_run_pending_test(test->fn, test->name); }
 
   double total_time = ClutElapsedSeconds(Clut.suite.start_time);
 
@@ -813,12 +822,8 @@ CLUT_API void ClutSuiteEnd(void) {
   ClutSuiteResult result = {Clut.suite.total_tests, Clut.suite.passed, Clut.suite.failures, total_time};
   clut_dispatch_suite_end(&result);
 
-  clut_sb_free(&Clut.runner.output);
-  clut_sb_free(&Clut.runner.test_message);
-
   Clut.runner.global_failures += Clut.suite.failures;
-  ClutSuiteReset();
-  ClutHooksReset();
+  clut_suite_clear();
 }
 
 CLUT_API void ClutSetBeforeAll(ClutHookFn hook_fn) { Clut.hooks.before_all = hook_fn; }
@@ -845,7 +850,7 @@ CLUT_API void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t repetitions
   volatile ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = repetitions};
   volatile bool failed = false;
   for (volatile size_t i = 1; i <= repetitions; ++i) {
-    clut_sb_clear(&Clut.runner.test_message);
+    clut_da_clear(&Clut.runner.test_message);
     Clut.current.iteration_index = (int)i;
     input.current_repetition = i;
     CLUT_RUN_GUARDED(test_fn(input));
@@ -861,7 +866,7 @@ CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_
   volatile ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = repetitions};
   volatile size_t failures = 0;
   for (volatile size_t i = 1; i <= repetitions; ++i) {
-    clut_sb_clear(&Clut.runner.test_message);
+    clut_da_clear(&Clut.runner.test_message);
     Clut.current.iteration_index = (int)i;
     input.current_repetition = i;
     CLUT_RUN_GUARDED(test_fn(input));
