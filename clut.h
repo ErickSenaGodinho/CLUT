@@ -556,7 +556,54 @@ static void clut_log_record_capture(ClutLogRecord *record, const char *file, int
   record->iteration_index = Clut.current.iteration_index;
 }
 
-#ifdef CLUT_OUTPUT_GITHUB
+#ifdef CLUT_OUTPUT_TAP
+static size_t clut_tap_test_index = 0;
+static bool clut_tap_plan_printed = false;
+
+static void clut_backend_tap_print_plan(void) {
+  if (!clut_tap_plan_printed) {
+    fprintf(CLUT_STREAM_DEFAULT, "1..%zu\n", Clut.suite.total_tests);
+    clut_tap_plan_printed = true;
+  }
+}
+
+static void clut_backend_tap_on_pass(const char *test_name, double elapsed_seconds) {
+  clut_backend_tap_print_plan();
+  clut_tap_test_index++;
+  fprintf(CLUT_STREAM_DEFAULT, "ok %zu - %s # (%.3fs)\n", clut_tap_test_index, test_name, elapsed_seconds);
+}
+
+static void clut_backend_tap_on_fail_header() {
+  clut_backend_tap_print_plan();
+  clut_tap_test_index++;
+  double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
+  fprintf(CLUT_STREAM_DEFAULT, "not ok %zu - %s # (%.3fs)\n", clut_tap_test_index, Clut.current.name, elapsed_seconds);
+}
+
+static void clut_backend_tap_append_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
+  clut_sb_appendf(output, "# %s:%d: %s", record->file, record->line, clut_sb_cstr(test_message));
+  if (record->iteration_index >= 0) {
+    clut_sb_appendf(output, " [iteration %d]", record->iteration_index);
+  }
+  clut_sb_appendc(output, '\n');
+}
+
+static void clut_backend_tap_flush_failures(ClutSB *output) { fprintf(CLUT_STREAM_DEFAULT, "%s", clut_sb_cstr(output)); }
+
+static void clut_backend_tap_on_suite_end(const ClutSuiteResult *result) {
+  clut_backend_tap_print_plan();
+  fprintf(CLUT_STREAM_DEFAULT, "# Tests run: %zu, Passed: %zu, Failed: %zu, Time: %.3fs\n", result->total_tests, result->passed, result->failures, result->total_seconds);
+  clut_tap_test_index = 0;
+  clut_tap_plan_printed = false;
+}
+
+#define clut_dispatch_pass(test_name, elapsed_seconds) clut_backend_tap_on_pass((test_name), (elapsed_seconds))
+#define clut_dispatch_fail_header() clut_backend_tap_on_fail_header()
+#define clut_dispatch_fail_append(record, output, test_message) clut_backend_tap_append_failure((record), (output), (test_message))
+#define clut_dispatch_fail_flush(output) clut_backend_tap_flush_failures((output))
+#define clut_dispatch_suite_end(result) clut_backend_tap_on_suite_end((result))
+
+#elif defined(CLUT_OUTPUT_GITHUB)
 static void clut_backend_github_on_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "::notice title=PASS::%s (%.3fs)\n", test_name, elapsed_seconds); }
 static void clut_backend_github_on_fail_header() {
   double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
