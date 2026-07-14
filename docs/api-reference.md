@@ -9,12 +9,12 @@ These wrap the `main()` of your test binary and control the overall test run.
 
 - `RUNNER_BEGIN()` - initializes the runner. Call once, before any suite.
 - `SUITE_BEGIN()` - starts a suite/group of tests.
-- `RUN_TEST(name)` - runs a single test registered with `TEST`, `REPEATED_TEST`,
-  `REPEATED_TEST_WITH_THRESHOLD`, or `PARAM_TEST`.
-- `SUITE_END()` - closes the current suite.
+- `RUN_TEST(name)` - registers a test (created with `TEST`, `REPEATED_TEST`,
+  `REPEATED_TEST_WITH_THRESHOLD`, or `PARAM_TEST`) to run when the suite ends.
+- `SUITE_END()` - runs all registered tests and closes the current suite.
 - `RUNNER_END()` - prints the final summary and returns the number of failed tests
   (limited to `255`). Use as the return value of `main()`.
-
+  
 ```c
 int main() {
   RUNNER_BEGIN();

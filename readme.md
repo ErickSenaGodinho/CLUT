@@ -54,7 +54,7 @@ CLUT keeps things simple:
 
 - Single header integration
 - No external dependencies
-- Multiple output modes
+- Multiple output modes (Default, GitHub Actions, TAP)
 - Hooks for test setup and teardown
 - Support for repeated and parameterized tests
 - Optional CLI tool to auto-generate the test runner from your test files
