@@ -58,12 +58,10 @@
 #define CLUT_STR_WAS " but was "
 
 /* String Builder */
-#define CLUT_SB_INIT_CAP 256
-
 typedef struct {
-  char *data;
-  size_t len;
-  size_t cap;
+  char *items;
+  size_t count;
+  size_t capacity;
 } ClutSB;
 
 /* Suite Result */
@@ -147,10 +145,10 @@ typedef struct {
   void CLUT_RUN_TEST_NAME(name)(void) { ClutRunRepeatedTestWithThreshold(CLUT_TEST_NAME(name), repetitions, failure_threshold); }                                                                                                                                  \
   void CLUT_TEST_NAME(name)(ClutRepeatedTestInput input)
 
-#define PARAM_TEST(name, type, ...)                                                                                                                                                                                                                                \
-  void CLUT_TEST_NAME(name)(type input);                                                                                                                                                                                                                           \
-  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunParamTest(CLUT_TEST_NAME(name), type, __VA_ARGS__); }                                                                                                                                                               \
-  void CLUT_TEST_NAME(name)(type input)
+#define PARAM_TEST(name, Type, ...)                                                                                                                                                                                                                                \
+  void CLUT_TEST_NAME(name)(Type input);                                                                                                                                                                                                                           \
+  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunParamTest(CLUT_TEST_NAME(name), Type, __VA_ARGS__); }                                                                                                                                                               \
+  void CLUT_TEST_NAME(name)(Type input)
 
 /* Test Runner lifecycle macros */
 #define RUNNER_BEGIN() ClutRunnerBegin()
@@ -341,7 +339,7 @@ CLUT_API void ClutSetAfterEach(ClutHookFn hook_fn);
 CLUT_API void ClutRunSimpleTest(ClutTestFn test_fn);
 CLUT_API void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t repetitions);
 CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold);
-#define ClutRunParamTest(test_fn, type, ...)
+#define ClutRunParamTest(test_fn, Type, ...)
 
 CLUT_API void ClutTestAssert(bool condition, const char *file, const int line, const char *msg);
 CLUT_API void ClutTestAssertEqualChar(char expected, char actual, const char *file, const int line, const char *msg);
@@ -442,32 +440,49 @@ CLUT_API void ClutTestAssertWithinDoubleArray(const double *expected, double del
 #define CLUT_BLUE_TEXT(text) text
 #endif
 
-CLUT_INTERNAL_STATE ClutData Clut = {0};
+#ifndef CLUT_DA_INIT_CAP
+#define CLUT_DA_INIT_CAP 256
+#endif
+
+#define clut_da_reserve(da, expected_capacity)                                                                                                                                                                                                                     \
+  do {                                                                                                                                                                                                                                                             \
+    if ((expected_capacity) > (da)->capacity) {                                                                                                                                                                                                                    \
+      if ((da)->capacity == 0) {                                                                                                                                                                                                                                   \
+        (da)->capacity = CLUT_DA_INIT_CAP;                                                                                                                                                                                                                         \
+      }                                                                                                                                                                                                                                                            \
+      while ((expected_capacity) > (da)->capacity) {                                                                                                                                                                                                               \
+        (da)->capacity *= 2;                                                                                                                                                                                                                                       \
+      }                                                                                                                                                                                                                                                            \
+      (da)->items = CLUT_REALLOC((da)->items, (da)->capacity * sizeof(*(da)->items));                                                                                                                                                                              \
+    }                                                                                                                                                                                                                                                              \
+  } while (0)
+
+#define clut_da_append(da, item)                                                                                                                                                                                                                                   \
+  do {                                                                                                                                                                                                                                                             \
+    clut_da_reserve((da), (da)->count + 1);                                                                                                                                                                                                                        \
+    (da)->items[(da)->count++] = (item);                                                                                                                                                                                                                           \
+  } while (0)
+
+#define clut_da_append_many(da, new_items, new_items_count)                                                                                                                                                                                                        \
+  do {                                                                                                                                                                                                                                                             \
+    clut_da_reserve((da), (da)->count + (new_items_count));                                                                                                                                                                                                        \
+    memcpy((da)->items + (da)->count, (new_items), (new_items_count) * sizeof(*(da)->items));                                                                                                                                                                      \
+    (da)->count += (new_items_count);                                                                                                                                                                                                                              \
+  } while (0)
+
+#define clut_da_foreach(Type, it, da) for (Type *it = (da)->items; it < (da)->items + (da)->count; ++it)
+
+#define clut_da_free(da) CLUT_FREE((da).items)
 
 /* String Builder Implementation */
-static void clut_sb_grow(ClutSB *sb, size_t needed) {
-  if (sb->len + needed <= sb->cap)
-    return;
-  size_t new_cap = sb->cap ? sb->cap * 2 : CLUT_SB_INIT_CAP;
-  while (new_cap < sb->len + needed)
-    new_cap *= 2;
-  sb->data = (char *)CLUT_REALLOC(sb->data, new_cap);
-  sb->cap = new_cap;
-}
-
 static void clut_sb_append(ClutSB *sb, const char *str) {
   if (!str)
     str = "(null)";
   size_t n = strlen(str);
-  clut_sb_grow(sb, n);
-  memcpy(sb->data + sb->len, str, n);
-  sb->len += n;
+  clut_da_append_many(sb, str, n);
 }
 
-static void clut_sb_appendc(ClutSB *sb, char c) {
-  clut_sb_grow(sb, 1);
-  sb->data[sb->len++] = c;
-}
+static void clut_sb_appendc(ClutSB *sb, char c) { clut_da_append(sb, c); }
 
 static void clut_sb_appendf(ClutSB *sb, const char *fmt, ...) {
   va_list args;
@@ -476,34 +491,34 @@ static void clut_sb_appendf(ClutSB *sb, const char *fmt, ...) {
   va_end(args);
   if (n <= 0)
     return;
-  clut_sb_grow(sb, (size_t)n);
+  clut_da_reserve(sb, sb->count + (size_t)n + 1);
   va_start(args, fmt);
-  vsnprintf(sb->data + sb->len, (size_t)n + 1, fmt, args);
+  vsnprintf(sb->items + sb->count, (size_t)n + 1, fmt, args);
   va_end(args);
-  sb->len += (size_t)n;
+  sb->count += (size_t)n;
 }
 
 static void clut_sb_init(ClutSB *sb) {
-  sb->data = NULL;
-  sb->len = 0;
-  sb->cap = 0;
+  sb->items = NULL;
+  sb->count = 0;
+  sb->capacity = 0;
 }
 
-static void clut_sb_clear(ClutSB *sb) { sb->len = 0; }
+static void clut_sb_clear(ClutSB *sb) { sb->count = 0; }
 
 static void clut_sb_free(ClutSB *sb) {
-  CLUT_FREE(sb->data);
-  sb->data = NULL;
-  sb->len = 0;
-  sb->cap = 0;
+  clut_da_free(*sb);
+  sb->items = NULL;
+  sb->count = 0;
+  sb->capacity = 0;
 }
 
 static const char *clut_sb_cstr(ClutSB *sb) {
-  if (!sb->data)
+  if (!sb->items)
     return "";
-  clut_sb_grow(sb, 1);
-  sb->data[sb->len] = '\0';
-  return sb->data;
+  clut_da_reserve(sb, sb->count + 1);
+  sb->items[sb->count] = '\0';
+  return sb->items;
 }
 
 /* Helpers */
@@ -523,6 +538,8 @@ static inline bool clut_double_equal(double expected, double actual) {
 }
 
 static inline double ClutElapsedSeconds(long start) { return ((double)(clock() - start)) / CLOCKS_PER_SEC; }
+
+CLUT_INTERNAL_STATE ClutData Clut = {0};
 
 /* Log Helpers */
 static void clut_log_record_capture(ClutLogRecord *record, const char *file, int line) {
@@ -859,9 +876,9 @@ CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_
 }
 
 #undef ClutRunParamTest
-#define ClutRunParamTest(test_fn, type, ...)                                                                                                                                                                                                                       \
+#define ClutRunParamTest(test_fn, Type, ...)                                                                                                                                                                                                                       \
   do {                                                                                                                                                                                                                                                             \
-    type input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                                \
+    Type input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                                \
     size_t n = sizeof(input_arr) / sizeof(input_arr[0]);                                                                                                                                                                                                           \
     volatile bool failed = false;                                                                                                                                                                                                                                  \
     for (volatile size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                      \
