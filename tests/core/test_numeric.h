@@ -3,7 +3,7 @@
 
 #include "test_common.h"
 
-TEST(test_char_comparisons) {
+TEST(char_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_CHAR('\n', '\n'));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_CHAR('A', 'B'), "Expected 'A' (0x41) Received 'B' (0x42)");
 
@@ -38,7 +38,7 @@ TEST(test_char_comparisons) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_CHAR_MESSAGE('A', 'B', "custom lte char"), "custom lte char");
 }
 
-TEST(test_integer_comparisons) {
+TEST(integer_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_INT(10, 10));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_INT(10, 20), "Expected 10 Received 20");
 
@@ -69,7 +69,7 @@ TEST(test_integer_comparisons) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_INT_MESSAGE(5, 10, "custom lte int"), "custom lte int");
 }
 
-TEST(test_uint_comparisons) {
+TEST(uint_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_UINT(10, 10));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_UINT(10, 20), "Expected 10 Received 20");
 
@@ -100,7 +100,7 @@ TEST(test_uint_comparisons) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_UINT_MESSAGE(5, 10, "custom lte uint"), "custom lte uint");
 }
 
-TEST(test_floating_point_numbers) {
+TEST(floating_point_numbers) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT(3.14f, 3.14f));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_FLOAT(3.14f, 2.71f), "Expected 3.14000 Received 2.71000");
 
@@ -173,7 +173,7 @@ TEST(test_floating_point_numbers) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE_MESSAGE(1.0, 2.0, "custom lte double"), "custom lte double");
 }
 
-TEST(test_floating_point_zero) {
+TEST(floating_point_zero) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_FLOAT(0.0f, 0.0f));
   VALIDATE_PASS(TEST_ASSERT_EQUAL_DOUBLE(0.0, 0.0));
 
@@ -191,7 +191,7 @@ TEST(test_floating_point_zero) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_THAN_DOUBLE(0.0, 0.0));
 }
 
-TEST(test_floating_point_precision_accumulation) {
+TEST(floating_point_precision_accumulation) {
   float accumulated_float = 0.0f;
   for (int i = 0; i < 10; i++)
     accumulated_float += 0.1f;
@@ -239,7 +239,7 @@ TEST(test_floating_point_precision_accumulation) {
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(accumulated_double, expected_double + 1.0));
 }
 
-TEST(test_within_comparisons) {
+TEST(within_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 52));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 55));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_CHAR(50, 5, 45));

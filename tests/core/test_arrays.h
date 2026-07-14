@@ -3,7 +3,7 @@
 
 #include "test_common.h"
 
-TEST(test_char_array) {
+TEST(char_array) {
   char exp[] = "ClutTest";
   char act_ok[] = "ClutTest";
   char act_diff_end[] = "ClutTesX";
@@ -27,7 +27,7 @@ TEST(test_char_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_CHAR_ARRAY_MESSAGE(exp, act_diff_end, 8, "custom char array"), "custom char array");
 }
 
-TEST(test_int_array) {
+TEST(int_array) {
   int arr1[] = {-10, 20, -30, 40, -50};
   int arr2[] = {-10, 20, -30, 40, -50};
   int arr3[] = {-10, -99, -30, 40, -50};
@@ -53,7 +53,7 @@ TEST(test_int_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(arr1, arr3, 5, "custom int array"), "custom int array");
 }
 
-TEST(test_uint_array) {
+TEST(uint_array) {
   size_t arr1[] = {10, 20, 30, 40, 50};
   size_t arr2[] = {10, 20, 30, 40, 50};
   size_t arr3[] = {10, 99, 30, 40, 50};
@@ -79,7 +79,7 @@ TEST(test_uint_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_UINT_ARRAY_MESSAGE(arr1, arr3, 5, "custom uint array"), "custom uint array");
 }
 
-TEST(test_float_array) {
+TEST(float_array) {
   float sum = 0.0f;
   for (int i = 0; i < 10; i++)
     sum += 0.1f;
@@ -112,7 +112,7 @@ TEST(test_float_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_FLOAT_ARRAY_MESSAGE(exp, act_diff_start, 3, "custom float array"), "custom float array");
 }
 
-TEST(test_double_array) {
+TEST(double_array) {
   double sum = 0.0;
   for (int i = 0; i < 10000; i++)
     sum += 0.1;
@@ -145,7 +145,7 @@ TEST(test_double_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_DOUBLE_ARRAY_MESSAGE(exp, act_diff_start, 3, "custom double array"), "custom double array");
 }
 
-TEST(test_string_array) {
+TEST(string_array) {
   const char *exp[] = {"clut", "test", "framework"};
   const char *act_ok[] = {"clut", "test", "framework"};
   const char *act_diff_start[] = {"XXXX", "test", "framework"};
@@ -176,7 +176,7 @@ TEST(test_string_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_STRING_ARRAY_MESSAGE(exp, act_diff_start, 3, "custom string array"), "custom string array");
 }
 
-TEST(test_within_char_array) {
+TEST(within_char_array) {
   char exp[] = {'2', 'd', 20};
   char act_ok[] = {'4', 'a', 23};
   char act_fail[] = {'2', 'd', 26};
@@ -195,7 +195,7 @@ TEST(test_within_char_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_CHAR_ARRAY_MESSAGE(exp, 5, act_fail, 3, "custom within char array"), "custom within char array");
 }
 
-TEST(test_within_int_array) {
+TEST(within_int_array) {
   int exp[] = {100, -50, 0, 200};
   int act_ok[] = {105, -45, 10, 195};
   int act_fail[] = {105, -45, 11, 195};
@@ -214,7 +214,7 @@ TEST(test_within_int_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_INT_ARRAY_MESSAGE(exp, 10, act_fail, 4, "custom within int array"), "custom within int array");
 }
 
-TEST(test_within_uint_array) {
+TEST(within_uint_array) {
   size_t exp[] = {1000, 500, 250};
   size_t act_ok[] = {1040, 550, 250};
   size_t act_fail[] = {1040, 551, 250};
@@ -233,7 +233,7 @@ TEST(test_within_uint_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_UINT_ARRAY_MESSAGE(exp, 50, act_fail, 3, "custom within uint array"), "custom within uint array");
 }
 
-TEST(test_within_float_array) {
+TEST(within_float_array) {
   float exp[] = {1.0f, 5.5f, 10.0f};
   float act_ok[] = {1.05f, 5.45f, 10.09f};
   float act_fail[] = {1.05f, 5.45f, 10.11f};
@@ -252,7 +252,7 @@ TEST(test_within_float_array) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_FLOAT_ARRAY_MESSAGE(exp, 0.1f, act_fail, 3, "custom within float array"), "custom within float array");
 }
 
-TEST(test_within_double_array) {
+TEST(within_double_array) {
   double exp[] = {1.0, 5.5, 10.0};
   double act_ok[] = {1.05, 5.45, 10.09};
   double act_fail[] = {1.05, 5.45, 10.11};

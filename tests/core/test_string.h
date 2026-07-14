@@ -3,7 +3,7 @@
 
 #include "test_common.h"
 
-TEST(test_strings) {
+TEST(strings) {
   VALIDATE_PASS(TEST_ASSERT_EQUAL_STRING("clut", "clut"));
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_STRING("clut", "different"), "Expected \"different\" to be equal to \"clut\"");
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_STRING("clut", NULL), "Expected (null) to be equal to \"clut\"");

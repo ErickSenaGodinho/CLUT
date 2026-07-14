@@ -3,7 +3,7 @@
 
 #include "test_common.h"
 
-TEST(test_boolean_and_basic) {
+TEST(boolean_and_basic) {
   int val = 1;
   VALIDATE_PASS(TEST_ASSERT(val == 1));
   VALIDATE_FAIL_MSG(TEST_ASSERT(val == 0), "Expression Is False -> val == 0");
@@ -25,7 +25,7 @@ TEST(test_boolean_and_basic) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_UNLESS_MESSAGE(true, "custom unless"), "custom unless");
 }
 
-TEST(test_pointers_and_nullness) {
+TEST(pointers_and_nullness) {
   int dummy = 42;
   int *ptr = &dummy;
 
@@ -46,7 +46,7 @@ TEST(test_pointers_and_nullness) {
   VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_PTR_MESSAGE(ptr, ptr, "custom ptr"), "custom ptr");
 }
 
-TEST(test_memory) {
+TEST(memory) {
   typedef struct {
     int x;
     int y;
