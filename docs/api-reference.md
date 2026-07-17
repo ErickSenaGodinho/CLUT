@@ -14,7 +14,7 @@ These wrap the `main()` of your test binary and control the overall test run.
 - `SUITE_END()` - runs all registered tests and closes the current suite.
 - `RUNNER_END()` - prints the final summary and returns the number of failed tests
   (limited to `255`). Use as the return value of `main()`.
-  
+
 ```c
 int main() {
   RUNNER_BEGIN();

@@ -14,7 +14,7 @@ BEFORE_ALL_HOOK(setup) {
 
 AFTER_EACH_HOOK(dispatch_fail_flush) {
   if (Clut.current.failed) {
-    clut_dispatch_fail_flush(&output);
+    clut_output_flush_failures(&output);
     clut_da_clear(&output);
   }
 }
@@ -27,7 +27,7 @@ AFTER_ALL_HOOK(teardown) {
 static void record_failure(const char *file, int line) {
   ClutLogRecord record;
   clut_log_record_capture(&record, file, line);
-  clut_dispatch_fail_append(&record, &output, &test_message);
+  clut_output_append_failure(&record, &output, &test_message);
   clut_da_clear(&test_message);
 }
 
