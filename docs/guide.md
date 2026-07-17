@@ -108,6 +108,7 @@ test_strings.c:7:Strings:Expected "Hella" to be equal to "Hello"
 Tests run:  2
 Passed:     1
 Failed:     1
+Skipped:    0
 --------------------------------
 Total time: 0.000s
 ```
@@ -118,7 +119,7 @@ Total time: 0.000s
 ::notice title=PASS::Addition (0.000s)
 ::notice title=FAIL::Strings (0.000s)
 ::error file=test_strings.c,line=7,title=Strings::Expected "Hella" to be equal to "Hello"
-::notice title=Suite Results::Tests=2 Passed=1 Failed=1 Time=0.000s
+::notice title=Suite Results::Tests=2 Passed=1 Failed=1 Skipped=0 Time=0.000s
 ```
 
 ### TAP
@@ -127,5 +128,5 @@ Total time: 0.000s
 ok 1 - Addition # (0.000s)
 not ok 2 - Strings # (0.000s)
 # test_strings.c:7: Expected "Hella" to be equal to "Hello"
-# Tests run: 2, Passed: 1, Failed: 1, Time: 0.000s
+# Tests run: 2, Passed: 1, Failed: 1, Skipped: 0, Time: 0.000s
 ```

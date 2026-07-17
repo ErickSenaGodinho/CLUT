@@ -54,13 +54,17 @@ int main() {
 
 See [guide.md](guide.md#repeated-tests) for full examples of repeated and parameterized tests.
 
+### Test Control
+
+- `TEST_FAIL(message)`
+- `TEST_SKIP()`
+
 ## Boolean Assertions
 
 - `TEST_ASSERT(condition)`
 - `TEST_ASSERT_TRUE(condition)`
 - `TEST_ASSERT_FALSE(condition)`
 - `TEST_ASSERT_UNLESS(condition)`
-- `TEST_FAIL(message)`
 
 ## Pointer Assertions
 

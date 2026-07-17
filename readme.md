@@ -29,9 +29,10 @@ Output:
 ```
 [ PASS ] Addition                                      0.000s
 --------------------------------
-Tests run:  1
+Tests:      1
 Passed:     1
 Failed:     0
+Skipped:    0
 --------------------------------
 Total time: 0.000s
 ```
