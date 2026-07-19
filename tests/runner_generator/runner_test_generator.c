@@ -1,8 +1,12 @@
 #define CLUT_IMPLEMENTATION
 
+#include "test_common.h"
 #include "test_lexer.h"
 #include "test_parser.h"
 #include "test_path_utilities.h"
+#include "test_string_list.h"
+#include "test_wildcard_expansion.h"
+#include "test_wildcard_match.h"
 
 int main(void){
 	RUNNER_BEGIN();
@@ -35,6 +39,10 @@ int main(void){
 		RUN_TEST(path_is_separator_slash);
 		RUN_TEST(path_is_absolute_root);
 		RUN_TEST(path_normalize_separators_backslashes);
+		RUN_TEST(path_basename_nested);
+		RUN_TEST(path_basename_no_separator);
+		RUN_TEST(path_basename_trailing_slash);
+		RUN_TEST(path_basename_root_file);
 		RUN_TEST(path_dirname_nested);
 		RUN_TEST(path_dirname_no_separator);
 		RUN_TEST(path_dirname_root);
@@ -48,6 +56,40 @@ int main(void){
 		RUN_TEST(path_relative_nested);
 		RUN_TEST(path_relative_same_directory);
 		RUN_TEST(path_relative_different_roots);
+	SUITE_END();
+
+	SUITE_BEGIN();
+		RUN_TEST(str_dup_copies_content);
+		RUN_TEST(str_dup_independent_buffer);
+		RUN_TEST(string_list_append_single);
+		RUN_TEST(string_list_append_many_preserves_order);
+		RUN_TEST(string_list_append_grows_past_init_cap);
+		RUN_TEST(string_list_free_resets_state);
+		RUN_TEST(string_list_free_empty_list_is_safe);
+	SUITE_END();
+
+	SUITE_BEGIN();
+		SET_BEFORE_ALL(wildcard_expansion_setup);
+		SET_AFTER_ALL(wildcard_expansion_teardown);
+
+		RUN_TEST(list_directory_lists_all_entries);
+		RUN_TEST(list_directory_missing_dir_fails);
+		RUN_TEST(expand_wildcard_matches_subset);
+		RUN_TEST(expand_wildcard_matches_all_with_star);
+		RUN_TEST(expand_wildcard_no_match_appends_nothing);
+	SUITE_END();
+
+	SUITE_BEGIN();
+		RUN_TEST(wildcard_match_exact);
+		RUN_TEST(wildcard_match_star_matches_all);
+		RUN_TEST(wildcard_match_star_suffix);
+		RUN_TEST(wildcard_match_star_prefix);
+		RUN_TEST(wildcard_match_star_middle);
+		RUN_TEST(wildcard_match_question_mark);
+		RUN_TEST(wildcard_match_empty_pattern_empty_string);
+		RUN_TEST(wildcard_match_empty_pattern_nonempty_string);
+		RUN_TEST(wildcard_match_pattern_longer_than_string);
+		RUN_TEST(wildcard_match_multiple_stars);
 	SUITE_END();
 
 	return RUNNER_END();

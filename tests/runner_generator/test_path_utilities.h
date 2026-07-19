@@ -20,6 +20,14 @@ TEST(path_normalize_separators_backslashes) {
   TEST_ASSERT_EQUAL_STRING("a/b/c", buf);
 }
 
+TEST(path_basename_nested) { TEST_ASSERT_EQUAL_STRING("c.txt", path_basename("/a/b/c.txt")); }
+
+TEST(path_basename_no_separator) { TEST_ASSERT_EQUAL_STRING("file.txt", path_basename("file.txt")); }
+
+TEST(path_basename_trailing_slash) { TEST_ASSERT_EQUAL_STRING("", path_basename("/a/b/")); }
+
+TEST(path_basename_root_file) { TEST_ASSERT_EQUAL_STRING("file.txt", path_basename("/file.txt")); }
+
 TEST(path_dirname_nested) {
   char out[CLUT_PATH_MAX];
   bool ok = path_dirname("/a/b/c.txt", out, sizeof(out));

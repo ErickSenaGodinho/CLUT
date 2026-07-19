@@ -8,11 +8,76 @@
 #ifdef _WIN32
 #include <direct.h>
 #include <io.h>
+#include <windows.h>
 #else
+#include <dirent.h>
 #include <unistd.h>
 #endif
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+/* Dynamic Arrays */
+#ifndef DA_INIT_CAP
+#define DA_INIT_CAP 256
+#endif
+
+#ifndef DA_REALLOC
+#define DA_REALLOC realloc
+#endif
+
+#ifndef DA_FREE
+#define DA_FREE free
+#endif
+
+#define da_reserve(da, expected_capacity)                                                                                                                                                                                                                          \
+  do {                                                                                                                                                                                                                                                             \
+    if ((expected_capacity) > (da)->capacity) {                                                                                                                                                                                                                    \
+      if ((da)->capacity == 0) {                                                                                                                                                                                                                                   \
+        (da)->capacity = DA_INIT_CAP;                                                                                                                                                                                                                              \
+      }                                                                                                                                                                                                                                                            \
+      while ((expected_capacity) > (da)->capacity) {                                                                                                                                                                                                               \
+        (da)->capacity *= 2;                                                                                                                                                                                                                                       \
+      }                                                                                                                                                                                                                                                            \
+      (da)->items = DA_REALLOC((da)->items, (da)->capacity * sizeof(*(da)->items));                                                                                                                                                                                \
+    }                                                                                                                                                                                                                                                              \
+  } while (0)
+
+#define da_append(da, item)                                                                                                                                                                                                                                        \
+  do {                                                                                                                                                                                                                                                             \
+    da_reserve((da), (da)->count + 1);                                                                                                                                                                                                                             \
+    (da)->items[(da)->count++] = (item);                                                                                                                                                                                                                           \
+  } while (0)
+
+#define da_append_many(da, new_items, new_items_count)                                                                                                                                                                                                             \
+  do {                                                                                                                                                                                                                                                             \
+    da_reserve((da), (da)->count + (new_items_count));                                                                                                                                                                                                             \
+    memcpy((da)->items + (da)->count, (new_items), (new_items_count) * sizeof(*(da)->items));                                                                                                                                                                      \
+    (da)->count += (new_items_count);                                                                                                                                                                                                                              \
+  } while (0)
+
+#define da_foreach(Type, it, da) for (Type *it = (da)->items; it < (da)->items + (da)->count; ++it)
+
+#define da_free(da)                                                                                                                                                                                                                                                \
+  do {                                                                                                                                                                                                                                                             \
+    DA_FREE((da)->items);                                                                                                                                                                                                                                          \
+    (da)->items = NULL;                                                                                                                                                                                                                                            \
+    (da)->count = 0;                                                                                                                                                                                                                                               \
+    (da)->capacity = 0;                                                                                                                                                                                                                                            \
+  } while (0)
+
+#define da_clear(da)                                                                                                                                                                                                                                               \
+  do {                                                                                                                                                                                                                                                             \
+    (da)->count = 0;                                                                                                                                                                                                                                               \
+  } while (0)
+
+/* Helpers */
+static char *str_dup(const char *s) {
+  size_t len = strlen(s) + 1;
+  char *copy = malloc(len);
+  if (copy)
+    memcpy(copy, s, len);
+  return copy;
+}
 
 static char *read_entire_file(const char *path, size_t *out_size) {
   FILE *f = fopen(path, "rb");
@@ -55,6 +120,7 @@ error:
 static bool is_symbol_start(char x) { return isalpha(x) || x == '_'; }
 static bool is_symbol(char x) { return isalnum(x) || x == '_'; }
 
+/* Tokens */
 typedef enum {
   TOKEN_END = 0,
   TOKEN_SYMBOL = 1 << 0,
@@ -157,6 +223,7 @@ typedef struct {
   size_t text_len;
 } Token;
 
+/* Lexer */
 typedef struct {
   const char *file_name;
   const char *content;
@@ -361,6 +428,7 @@ static void lexer_skip_balanced_parens(Lexer *lexer) {
   }
 }
 
+/* Parser */
 typedef struct {
   TokenKind kind;
   const char *name;
@@ -373,32 +441,13 @@ typedef struct {
   size_t capacity;
 } RegistrationList;
 
-#define REGISTRATION_LIST_INIT_CAP 16
-
 static void registration_list_append(RegistrationList *list, TokenKind kind, const char *name, size_t name_len) {
-  if (list->count == list->capacity) {
-    list->capacity = list->capacity == 0 ? REGISTRATION_LIST_INIT_CAP : list->capacity * 2;
-    list->items = realloc(list->items, list->capacity * sizeof(*list->items));
-  }
-  list->items[list->count++] = (RegistrationEntry){
-      .kind = kind,
-      .name = name,
-      .name_len = name_len,
-  };
-}
-
-static void registration_list_free(RegistrationList *list) {
-  free(list->items);
-  list->items = NULL;
-  list->count = 0;
-  list->capacity = 0;
+  RegistrationEntry entry = {.kind = kind, .name = name, .name_len = name_len};
+  da_append(list, entry);
 }
 
 static void emit_hooks(FILE *out, const RegistrationList *hooks) {
-  for (size_t i = 0; i < hooks->count; ++i) {
-    const RegistrationEntry *entry = &hooks->items[i];
-    fprintf(out, "\t\t%s(%.*s);\n", get_macro_set_hook(entry->kind), (int)entry->name_len, entry->name);
-  }
+  da_foreach(RegistrationEntry, entry, hooks) { fprintf(out, "\t\t%s(%.*s);\n", get_macro_set_hook(entry->kind), (int)entry->name_len, entry->name); }
 
   if (hooks->count)
     fputc('\n', out);
@@ -410,10 +459,7 @@ static void emit_suite(FILE *out, const RegistrationList *hooks, const Registrat
 
   fputs("\tSUITE_BEGIN();\n", out);
   emit_hooks(out, hooks);
-  for (size_t i = 0; i < tests->count; ++i) {
-    const RegistrationEntry *entry = &tests->items[i];
-    fprintf(out, "\t\tRUN_TEST(%.*s);\n", (int)entry->name_len, entry->name);
-  }
+  da_foreach(RegistrationEntry, entry, tests) { fprintf(out, "\t\tRUN_TEST(%.*s);\n", (int)entry->name_len, entry->name); }
   fputs("\tSUITE_END();\n\n", out);
 }
 
@@ -451,12 +497,13 @@ static int parse_test_file(const char *file_name, FILE *out) {
 
   emit_suite(out, &hooks, &tests);
 
-  registration_list_free(&tests);
-  registration_list_free(&hooks);
+  da_free(&tests);
+  da_free(&hooks);
   free((void *)content);
   return 0;
 }
 
+/* Path Helpers */
 #define CLUT_PATH_MAX 4096
 
 static bool path_is_separator(char c) { return c == '/' || c == '\\'; }
@@ -478,6 +525,15 @@ static void path_normalize_separators(char *path) {
     if (*p == '\\')
       *p = '/';
   }
+}
+
+static const char *path_basename(const char *path) {
+  const char *last_sep = NULL;
+  for (const char *p = path; *p != '\0'; ++p) {
+    if (path_is_separator(*p))
+      last_sep = p;
+  }
+  return last_sep ? last_sep + 1 : path;
 }
 
 static bool path_dirname(const char *path, char *out, size_t out_size) {
@@ -701,12 +757,59 @@ static bool compute_include_path(const char *test_file, const char *output_dir_a
 }
 
 typedef struct {
-  bool help;
-  const char *output_file;
-  const char **test_files;
-  int test_files_count;
-} CliArgs;
+  char **items;
+  size_t count;
+  size_t capacity;
+} StringList;
 
+static void string_list_append(StringList *list, const char *str) {
+  char *copy = str_dup(str);
+  da_append(list, copy);
+}
+
+static void string_list_free(StringList *list) {
+  da_foreach(char *, it, list) free(*it);
+  da_free(list);
+}
+
+static bool list_directory(const char *dir, StringList *out) {
+#ifdef _WIN32
+  char search_path[CLUT_PATH_MAX];
+  int n = snprintf(search_path, sizeof(search_path), "%s\\*", dir);
+  if (n < 0 || (size_t)n >= sizeof(search_path))
+    return false;
+
+  WIN32_FIND_DATAA find_data;
+  HANDLE h = FindFirstFileA(search_path, &find_data);
+  if (h == INVALID_HANDLE_VALUE)
+    return false;
+
+  do {
+    if (strcmp(find_data.cFileName, ".") == 0 || strcmp(find_data.cFileName, "..") == 0)
+      continue;
+    string_list_append(out, find_data.cFileName);
+  } while (FindNextFileA(h, &find_data));
+
+  FindClose(h);
+  return true;
+#else
+  DIR *d = opendir(dir);
+  if (d == NULL)
+    return false;
+
+  struct dirent *entry;
+  while ((entry = readdir(d)) != NULL) {
+    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+      continue;
+    string_list_append(out, entry->d_name);
+  }
+
+  closedir(d);
+  return true;
+#endif
+}
+
+/* CLI */
 static void print_usage(const char *prog_name) {
   fprintf(stderr,
           "Usage: %s -o <output_file> <test_file> [test_file...]\n"
@@ -718,21 +821,88 @@ static void print_usage(const char *prog_name) {
           prog_name, prog_name);
 }
 
-static CliArgs parse_args(int argc, char **argv) {
-  CliArgs args = {0};
-  const char **test_files = malloc(sizeof(char *) * (size_t)argc);
+static bool wildcard_match(const char *pattern, const char *str) {
+  if (*pattern == '\0')
+    return *str == '\0';
 
-  if (test_files == NULL) {
-    fprintf(stderr, "error: failed to allocate memory for test file list\n");
+  if (*pattern == '*') {
+    while (*pattern == '*')
+      pattern++;
+    if (*pattern == '\0')
+      return true;
+    for (const char *s = str; *s != '\0'; ++s) {
+      if (wildcard_match(pattern, s))
+        return true;
+    }
+    return false;
+  }
+
+  if (*pattern == '?')
+    return *str != '\0' && wildcard_match(pattern + 1, str + 1);
+
+  return *str != '\0' && *pattern == *str && wildcard_match(pattern + 1, str + 1);
+}
+
+static void expand_wildcard(const char *pattern_arg, StringList *out) {
+  char dir[CLUT_PATH_MAX];
+  if (!path_dirname(pattern_arg, dir, sizeof(dir))) {
+    fprintf(stderr, "error: path too long '%s'\n", pattern_arg);
     exit(1);
   }
 
-  int test_files_count = 0;
+  const char *pattern = path_basename(pattern_arg);
+
+  StringList entries = {0};
+  if (!list_directory(dir, &entries)) {
+    fprintf(stderr, "error: could not list directory '%s' for pattern '%s'\n", dir, pattern_arg);
+    exit(1);
+  }
+
+  size_t matched = 0;
+  da_foreach(char *, it, &entries) {
+    if (!wildcard_match(pattern, *it))
+      continue;
+
+    char full_path[CLUT_PATH_MAX];
+    int n = strcmp(dir, ".") == 0 ? snprintf(full_path, sizeof(full_path), "%s", *it) : snprintf(full_path, sizeof(full_path), "%s/%s", dir, *it);
+
+    if (n < 0 || (size_t)n >= sizeof(full_path)) {
+      fprintf(stderr, "error: path too long while expanding '%s'\n", pattern_arg);
+      exit(1);
+    }
+
+    string_list_append(out, full_path);
+    matched++;
+  }
+
+  string_list_free(&entries);
+
+  if (matched == 0)
+    fprintf(stderr, "warning: no files matched pattern '%s'\n", pattern_arg);
+}
+
+static void add_test_file_arg(StringList *list, const char *arg) {
+  if (strpbrk(arg, "*?") != NULL)
+    expand_wildcard(arg, list);
+  else
+    string_list_append(list, arg);
+}
+
+typedef struct {
+  bool help;
+  const char *output_file;
+  char **test_files;
+  int test_files_count;
+} CliArgs;
+
+static CliArgs parse_args(int argc, char **argv) {
+  CliArgs args = {0};
+  StringList test_files = {0};
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
       args.help = true;
-      free(test_files);
+      string_list_free(&test_files);
       return args;
     }
 
@@ -748,7 +918,7 @@ static CliArgs parse_args(int argc, char **argv) {
 
     if (strcmp(argv[i], "--") == 0) {
       for (i++; i < argc; i++)
-        test_files[test_files_count++] = argv[i];
+        add_test_file_arg(&test_files, argv[i]);
       break;
     }
 
@@ -758,7 +928,7 @@ static CliArgs parse_args(int argc, char **argv) {
       exit(1);
     }
 
-    test_files[test_files_count++] = argv[i];
+    add_test_file_arg(&test_files, argv[i]);
   }
 
   if (args.output_file == NULL) {
@@ -767,14 +937,14 @@ static CliArgs parse_args(int argc, char **argv) {
     exit(1);
   }
 
-  if (test_files_count == 0) {
+  if (test_files.count == 0) {
     fprintf(stderr, "error: no test files provided\n");
     print_usage(argv[0]);
     exit(1);
   }
 
-  args.test_files = test_files;
-  args.test_files_count = test_files_count;
+  args.test_files = test_files.items;
+  args.test_files_count = (int)test_files.count;
   return args;
 }
 

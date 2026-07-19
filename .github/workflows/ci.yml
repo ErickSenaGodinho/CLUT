@@ -23,7 +23,7 @@ jobs:
       run: gcc -o runner_generator tools/runner_generator.c
 
     - name: Generate core test runner
-      run: ./runner_generator -o tests/core/runner_test_core.c tests/core/test_basic.h tests/core/test_numeric.h tests/core/test_string.h tests/core/test_arrays.h
+      run: ./runner_generator -o tests/core/runner_test_core.c tests/core/test_*.h
 
     - name: Compile core test runner
       run: gcc -o tests/core/runner_test_core tests/core/runner_test_core.c -DCLUT_OUTPUT_GITHUB
@@ -32,7 +32,7 @@ jobs:
       run: ./tests/core/runner_test_core
 
     - name: Generate generator test runner
-      run: ./runner_generator -o tests/runner_generator/runner_test_generator.c tests/runner_generator/test_lexer.h tests/runner_generator/test_parser.h tests/runner_generator/test_path_utilities.h
+      run: ./runner_generator -o tests/runner_generator/runner_test_generator.c tests/runner_generator/test_*.h
 
     - name: Compile generator test runner
       run: gcc -o tests/runner_generator/runner_test_generator tests/runner_generator/runner_test_generator.c -DCLUT_OUTPUT_GITHUB
