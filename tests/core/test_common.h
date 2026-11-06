@@ -4,43 +4,43 @@
 #define CLUT_IMPLEMENTATION
 #include "../../clut.h"
 
-ClutSB test_message;
-ClutSB output;
+ClutSB failure_message;
+ClutSB failure_report;
 
 BEFORE_ALL_HOOK(setup) {
-  test_message = (ClutSB){0};
-  output = (ClutSB){0};
+  failure_message = (ClutSB){0};
+  failure_report = (ClutSB){0};
 }
 
 AFTER_EACH_HOOK(dispatch_fail_flush) {
   if (Clut.current.failed) {
-    clut_report_print_failures(&output);
-    clut_da_clear(&output);
+    clut_report_print_failures(&failure_report);
+    clut_da_clear(&failure_report);
   }
 }
 
 AFTER_ALL_HOOK(teardown) {
-  clut_da_free(&output);
-  clut_da_free(&test_message);
+  clut_da_free(&failure_report);
+  clut_da_free(&failure_message);
 }
 
 static void record_failure(const char *file, int line) {
   ClutLogRecord record;
   clut_capture_failure_location(&record, file, line);
-  clut_report_format_failure(&record, &output, &test_message);
-  clut_da_clear(&test_message);
+  clut_report_format_failure(&record, &failure_report, &failure_message);
+  clut_da_clear(&failure_message);
 }
 
 static bool clut_validate_pass(bool failed, const char *expr, const char *file, int line) {
   if (failed) {
-    const char *clut_msg = clut_string_builder_to_cstr(&Clut.runner.test_message);
-    clut_string_builder_append(&test_message, "FALSE-POSITIVE (expected PASS, got FAIL)\n  expr: ");
-    clut_string_builder_append(&test_message, expr);
-    clut_string_builder_append(&test_message, "\n  msg : ");
-    clut_string_builder_append(&test_message, clut_msg);
+    const char *clut_msg = clut_string_builder_to_cstr(&Clut.runner.failure_message);
+    clut_string_builder_append(&failure_message, "FALSE-POSITIVE (expected PASS, got FAIL)\n  expr: ");
+    clut_string_builder_append(&failure_message, expr);
+    clut_string_builder_append(&failure_message, "\n  msg : ");
+    clut_string_builder_append(&failure_message, clut_msg);
     record_failure(file, line);
-    clut_da_clear(&Clut.runner.output);
-    clut_da_clear(&Clut.runner.test_message);
+    clut_da_clear(&Clut.runner.failure_report);
+    clut_da_clear(&Clut.runner.failure_message);
     return true;
   }
   return false;
@@ -48,28 +48,28 @@ static bool clut_validate_pass(bool failed, const char *expr, const char *file, 
 
 static bool clut_validate_fail(bool failed, const char *expr, const char *expected_msg, const char *file, int line) {
   if (!failed) {
-    clut_string_builder_append(&test_message, "FALSE-NEGATIVE (expected FAIL, got PASS)\n  expr: ");
-    clut_string_builder_append(&test_message, expr);
+    clut_string_builder_append(&failure_message, "FALSE-NEGATIVE (expected FAIL, got PASS)\n  expr: ");
+    clut_string_builder_append(&failure_message, expr);
     record_failure(file, line);
     return true;
   }
   if (expected_msg != NULL) {
-    const char *actual_msg = clut_string_builder_to_cstr(&Clut.runner.test_message);
+    const char *actual_msg = clut_string_builder_to_cstr(&Clut.runner.failure_message);
     if (strcmp(actual_msg, expected_msg) != 0) {
-      clut_string_builder_append(&test_message, "WRONG MESSAGE\n  expr    : ");
-      clut_string_builder_append(&test_message, expr);
-      clut_string_builder_append(&test_message, "\n  expected: ");
-      clut_string_builder_append(&test_message, expected_msg);
-      clut_string_builder_append(&test_message, "\n  actual  : ");
-      clut_string_builder_append(&test_message, actual_msg);
+      clut_string_builder_append(&failure_message, "WRONG MESSAGE\n  expr    : ");
+      clut_string_builder_append(&failure_message, expr);
+      clut_string_builder_append(&failure_message, "\n  expected: ");
+      clut_string_builder_append(&failure_message, expected_msg);
+      clut_string_builder_append(&failure_message, "\n  actual  : ");
+      clut_string_builder_append(&failure_message, actual_msg);
       record_failure(file, line);
-      clut_da_clear(&Clut.runner.output);
-      clut_da_clear(&Clut.runner.test_message);
+      clut_da_clear(&Clut.runner.failure_report);
+      clut_da_clear(&Clut.runner.failure_message);
       return true;
     }
   }
-  clut_da_clear(&Clut.runner.output);
-  clut_da_clear(&Clut.runner.test_message);
+  clut_da_clear(&Clut.runner.failure_report);
+  clut_da_clear(&Clut.runner.failure_message);
   return false;
 }
 
