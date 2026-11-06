@@ -513,16 +513,16 @@ CLUT_API void ClutTestAssertWithinDoubleArray(const double *expected, double del
   } while (0)
 
 /* String Builder Implementation */
-static void clut_sb_append(ClutSB *sb, const char *str) {
+static void clut_string_builder_append(ClutSB *sb, const char *str) {
   if (!str)
     str = "(null)";
   size_t n = strlen(str);
   clut_da_append_many(sb, str, n);
 }
 
-static void clut_sb_appendc(ClutSB *sb, char c) { clut_da_append(sb, c); }
+static void clut_string_builder_append_char(ClutSB *sb, char c) { clut_da_append(sb, c); }
 
-static void clut_sb_appendf(ClutSB *sb, const char *fmt, ...) {
+static void clut_string_builder_append_format(ClutSB *sb, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   int n = vsnprintf(NULL, 0, fmt, args);
@@ -536,7 +536,7 @@ static void clut_sb_appendf(ClutSB *sb, const char *fmt, ...) {
   sb->count += (size_t)n;
 }
 
-static const char *clut_sb_cstr(ClutSB *sb) {
+static const char *clut_string_builder_to_cstr(ClutSB *sb) {
   if (!sb->items)
     return "";
   clut_da_reserve(sb, sb->count + 1);
@@ -545,19 +545,19 @@ static const char *clut_sb_cstr(ClutSB *sb) {
 }
 
 /* Helpers */
-static inline float clut_fabsf(float x) { return x < 0.0f ? -x : x; }
-static inline double clut_fabs(double x) { return x < 0.0 ? -x : x; }
+static inline float clut_abs_float(float x) { return x < 0.0f ? -x : x; }
+static inline double clut_abs_double(double x) { return x < 0.0 ? -x : x; }
 
-static inline bool clut_float_equal(float expected, float actual) {
+static inline bool clut_floats_are_close(float expected, float actual) {
   if (expected == 0.0f)
     return actual == 0.0f;
-  return clut_fabsf(expected - actual) < clut_fabsf(expected) * CLUT_FLOAT_EPSILON;
+  return clut_abs_float(expected - actual) < clut_abs_float(expected) * CLUT_FLOAT_EPSILON;
 }
 
-static inline bool clut_double_equal(double expected, double actual) {
+static inline bool clut_doubles_are_close(double expected, double actual) {
   if (expected == 0.0)
     return actual == 0.0;
-  return clut_fabs(expected - actual) < clut_fabs(expected) * CLUT_DOUBLE_EPSILON;
+  return clut_abs_double(expected - actual) < clut_abs_double(expected) * CLUT_DOUBLE_EPSILON;
 }
 
 static inline double ClutElapsedSeconds(long start) { return ((double)(clock() - start)) / CLOCKS_PER_SEC; }
@@ -565,7 +565,7 @@ static inline double ClutElapsedSeconds(long start) { return ((double)(clock() -
 CLUT_INTERNAL_STATE ClutData Clut = {0};
 
 /* Log Helpers */
-static void clut_log_record_capture(ClutLogRecord *record, const char *file, int line) {
+static void clut_capture_failure_location(ClutLogRecord *record, const char *file, int line) {
   record->file = file;
   record->line = line;
   record->iteration_index = Clut.current.iteration_index;
@@ -575,83 +575,85 @@ static void clut_log_record_capture(ClutLogRecord *record, const char *file, int
 static size_t clut_tap_test_index = 0;
 static bool clut_tap_plan_printed = false;
 
-static void clut_output_plan(void) {
+static void clut_report_plan(void) {
   if (!clut_tap_plan_printed) {
     fprintf(CLUT_STREAM_DEFAULT, "1..%zu\n", Clut.suite.total_tests);
     clut_tap_plan_printed = true;
   }
 }
 
-static void clut_output_pass(const char *test_name, double elapsed_seconds) {
-  clut_output_plan();
+static void clut_report_pass(const char *test_name, double elapsed_seconds) {
+  clut_report_plan();
   clut_tap_test_index++;
   fprintf(CLUT_STREAM_DEFAULT, "ok %zu - %s # (%.3fs)\n", clut_tap_test_index, test_name, elapsed_seconds);
 }
 
-static void clut_output_skip(const char *test_name) {
-  clut_output_plan();
+static void clut_report_skip(const char *test_name) {
+  clut_report_plan();
   clut_tap_test_index++;
   fprintf(CLUT_STREAM_DEFAULT, "# skip %s\n", test_name);
 }
 
-static void clut_output_fail_header() {
-  clut_output_plan();
+static void clut_report_fail_header() {
+  clut_report_plan();
   clut_tap_test_index++;
   double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
   fprintf(CLUT_STREAM_DEFAULT, "not ok %zu - %s # (%.3fs)\n", clut_tap_test_index, Clut.current.name, elapsed_seconds);
 }
 
-static void clut_output_append_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
-  clut_sb_appendf(output, "# %s:%d: %s", record->file, record->line, clut_sb_cstr(test_message));
+static void clut_report_format_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
+  clut_string_builder_append_format(output, "# %s:%d: %s", record->file, record->line, clut_string_builder_to_cstr(test_message));
   if (record->iteration_index >= 0) {
-    clut_sb_appendf(output, " [iteration %d]", record->iteration_index);
+    clut_string_builder_append_format(output, " [iteration %d]", record->iteration_index);
   }
-  clut_sb_appendc(output, '\n');
+  clut_string_builder_append_char(output, '\n');
 }
 
-static void clut_output_flush_failures(ClutSB *output) { fprintf(CLUT_STREAM_DEFAULT, "%s", clut_sb_cstr(output)); }
+static void clut_report_print_failures(ClutSB *output) { fprintf(CLUT_STREAM_DEFAULT, "%s", clut_string_builder_to_cstr(output)); }
 
-static void clut_output_suite_end(const ClutSuiteResult *result) {
-  clut_output_plan();
+static void clut_report_suite_end(const ClutSuiteResult *result) {
+  clut_report_plan();
   fprintf(CLUT_STREAM_DEFAULT, "# Tests: %zu, Passed: %zu, Failed: %zu, Skipped: %zu, Time: %.3fs\n", result->total_tests, result->passed, result->failures, result->skips, result->total_seconds);
   clut_tap_test_index = 0;
   clut_tap_plan_printed = false;
 }
 
 #elif defined(CLUT_OUTPUT_GITHUB)
-static void clut_output_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "::notice title=PASS::%s (%.3fs)\n", test_name, elapsed_seconds); }
-static void clut_output_skip(const char *test_name) { fprintf(CLUT_STREAM_DEFAULT, "::notice title=SKIP::%s\n", test_name); }
-static void clut_output_fail_header() {
+static void clut_report_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "::notice title=PASS::%s (%.3fs)\n", test_name, elapsed_seconds); }
+static void clut_report_skip(const char *test_name) { fprintf(CLUT_STREAM_DEFAULT, "::notice title=SKIP::%s\n", test_name); }
+static void clut_report_fail_header() {
   double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
   fprintf(CLUT_STREAM_FAIL, "::notice title=FAIL::%s (%.3fs)\n", Clut.current.name, elapsed_seconds);
 }
-static void clut_output_append_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) { clut_sb_appendf(output, "::error file=%s,line=%d,title=%s::%s\n", record->file, record->line, Clut.current.name, clut_sb_cstr(test_message)); }
-static void clut_output_flush_failures(ClutSB *output) { fprintf(CLUT_STREAM_FAIL, "%s", clut_sb_cstr(output)); }
-static void clut_output_suite_end(const ClutSuiteResult *result) {
+static void clut_report_format_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
+  clut_string_builder_append_format(output, "::error file=%s,line=%d,title=%s::%s\n", record->file, record->line, Clut.current.name, clut_string_builder_to_cstr(test_message));
+}
+static void clut_report_print_failures(ClutSB *output) { fprintf(CLUT_STREAM_FAIL, "%s", clut_string_builder_to_cstr(output)); }
+static void clut_report_suite_end(const ClutSuiteResult *result) {
   fprintf(CLUT_STREAM_DEFAULT, "::notice title=Suite Results::Tests=%zu Passed=%zu Failed=%zu Skipped=%zu Time=%.3fs\n", result->total_tests, result->passed, result->failures, result->skips, result->total_seconds);
 }
 #else /* default */
-static void clut_output_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "%s%-50s%.3fs\n", CLUT_GREEN_TEXT("[ PASS ] "), test_name, elapsed_seconds); }
-static void clut_output_skip(const char *test_name) { fprintf(CLUT_STREAM_DEFAULT, "%s%-50s\n", CLUT_YELLOW_TEXT("[ SKIP ] "), test_name); }
-static void clut_output_fail_header() {
+static void clut_report_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "%s%-50s%.3fs\n", CLUT_GREEN_TEXT("[ PASS ] "), test_name, elapsed_seconds); }
+static void clut_report_skip(const char *test_name) { fprintf(CLUT_STREAM_DEFAULT, "%s%-50s\n", CLUT_YELLOW_TEXT("[ SKIP ] "), test_name); }
+static void clut_report_fail_header() {
   double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
   fprintf(CLUT_STREAM_FAIL, "%s%s%-50s%.3fs%s\n", CLUT_RED_TEXT("[ FAIL ] "), CLUT_STR_BEGIN_RED_TEXT, Clut.current.name, elapsed_seconds, CLUT_STR_END_COLOR_TEXT);
 }
 
-static void clut_output_append_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
-  clut_sb_append(output, CLUT_STR_BEGIN_RED_TEXT);
-  clut_sb_appendf(output, "%s:%d:%s", record->file, record->line, Clut.current.name);
+static void clut_report_format_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
+  clut_string_builder_append(output, CLUT_STR_BEGIN_RED_TEXT);
+  clut_string_builder_append_format(output, "%s:%d:%s", record->file, record->line, Clut.current.name);
   if (record->iteration_index >= 0) {
-    clut_sb_appendf(output, "[%d]", record->iteration_index);
+    clut_string_builder_append_format(output, "[%d]", record->iteration_index);
   }
-  clut_sb_appendc(output, ':');
-  clut_sb_append(output, clut_sb_cstr(test_message));
-  clut_sb_append(output, CLUT_STR_END_COLOR_TEXT);
-  clut_sb_appendc(output, '\n');
+  clut_string_builder_append_char(output, ':');
+  clut_string_builder_append(output, clut_string_builder_to_cstr(test_message));
+  clut_string_builder_append(output, CLUT_STR_END_COLOR_TEXT);
+  clut_string_builder_append_char(output, '\n');
 }
 
-static void clut_output_flush_failures(ClutSB *output) { fprintf(CLUT_STREAM_FAIL, "%s", clut_sb_cstr(output)); }
-static void clut_output_suite_end(const ClutSuiteResult *result) {
+static void clut_report_print_failures(ClutSB *output) { fprintf(CLUT_STREAM_FAIL, "%s", clut_string_builder_to_cstr(output)); }
+static void clut_report_suite_end(const ClutSuiteResult *result) {
   FILE *stream = CLUT_STREAM_DEFAULT;
   fprintf(stream, "--------------------------------\n");
   fprintf(stream, CLUT_BLUE_TEXT("Tests:      ") CLUT_GREEN_TEXT("%zu\n"), result->total_tests);
@@ -664,15 +666,15 @@ static void clut_output_suite_end(const ClutSuiteResult *result) {
 }
 #endif
 
-static void clut_record_failure(const char *file, int line) {
+static void clut_register_failure(const char *file, int line) {
   Clut.current.failed = true;
   ClutLogRecord record;
-  clut_log_record_capture(&record, file, line);
-  clut_output_append_failure(&record, &Clut.runner.output, &Clut.runner.test_message);
+  clut_capture_failure_location(&record, file, line);
+  clut_report_format_failure(&record, &Clut.runner.output, &Clut.runner.test_message);
 }
 
-static void clut_append_message(const char *msg) { clut_sb_append(&Clut.runner.test_message, msg); }
-static void clut_append_message_char(char c) {
+static void clut_message_append(const char *msg) { clut_string_builder_append(&Clut.runner.test_message, msg); }
+static void clut_message_append_char(char c) {
   unsigned char uc = (unsigned char)c;
   const char *escaped = NULL;
 
@@ -695,50 +697,50 @@ static void clut_append_message_char(char c) {
   }
 
   if (escaped) {
-    clut_sb_appendf(&Clut.runner.test_message, "'%s' (0x%02X)", escaped, uc);
+    clut_string_builder_append_format(&Clut.runner.test_message, "'%s' (0x%02X)", escaped, uc);
   } else if (isprint(uc)) {
-    clut_sb_appendf(&Clut.runner.test_message, "'%c' (0x%02X)", uc, uc);
+    clut_string_builder_append_format(&Clut.runner.test_message, "'%c' (0x%02X)", uc, uc);
   } else {
-    clut_sb_appendf(&Clut.runner.test_message, "'\\x%02X' (0x%02X)", uc, uc);
+    clut_string_builder_append_format(&Clut.runner.test_message, "'\\x%02X' (0x%02X)", uc, uc);
   }
 }
-static void clut_append_message_int(int v) { clut_sb_appendf(&Clut.runner.test_message, "%d", v); }
-static void clut_append_message_uint(size_t v) { clut_sb_appendf(&Clut.runner.test_message, "%zu", v); }
-static void clut_append_message_float(float v) { clut_sb_appendf(&Clut.runner.test_message, "%.5f", v); }
-static void clut_append_message_double(double v) { clut_sb_appendf(&Clut.runner.test_message, "%.9f", v); }
-static void clut_append_message_ptr(void *p) { clut_sb_appendf(&Clut.runner.test_message, "%p", p); }
-static void clut_append_message_hex(int v) { clut_sb_appendf(&Clut.runner.test_message, "0x%02X", v); }
-static void clut_append_message_str(const char *str) {
+static void clut_message_append_int(int v) { clut_string_builder_append_format(&Clut.runner.test_message, "%d", v); }
+static void clut_message_append_uint(size_t v) { clut_string_builder_append_format(&Clut.runner.test_message, "%zu", v); }
+static void clut_message_append_float(float v) { clut_string_builder_append_format(&Clut.runner.test_message, "%.5f", v); }
+static void clut_message_append_double(double v) { clut_string_builder_append_format(&Clut.runner.test_message, "%.9f", v); }
+static void clut_message_append_ptr(void *p) { clut_string_builder_append_format(&Clut.runner.test_message, "%p", p); }
+static void clut_message_append_hex(int v) { clut_string_builder_append_format(&Clut.runner.test_message, "0x%02X", v); }
+static void clut_message_append_str(const char *str) {
   if (str == NULL) {
-    clut_append_message("(null)");
+    clut_message_append("(null)");
   } else {
-    clut_sb_appendc(&Clut.runner.test_message, '"');
-    clut_append_message(str);
-    clut_sb_appendc(&Clut.runner.test_message, '"');
+    clut_string_builder_append_char(&Clut.runner.test_message, '"');
+    clut_message_append(str);
+    clut_string_builder_append_char(&Clut.runner.test_message, '"');
   }
 }
-#define clut_append_message_formated(fmt, ...) clut_sb_appendf(&Clut.runner.test_message, fmt, __VA_ARGS__)
+#define clut_message_append_format(fmt, ...) clut_string_builder_append_format(&Clut.runner.test_message, fmt, __VA_ARGS__)
 
-static void clut_append_message_array_prefix(size_t index) {
-  clut_append_message(CLUT_STR_ARRAY_MISMATCH_AT);
-  clut_append_message_formated("[%zu] ", index);
+static void clut_message_append_array_prefix(size_t index) {
+  clut_message_append(CLUT_STR_ARRAY_MISMATCH_AT);
+  clut_message_append_format("[%zu] ", index);
 }
 
 #define CLUT_MESSAGE_EXPECTED_ACTUAL(append_val, lhs, op_str, rhs)                                                                                                                                                                                                 \
   do {                                                                                                                                                                                                                                                             \
-    clut_append_message(CLUT_STR_EXPECTED);                                                                                                                                                                                                                        \
+    clut_message_append(CLUT_STR_EXPECTED);                                                                                                                                                                                                                        \
     append_val((lhs));                                                                                                                                                                                                                                             \
-    clut_append_message((op_str));                                                                                                                                                                                                                                 \
+    clut_message_append((op_str));                                                                                                                                                                                                                                 \
     append_val((rhs));                                                                                                                                                                                                                                             \
   } while (0)
 
 #define CLUT_MESSAGE_WITHIN_DIFF(append_val, append_num, expected, delta, diff)                                                                                                                                                                                    \
   do {                                                                                                                                                                                                                                                             \
-    clut_append_message(CLUT_STR_EXPECTED);                                                                                                                                                                                                                        \
+    clut_message_append(CLUT_STR_EXPECTED);                                                                                                                                                                                                                        \
     append_val((expected));                                                                                                                                                                                                                                        \
-    clut_append_message(CLUT_STR_WITHIN_DELTA);                                                                                                                                                                                                                    \
+    clut_message_append(CLUT_STR_WITHIN_DELTA);                                                                                                                                                                                                                    \
     append_num((delta));                                                                                                                                                                                                                                           \
-    clut_append_message(CLUT_STR_BUT_DIFF);                                                                                                                                                                                                                        \
+    clut_message_append(CLUT_STR_BUT_DIFF);                                                                                                                                                                                                                        \
     append_num((diff));                                                                                                                                                                                                                                            \
   } while (0)
 
@@ -763,11 +765,11 @@ static void clut_append_message_array_prefix(size_t index) {
     if (condition)                                                                                                                                                                                                                                                 \
       return;                                                                                                                                                                                                                                                      \
     if (msg) {                                                                                                                                                                                                                                                     \
-      clut_append_message((msg));                                                                                                                                                                                                                                  \
+      clut_message_append((msg));                                                                                                                                                                                                                                  \
     } else {                                                                                                                                                                                                                                                       \
       CLUT_MESSAGE_EXPECTED_ACTUAL(append_fn, (lhs), (op_str), (rhs));                                                                                                                                                                                             \
     }                                                                                                                                                                                                                                                              \
-    clut_record_failure(file, line);                                                                                                                                                                                                                               \
+    clut_register_failure(file, line);                                                                                                                                                                                                                             \
   } while (0)
 
 #define CLUT_ASSERT_WITHIN(append_fn_val, append_fn_num, diff_val, expected, delta, file, line, msg)                                                                                                                                                               \
@@ -776,11 +778,11 @@ static void clut_append_message_array_prefix(size_t index) {
     if ((diff_val) <= (delta))                                                                                                                                                                                                                                     \
       return;                                                                                                                                                                                                                                                      \
     if (msg) {                                                                                                                                                                                                                                                     \
-      clut_append_message((msg));                                                                                                                                                                                                                                  \
+      clut_message_append((msg));                                                                                                                                                                                                                                  \
     } else {                                                                                                                                                                                                                                                       \
       CLUT_MESSAGE_WITHIN_DIFF(append_fn_val, append_fn_num, (expected), (delta), (diff_val));                                                                                                                                                                     \
     }                                                                                                                                                                                                                                                              \
-    clut_record_failure(file, line);                                                                                                                                                                                                                               \
+    clut_register_failure(file, line);                                                                                                                                                                                                                             \
   } while (0)
 
 #define CHECK_MEMORY_PRECONDITIONS                                                                                                                                                                                                                                 \
@@ -790,8 +792,8 @@ static void clut_append_message_array_prefix(size_t index) {
     if (expected == actual)                                                                                                                                                                                                                                        \
       return;                                                                                                                                                                                                                                                      \
     if (expected == NULL || actual == NULL) {                                                                                                                                                                                                                      \
-      clut_append_message(msg ? msg : CLUT_STR_MEMORY_NULL);                                                                                                                                                                                                       \
-      clut_record_failure(file, line);                                                                                                                                                                                                                             \
+      clut_message_append(msg ? msg : CLUT_STR_MEMORY_NULL);                                                                                                                                                                                                       \
+      clut_register_failure(file, line);                                                                                                                                                                                                                           \
       return;                                                                                                                                                                                                                                                      \
     }                                                                                                                                                                                                                                                              \
   } while (0)
@@ -805,7 +807,7 @@ CLUT_API int ClutRunnerEnd() {
   return Clut.runner.global_failures > 255 ? 255 : (int)Clut.runner.global_failures;
 }
 
-static void clut_suite_clear(void) {
+static void clut_reset_suite(void) {
   Clut.suite.total_tests = 0;
   Clut.suite.passed = 0;
   Clut.suite.failures = 0;
@@ -814,7 +816,7 @@ static void clut_suite_clear(void) {
 }
 
 CLUT_API void ClutSuiteBegin(void) {
-  clut_suite_clear();
+  clut_reset_suite();
   Clut.hooks = (ClutHooks){0};
 }
 
@@ -824,7 +826,7 @@ CLUT_API void ClutSuiteAddTest(ClutTestFn run_test_fn, const char *test_name) {
   Clut.suite.total_tests = Clut.suite.pending_tests.count;
 }
 
-static void clut_test_reset(void) {
+static void clut_reset_current_test(void) {
   Clut.current.name = NULL;
   Clut.current.failed = false;
   Clut.current.iteration_index = -1;
@@ -832,8 +834,8 @@ static void clut_test_reset(void) {
   clut_da_clear(&Clut.runner.test_message);
 }
 
-static void clut_run_pending_test(ClutTestFn run_test_fn, const char *test_name) {
-  clut_test_reset();
+static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
+  clut_reset_current_test();
 
   if (Clut.hooks.before_each)
     Clut.hooks.before_each();
@@ -844,14 +846,14 @@ static void clut_run_pending_test(ClutTestFn run_test_fn, const char *test_name)
   run_test_fn();
 
   if (Clut.current.failed) {
-    clut_output_fail_header();
-    clut_output_flush_failures(&Clut.runner.output);
+    clut_report_fail_header();
+    clut_report_print_failures(&Clut.runner.output);
     Clut.suite.failures++;
   } else if (Clut.current.skipped) {
     Clut.suite.skips++;
-    clut_output_skip(test_name);
+    clut_report_skip(test_name);
   } else {
-    clut_output_pass(test_name, ClutElapsedSeconds(Clut.current.start_time));
+    clut_report_pass(test_name, ClutElapsedSeconds(Clut.current.start_time));
     Clut.suite.passed++;
   }
 
@@ -869,7 +871,7 @@ CLUT_API void ClutSuiteEnd(void) {
   if (Clut.hooks.before_all)
     Clut.hooks.before_all();
 
-  clut_da_foreach(ClutPendingTest, test, &Clut.suite.pending_tests) { clut_run_pending_test(test->fn, test->name); }
+  clut_da_foreach(ClutPendingTest, test, &Clut.suite.pending_tests) { clut_execute_test(test->fn, test->name); }
 
   double total_time = ClutElapsedSeconds(Clut.suite.start_time);
 
@@ -877,10 +879,10 @@ CLUT_API void ClutSuiteEnd(void) {
     Clut.hooks.after_all();
 
   ClutSuiteResult result = {Clut.suite.total_tests, Clut.suite.passed, Clut.suite.failures, Clut.suite.skips, total_time};
-  clut_output_suite_end(&result);
+  clut_report_suite_end(&result);
 
   Clut.runner.global_failures += Clut.suite.failures;
-  clut_suite_clear();
+  clut_reset_suite();
 }
 
 CLUT_API void ClutSetBeforeAll(ClutHookFn hook_fn) { Clut.hooks.before_all = hook_fn; }
@@ -960,15 +962,17 @@ CLUT_API void ClutSkipTest() { Clut.current.skipped = true; }
 CLUT_API void ClutTestAssert(bool condition, const char *file, int line, const char *msg) {
   RETURN_IF_FAILED_OR_SKIPPED;
   if (!condition) {
-    clut_append_message(msg);
-    clut_record_failure(file, line);
+    clut_message_append(msg);
+    clut_register_failure(file, line);
   }
 }
-CLUT_API void ClutTestAssertEqualChar(char expected, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, expected == actual, expected, CLUT_STR_RECEIVED, actual, file, line, msg); }
-CLUT_API void ClutTestAssertEqualInt(int expected, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_int, expected == actual, expected, CLUT_STR_RECEIVED, actual, file, line, msg); }
-CLUT_API void ClutTestAssertEqualUint(size_t expected, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_uint, expected == actual, expected, CLUT_STR_RECEIVED, actual, file, line, msg); }
-CLUT_API void ClutTestAssertEqualFloat(float expected, float actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_float, clut_float_equal(expected, actual), expected, CLUT_STR_RECEIVED, actual, file, line, msg); }
-CLUT_API void ClutTestAssertEqualDouble(double expected, double actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_double, clut_double_equal(expected, actual), expected, CLUT_STR_RECEIVED, actual, file, line, msg); }
+CLUT_API void ClutTestAssertEqualChar(char expected, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_char, expected == actual, expected, CLUT_STR_RECEIVED, actual, file, line, msg); }
+CLUT_API void ClutTestAssertEqualInt(int expected, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_int, expected == actual, expected, CLUT_STR_RECEIVED, actual, file, line, msg); }
+CLUT_API void ClutTestAssertEqualUint(size_t expected, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_uint, expected == actual, expected, CLUT_STR_RECEIVED, actual, file, line, msg); }
+CLUT_API void ClutTestAssertEqualFloat(float expected, float actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_float, clut_floats_are_close(expected, actual), expected, CLUT_STR_RECEIVED, actual, file, line, msg); }
+CLUT_API void ClutTestAssertEqualDouble(double expected, double actual, const char *file, int line, const char *msg) {
+  CLUT_ASSERT_COMPARE(clut_message_append_double, clut_doubles_are_close(expected, actual), expected, CLUT_STR_RECEIVED, actual, file, line, msg);
+}
 
 CLUT_API void ClutTestAssertEqualString(const char *expected, const char *actual, const char *file, int line, const char *msg) {
   RETURN_IF_FAILED_OR_SKIPPED;
@@ -985,7 +989,7 @@ CLUT_API void ClutTestAssertEqualString(const char *expected, const char *actual
   }
   if (!failed)
     return;
-  CLUT_ASSERT_COMPARE(clut_append_message_str, !failed, actual, CLUT_STR_EQUAL, expected, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_str, !failed, actual, CLUT_STR_EQUAL, expected, file, line, msg);
 }
 
 CLUT_API void ClutTestAssertEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, int line, const char *msg) {
@@ -1004,16 +1008,16 @@ CLUT_API void ClutTestAssertEqualStringLen(const char *expected, const char *act
   if (!failed)
     return;
   if (msg) {
-    clut_append_message(msg);
+    clut_message_append(msg);
   } else {
-    clut_append_message(CLUT_STR_EXPECTED);
-    clut_append_message_str(actual);
-    clut_append_message(CLUT_STR_EQUAL);
-    clut_append_message_str(expected);
-    clut_append_message(CLUT_STR_UNTIL_LEN);
-    clut_append_message_uint(len);
+    clut_message_append(CLUT_STR_EXPECTED);
+    clut_message_append_str(actual);
+    clut_message_append(CLUT_STR_EQUAL);
+    clut_message_append_str(expected);
+    clut_message_append(CLUT_STR_UNTIL_LEN);
+    clut_message_append_uint(len);
   }
-  clut_record_failure(file, line);
+  clut_register_failure(file, line);
 }
 
 CLUT_API void ClutTestAssertEqualPtr(void *expected, void *actual, const char *file, int line, const char *msg) {
@@ -1021,19 +1025,21 @@ CLUT_API void ClutTestAssertEqualPtr(void *expected, void *actual, const char *f
   if (expected == actual)
     return;
   if (msg) {
-    clut_append_message(msg);
+    clut_message_append(msg);
   } else {
-    CLUT_MESSAGE_EXPECTED_ACTUAL(clut_append_message_ptr, expected, CLUT_STR_RECEIVED, actual);
+    CLUT_MESSAGE_EXPECTED_ACTUAL(clut_message_append_ptr, expected, CLUT_STR_RECEIVED, actual);
   }
-  clut_record_failure(file, line);
+  clut_register_failure(file, line);
 }
 
-CLUT_API void ClutTestAssertNotEqualChar(char expected, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, expected != actual, actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg); }
-CLUT_API void ClutTestAssertNotEqualInt(int expected, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_int, expected != actual, actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg); }
-CLUT_API void ClutTestAssertNotEqualUint(size_t expected, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_uint, expected != actual, actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg); }
-CLUT_API void ClutTestAssertNotEqualFloat(float expected, float actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_float, !clut_float_equal(expected, actual), actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg); }
+CLUT_API void ClutTestAssertNotEqualChar(char expected, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_char, expected != actual, actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg); }
+CLUT_API void ClutTestAssertNotEqualInt(int expected, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_int, expected != actual, actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg); }
+CLUT_API void ClutTestAssertNotEqualUint(size_t expected, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_uint, expected != actual, actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg); }
+CLUT_API void ClutTestAssertNotEqualFloat(float expected, float actual, const char *file, int line, const char *msg) {
+  CLUT_ASSERT_COMPARE(clut_message_append_float, !clut_floats_are_close(expected, actual), actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg);
+}
 CLUT_API void ClutTestAssertNotEqualDouble(double expected, double actual, const char *file, int line, const char *msg) {
-  CLUT_ASSERT_COMPARE(clut_append_message_double, !clut_double_equal(expected, actual), actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_double, !clut_doubles_are_close(expected, actual), actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg);
 }
 
 CLUT_API void ClutTestAssertNotEqualString(const char *expected, const char *actual, const char *file, int line, const char *msg) {
@@ -1054,7 +1060,7 @@ CLUT_API void ClutTestAssertNotEqualString(const char *expected, const char *act
   }
   if (!equal)
     return;
-  CLUT_ASSERT_COMPARE(clut_append_message_str, !equal, actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_str, !equal, actual, CLUT_STR_NOT_EQUAL, expected, file, line, msg);
 }
 
 CLUT_API void ClutTestAssertNotEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, int line, const char *msg) {
@@ -1076,16 +1082,16 @@ CLUT_API void ClutTestAssertNotEqualStringLen(const char *expected, const char *
   if (!equal)
     return;
   if (msg) {
-    clut_append_message(msg);
+    clut_message_append(msg);
   } else {
-    clut_append_message(CLUT_STR_EXPECTED);
-    clut_append_message_str(actual);
-    clut_append_message(CLUT_STR_NOT_EQUAL);
-    clut_append_message_str(expected);
-    clut_append_message(CLUT_STR_UNTIL_LEN);
-    clut_append_message_uint(len);
+    clut_message_append(CLUT_STR_EXPECTED);
+    clut_message_append_str(actual);
+    clut_message_append(CLUT_STR_NOT_EQUAL);
+    clut_message_append_str(expected);
+    clut_message_append(CLUT_STR_UNTIL_LEN);
+    clut_message_append_uint(len);
   }
-  clut_record_failure(file, line);
+  clut_register_failure(file, line);
 }
 
 CLUT_API void ClutTestAssertNotEqualPtr(void *expected, void *actual, const char *file, int line, const char *msg) {
@@ -1093,65 +1099,65 @@ CLUT_API void ClutTestAssertNotEqualPtr(void *expected, void *actual, const char
   if (expected != actual)
     return;
   if (msg) {
-    clut_append_message(msg);
+    clut_message_append(msg);
   } else {
-    CLUT_MESSAGE_EXPECTED_ACTUAL(clut_append_message_ptr, actual, CLUT_STR_NOT_EQUAL, expected);
+    CLUT_MESSAGE_EXPECTED_ACTUAL(clut_message_append_ptr, actual, CLUT_STR_NOT_EQUAL, expected);
   }
-  clut_record_failure(file, line);
+  clut_register_failure(file, line);
 }
 
-CLUT_API void ClutTestAssertCharGreaterThan(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
-CLUT_API void ClutTestAssertCharGreaterOrEqual(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, actual >= threshold, actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg); }
-CLUT_API void ClutTestAssertCharLessThan(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
-CLUT_API void ClutTestAssertCharLessOrEqual(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_char, actual <= threshold, actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertCharGreaterThan(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_char, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertCharGreaterOrEqual(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_char, actual >= threshold, actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertCharLessThan(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_char, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertCharLessOrEqual(char threshold, char actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_char, actual <= threshold, actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg); }
 
-CLUT_API void ClutTestAssertIntGreaterThan(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_int, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
-CLUT_API void ClutTestAssertIntGreaterOrEqual(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_int, actual >= threshold, actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg); }
-CLUT_API void ClutTestAssertIntLessThan(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_int, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
-CLUT_API void ClutTestAssertIntLessOrEqual(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_int, actual <= threshold, actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertIntGreaterThan(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_int, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertIntGreaterOrEqual(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_int, actual >= threshold, actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertIntLessThan(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_int, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertIntLessOrEqual(int threshold, int actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_int, actual <= threshold, actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg); }
 
-CLUT_API void ClutTestAssertUintGreaterThan(size_t threshold, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_uint, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
-CLUT_API void ClutTestAssertUintGreaterOrEqual(size_t threshold, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_uint, actual >= threshold, actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg); }
-CLUT_API void ClutTestAssertUintLessThan(size_t threshold, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_uint, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
-CLUT_API void ClutTestAssertUintLessOrEqual(size_t threshold, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_uint, actual <= threshold, actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertUintGreaterThan(size_t threshold, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_uint, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertUintGreaterOrEqual(size_t threshold, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_uint, actual >= threshold, actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertUintLessThan(size_t threshold, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_uint, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertUintLessOrEqual(size_t threshold, size_t actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_uint, actual <= threshold, actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg); }
 
-CLUT_API void ClutTestAssertFloatGreaterThan(float threshold, float actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_float, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertFloatGreaterThan(float threshold, float actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_float, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
 CLUT_API void ClutTestAssertFloatGreaterOrEqual(float threshold, float actual, const char *file, int line, const char *msg) {
-  CLUT_ASSERT_COMPARE(clut_append_message_float, actual > threshold || clut_float_equal(threshold, actual), actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_float, actual > threshold || clut_floats_are_close(threshold, actual), actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg);
 }
-CLUT_API void ClutTestAssertFloatLessThan(float threshold, float actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_float, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertFloatLessThan(float threshold, float actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_float, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
 CLUT_API void ClutTestAssertFloatLessOrEqual(float threshold, float actual, const char *file, int line, const char *msg) {
-  CLUT_ASSERT_COMPARE(clut_append_message_float, actual < threshold || clut_float_equal(threshold, actual), actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_float, actual < threshold || clut_floats_are_close(threshold, actual), actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg);
 }
 
-CLUT_API void ClutTestAssertDoubleGreaterThan(double threshold, double actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_double, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertDoubleGreaterThan(double threshold, double actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_double, actual > threshold, actual, CLUT_STR_GREATER_THAN, threshold, file, line, msg); }
 CLUT_API void ClutTestAssertDoubleGreaterOrEqual(double threshold, double actual, const char *file, int line, const char *msg) {
-  CLUT_ASSERT_COMPARE(clut_append_message_double, actual > threshold || clut_double_equal(threshold, actual), actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_double, actual > threshold || clut_doubles_are_close(threshold, actual), actual, CLUT_STR_GREATER_OR_EQUAL, threshold, file, line, msg);
 }
-CLUT_API void ClutTestAssertDoubleLessThan(double threshold, double actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_append_message_double, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
+CLUT_API void ClutTestAssertDoubleLessThan(double threshold, double actual, const char *file, int line, const char *msg) { CLUT_ASSERT_COMPARE(clut_message_append_double, actual < threshold, actual, CLUT_STR_LESS_THAN, threshold, file, line, msg); }
 CLUT_API void ClutTestAssertDoubleLessOrEqual(double threshold, double actual, const char *file, int line, const char *msg) {
-  CLUT_ASSERT_COMPARE(clut_append_message_double, actual < threshold || clut_double_equal(threshold, actual), actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_double, actual < threshold || clut_doubles_are_close(threshold, actual), actual, CLUT_STR_LESS_OR_EQUAL, threshold, file, line, msg);
 }
 
 CLUT_API void ClutTestAssertWithinChar(char expected, size_t delta, char actual, const char *file, int line, const char *msg) {
   size_t diff = (actual > expected) ? (actual - expected) : (expected - actual);
-  CLUT_ASSERT_WITHIN(clut_append_message_char, clut_append_message_uint, diff, expected, delta, file, line, msg);
+  CLUT_ASSERT_WITHIN(clut_message_append_char, clut_message_append_uint, diff, expected, delta, file, line, msg);
 }
 CLUT_API void ClutTestAssertWithinInt(int expected, size_t delta, int actual, const char *file, int line, const char *msg) {
   size_t diff = (actual > expected) ? (actual - expected) : (expected - actual);
-  CLUT_ASSERT_WITHIN(clut_append_message_int, clut_append_message_uint, diff, expected, delta, file, line, msg);
+  CLUT_ASSERT_WITHIN(clut_message_append_int, clut_message_append_uint, diff, expected, delta, file, line, msg);
 }
 CLUT_API void ClutTestAssertWithinUint(size_t expected, size_t delta, size_t actual, const char *file, int line, const char *msg) {
   size_t diff = (actual > expected) ? (actual - expected) : (expected - actual);
-  CLUT_ASSERT_WITHIN(clut_append_message_uint, clut_append_message_uint, diff, expected, delta, file, line, msg);
+  CLUT_ASSERT_WITHIN(clut_message_append_uint, clut_message_append_uint, diff, expected, delta, file, line, msg);
 }
 CLUT_API void ClutTestAssertWithinFloat(float expected, float delta, float actual, const char *file, int line, const char *msg) {
-  float diff = clut_fabsf(actual - expected);
-  CLUT_ASSERT_WITHIN(clut_append_message_float, clut_append_message_float, diff, expected, delta, file, line, msg);
+  float diff = clut_abs_float(actual - expected);
+  CLUT_ASSERT_WITHIN(clut_message_append_float, clut_message_append_float, diff, expected, delta, file, line, msg);
 }
 CLUT_API void ClutTestAssertWithinDouble(double expected, double delta, double actual, const char *file, int line, const char *msg) {
-  double diff = clut_fabs(actual - expected);
-  CLUT_ASSERT_WITHIN(clut_append_message_double, clut_append_message_double, diff, expected, delta, file, line, msg);
+  double diff = clut_abs_double(actual - expected);
+  CLUT_ASSERT_WITHIN(clut_message_append_double, clut_message_append_double, diff, expected, delta, file, line, msg);
 }
 
 CLUT_API void ClutTestAssertEqualMemory(const void *expected, const void *actual, size_t len, size_t num_elements, const char *file, int line, const char *msg) {
@@ -1170,19 +1176,19 @@ CLUT_API void ClutTestAssertEqualMemory(const void *expected, const void *actual
         continue;
 
       if (msg) {
-        clut_append_message(msg);
+        clut_message_append(msg);
       } else {
         if (num_elements > 1) {
-          clut_append_message_array_prefix(idx);
-          clut_append_message(CLUT_STR_BYTE_OFFSET);
-          clut_append_message_formated("[%zu] ", byte);
+          clut_message_append_array_prefix(idx);
+          clut_message_append(CLUT_STR_BYTE_OFFSET);
+          clut_message_append_format("[%zu] ", byte);
         } else {
-          clut_append_message(CLUT_STR_MISMATCH_AT);
-          clut_append_message_uint(byte);
+          clut_message_append(CLUT_STR_MISMATCH_AT);
+          clut_message_append_uint(byte);
         }
-        CLUT_MESSAGE_EXPECTED_ACTUAL(clut_append_message_hex, ptr_expected[offset], CLUT_STR_WAS, ptr_actual[offset]);
+        CLUT_MESSAGE_EXPECTED_ACTUAL(clut_message_append_hex, ptr_expected[offset], CLUT_STR_WAS, ptr_actual[offset]);
       }
-      clut_record_failure(file, line);
+      clut_register_failure(file, line);
       return;
     }
   }
@@ -1191,12 +1197,12 @@ CLUT_API void ClutTestAssertEqualMemory(const void *expected, const void *actual
 #define CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, index, append_fn, exp_val, act_val)                                                                                                                                                                            \
   do {                                                                                                                                                                                                                                                             \
     if (msg) {                                                                                                                                                                                                                                                     \
-      clut_append_message((msg));                                                                                                                                                                                                                                  \
+      clut_message_append((msg));                                                                                                                                                                                                                                  \
     } else {                                                                                                                                                                                                                                                       \
-      clut_append_message_array_prefix((index));                                                                                                                                                                                                                   \
+      clut_message_append_array_prefix((index));                                                                                                                                                                                                                   \
       CLUT_MESSAGE_EXPECTED_ACTUAL(append_fn, (exp_val), CLUT_STR_WAS, (act_val));                                                                                                                                                                                 \
     }                                                                                                                                                                                                                                                              \
-    clut_record_failure(file, line);                                                                                                                                                                                                                               \
+    clut_register_failure(file, line);                                                                                                                                                                                                                             \
   } while (0)
 
 CLUT_API void ClutTestAssertEqualCharArray(const char *expected, const char *actual, size_t num_elements, const char *file, int line, const char *msg) {
@@ -1205,7 +1211,7 @@ CLUT_API void ClutTestAssertEqualCharArray(const char *expected, const char *act
   for (size_t i = 0; i < num_elements; i++) {
     if (expected[i] == actual[i])
       continue;
-    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_append_message_char, expected[i], actual[i]);
+    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_char, expected[i], actual[i]);
     return;
   }
 }
@@ -1216,7 +1222,7 @@ CLUT_API void ClutTestAssertEqualIntArray(const int *expected, const int *actual
   for (size_t i = 0; i < num_elements; i++) {
     if (expected[i] == actual[i])
       continue;
-    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_append_message_int, expected[i], actual[i]);
+    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_int, expected[i], actual[i]);
     return;
   }
 }
@@ -1227,7 +1233,7 @@ CLUT_API void ClutTestAssertEqualUintArray(const size_t *expected, const size_t 
   for (size_t i = 0; i < num_elements; i++) {
     if (expected[i] == actual[i])
       continue;
-    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_append_message_uint, expected[i], actual[i]);
+    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_uint, expected[i], actual[i]);
     return;
   }
 }
@@ -1236,9 +1242,9 @@ CLUT_API void ClutTestAssertEqualFloatArray(const float *expected, const float *
   RETURN_IF_FAILED_OR_SKIPPED;
   CHECK_MEMORY_PRECONDITIONS;
   for (size_t i = 0; i < num_elements; i++) {
-    if (clut_float_equal(expected[i], actual[i]))
+    if (clut_floats_are_close(expected[i], actual[i]))
       continue;
-    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_append_message_float, expected[i], actual[i]);
+    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_float, expected[i], actual[i]);
     return;
   }
 }
@@ -1247,9 +1253,9 @@ CLUT_API void ClutTestAssertEqualDoubleArray(const double *expected, const doubl
   RETURN_IF_FAILED_OR_SKIPPED;
   CHECK_MEMORY_PRECONDITIONS;
   for (size_t i = 0; i < num_elements; i++) {
-    if (clut_double_equal(expected[i], actual[i]))
+    if (clut_doubles_are_close(expected[i], actual[i]))
       continue;
-    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_append_message_double, expected[i], actual[i]);
+    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_double, expected[i], actual[i]);
     return;
   }
 }
@@ -1275,7 +1281,7 @@ CLUT_API void ClutTestAssertEqualStringArray(const char **expected, const char *
     }
     if (!mismatch)
       continue;
-    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_append_message_str, exp_str, act_str);
+    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_str, exp_str, act_str);
     return;
   }
 }
@@ -1283,12 +1289,12 @@ CLUT_API void ClutTestAssertEqualStringArray(const char **expected, const char *
 #define CLUT_ARRAY_WITHIN_RECORD(file, line, msg, index, append_fn_val, append_fn_num, exp_val, delta_val, diff_val)                                                                                                                                               \
   do {                                                                                                                                                                                                                                                             \
     if (msg) {                                                                                                                                                                                                                                                     \
-      clut_append_message((msg));                                                                                                                                                                                                                                  \
+      clut_message_append((msg));                                                                                                                                                                                                                                  \
     } else {                                                                                                                                                                                                                                                       \
-      clut_append_message_array_prefix((index));                                                                                                                                                                                                                   \
+      clut_message_append_array_prefix((index));                                                                                                                                                                                                                   \
       CLUT_MESSAGE_WITHIN_DIFF(append_fn_val, append_fn_num, (exp_val), (delta_val), (diff_val));                                                                                                                                                                  \
     }                                                                                                                                                                                                                                                              \
-    clut_record_failure(file, line);                                                                                                                                                                                                                               \
+    clut_register_failure(file, line);                                                                                                                                                                                                                             \
   } while (0)
 
 CLUT_API void ClutTestAssertWithinCharArray(const char *expected, size_t delta, const char *actual, size_t num_elements, const char *file, int line, const char *msg) {
@@ -1298,7 +1304,7 @@ CLUT_API void ClutTestAssertWithinCharArray(const char *expected, size_t delta, 
     size_t diff = (actual[i] > expected[i]) ? (actual[i] - expected[i]) : (expected[i] - actual[i]);
     if (diff <= delta)
       continue;
-    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_append_message_char, clut_append_message_uint, expected[i], delta, diff);
+    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_message_append_char, clut_message_append_uint, expected[i], delta, diff);
     return;
   }
 }
@@ -1310,7 +1316,7 @@ CLUT_API void ClutTestAssertWithinIntArray(const int *expected, size_t delta, co
     size_t diff = (actual[i] > expected[i]) ? (actual[i] - expected[i]) : (expected[i] - actual[i]);
     if (diff <= delta)
       continue;
-    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_append_message_int, clut_append_message_uint, expected[i], delta, diff);
+    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_message_append_int, clut_message_append_uint, expected[i], delta, diff);
     return;
   }
 }
@@ -1322,7 +1328,7 @@ CLUT_API void ClutTestAssertWithinUintArray(const size_t *expected, size_t delta
     size_t diff = (actual[i] > expected[i]) ? (actual[i] - expected[i]) : (expected[i] - actual[i]);
     if (diff <= delta)
       continue;
-    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_append_message_uint, clut_append_message_uint, expected[i], delta, diff);
+    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_message_append_uint, clut_message_append_uint, expected[i], delta, diff);
     return;
   }
 }
@@ -1331,10 +1337,10 @@ CLUT_API void ClutTestAssertWithinFloatArray(const float *expected, float delta,
   RETURN_IF_FAILED_OR_SKIPPED;
   CHECK_MEMORY_PRECONDITIONS;
   for (size_t i = 0; i < num_elements; i++) {
-    float diff = clut_fabsf(actual[i] - expected[i]);
+    float diff = clut_abs_float(actual[i] - expected[i]);
     if (diff <= delta)
       continue;
-    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_append_message_float, clut_append_message_float, expected[i], delta, diff);
+    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_message_append_float, clut_message_append_float, expected[i], delta, diff);
     return;
   }
 }
@@ -1343,10 +1349,10 @@ CLUT_API void ClutTestAssertWithinDoubleArray(const double *expected, double del
   RETURN_IF_FAILED_OR_SKIPPED;
   CHECK_MEMORY_PRECONDITIONS;
   for (size_t i = 0; i < num_elements; i++) {
-    double diff = clut_fabs(actual[i] - expected[i]);
+    double diff = clut_abs_double(actual[i] - expected[i]);
     if (diff <= delta)
       continue;
-    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_append_message_double, clut_append_message_double, expected[i], delta, diff);
+    CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_message_append_double, clut_message_append_double, expected[i], delta, diff);
     return;
   }
 }
