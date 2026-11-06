@@ -68,15 +68,15 @@ typedef struct {
 typedef struct {
   size_t total_tests;
   size_t passed;
-  size_t failures;
-  size_t skips;
+  size_t failed;
+  size_t skipped;
   double total_seconds;
 } ClutSuiteResult;
 
 typedef struct {
   const char *file;
   int line;
-  int iteration_index;
+  int iteration;
 } ClutLogRecord;
 
 /* Function-pointer types */
@@ -91,9 +91,9 @@ typedef void (*ClutRepeatedTestFn)(ClutRepeatedTestInput);
 
 /* Core data structures */
 typedef struct {
-  size_t global_failures;
-  ClutSB output;
-  ClutSB test_message;
+  size_t total_failures;
+  ClutSB failure_report;
+  ClutSB failure_message;
 } ClutRunner;
 
 typedef struct {
@@ -110,10 +110,10 @@ typedef struct {
 typedef struct {
   size_t total_tests;
   size_t passed;
-  size_t failures;
-  size_t skips;
+  size_t failed;
+  size_t skipped;
   long start_time;
-  ClutPendingTests pending_tests;
+  ClutPendingTests registered_tests;
 } ClutSuite;
 
 typedef struct {
@@ -128,7 +128,7 @@ typedef struct {
   long start_time;
   bool failed;
   bool skipped;
-  int iteration_index;
+  int iteration;
 #ifdef CLUT_USE_LONG_JUMP
   jmp_buf jmp_buffer;
 #endif
@@ -568,7 +568,7 @@ CLUT_INTERNAL_STATE ClutData Clut = {0};
 static void clut_capture_failure_location(ClutLogRecord *record, const char *file, int line) {
   record->file = file;
   record->line = line;
-  record->iteration_index = Clut.current.iteration_index;
+  record->iteration = Clut.current.iteration;
 }
 
 #ifdef CLUT_OUTPUT_TAP
@@ -601,19 +601,19 @@ static void clut_report_fail_header() {
   fprintf(CLUT_STREAM_DEFAULT, "not ok %zu - %s # (%.3fs)\n", clut_tap_test_index, Clut.current.name, elapsed_seconds);
 }
 
-static void clut_report_format_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
-  clut_string_builder_append_format(output, "# %s:%d: %s", record->file, record->line, clut_string_builder_to_cstr(test_message));
-  if (record->iteration_index >= 0) {
-    clut_string_builder_append_format(output, " [iteration %d]", record->iteration_index);
+static void clut_report_format_failure(const ClutLogRecord *record, ClutSB *failure_report, ClutSB *failure_message) {
+  clut_string_builder_append_format(failure_report, "# %s:%d: %s", record->file, record->line, clut_string_builder_to_cstr(failure_message));
+  if (record->iteration >= 0) {
+    clut_string_builder_append_format(failure_report, " [iteration %d]", record->iteration);
   }
-  clut_string_builder_append_char(output, '\n');
+  clut_string_builder_append_char(failure_report, '\n');
 }
 
-static void clut_report_print_failures(ClutSB *output) { fprintf(CLUT_STREAM_DEFAULT, "%s", clut_string_builder_to_cstr(output)); }
+static void clut_report_print_failures(ClutSB *failure_report) { fprintf(CLUT_STREAM_DEFAULT, "%s", clut_string_builder_to_cstr(failure_report)); }
 
 static void clut_report_suite_end(const ClutSuiteResult *result) {
   clut_report_plan();
-  fprintf(CLUT_STREAM_DEFAULT, "# Tests: %zu, Passed: %zu, Failed: %zu, Skipped: %zu, Time: %.3fs\n", result->total_tests, result->passed, result->failures, result->skips, result->total_seconds);
+  fprintf(CLUT_STREAM_DEFAULT, "# Tests: %zu, Passed: %zu, Failed: %zu, Skipped: %zu, Time: %.3fs\n", result->total_tests, result->passed, result->failed, result->skipped, result->total_seconds);
   clut_tap_test_index = 0;
   clut_tap_plan_printed = false;
 }
@@ -625,12 +625,12 @@ static void clut_report_fail_header() {
   double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
   fprintf(CLUT_STREAM_FAIL, "::notice title=FAIL::%s (%.3fs)\n", Clut.current.name, elapsed_seconds);
 }
-static void clut_report_format_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
-  clut_string_builder_append_format(output, "::error file=%s,line=%d,title=%s::%s\n", record->file, record->line, Clut.current.name, clut_string_builder_to_cstr(test_message));
+static void clut_report_format_failure(const ClutLogRecord *record, ClutSB *failure_report, ClutSB *failure_message) {
+  clut_string_builder_append_format(failure_report, "::error file=%s,line=%d,title=%s::%s\n", record->file, record->line, Clut.current.name, clut_string_builder_to_cstr(failure_message));
 }
-static void clut_report_print_failures(ClutSB *output) { fprintf(CLUT_STREAM_FAIL, "%s", clut_string_builder_to_cstr(output)); }
+static void clut_report_print_failures(ClutSB *failure_report) { fprintf(CLUT_STREAM_FAIL, "%s", clut_string_builder_to_cstr(failure_report)); }
 static void clut_report_suite_end(const ClutSuiteResult *result) {
-  fprintf(CLUT_STREAM_DEFAULT, "::notice title=Suite Results::Tests=%zu Passed=%zu Failed=%zu Skipped=%zu Time=%.3fs\n", result->total_tests, result->passed, result->failures, result->skips, result->total_seconds);
+  fprintf(CLUT_STREAM_DEFAULT, "::notice title=Suite Results::Tests=%zu Passed=%zu Failed=%zu Skipped=%zu Time=%.3fs\n", result->total_tests, result->passed, result->failed, result->skipped, result->total_seconds);
 }
 #else /* default */
 static void clut_report_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "%s%-50s%.3fs\n", CLUT_GREEN_TEXT("[ PASS ] "), test_name, elapsed_seconds); }
@@ -640,26 +640,26 @@ static void clut_report_fail_header() {
   fprintf(CLUT_STREAM_FAIL, "%s%s%-50s%.3fs%s\n", CLUT_RED_TEXT("[ FAIL ] "), CLUT_STR_BEGIN_RED_TEXT, Clut.current.name, elapsed_seconds, CLUT_STR_END_COLOR_TEXT);
 }
 
-static void clut_report_format_failure(const ClutLogRecord *record, ClutSB *output, ClutSB *test_message) {
-  clut_string_builder_append(output, CLUT_STR_BEGIN_RED_TEXT);
-  clut_string_builder_append_format(output, "%s:%d:%s", record->file, record->line, Clut.current.name);
-  if (record->iteration_index >= 0) {
-    clut_string_builder_append_format(output, "[%d]", record->iteration_index);
+static void clut_report_format_failure(const ClutLogRecord *record, ClutSB *failure_report, ClutSB *failure_message) {
+  clut_string_builder_append(failure_report, CLUT_STR_BEGIN_RED_TEXT);
+  clut_string_builder_append_format(failure_report, "%s:%d:%s", record->file, record->line, Clut.current.name);
+  if (record->iteration >= 0) {
+    clut_string_builder_append_format(failure_report, "[%d]", record->iteration);
   }
-  clut_string_builder_append_char(output, ':');
-  clut_string_builder_append(output, clut_string_builder_to_cstr(test_message));
-  clut_string_builder_append(output, CLUT_STR_END_COLOR_TEXT);
-  clut_string_builder_append_char(output, '\n');
+  clut_string_builder_append_char(failure_report, ':');
+  clut_string_builder_append(failure_report, clut_string_builder_to_cstr(failure_message));
+  clut_string_builder_append(failure_report, CLUT_STR_END_COLOR_TEXT);
+  clut_string_builder_append_char(failure_report, '\n');
 }
 
-static void clut_report_print_failures(ClutSB *output) { fprintf(CLUT_STREAM_FAIL, "%s", clut_string_builder_to_cstr(output)); }
+static void clut_report_print_failures(ClutSB *failure_report) { fprintf(CLUT_STREAM_FAIL, "%s", clut_string_builder_to_cstr(failure_report)); }
 static void clut_report_suite_end(const ClutSuiteResult *result) {
   FILE *stream = CLUT_STREAM_DEFAULT;
   fprintf(stream, "--------------------------------\n");
   fprintf(stream, CLUT_BLUE_TEXT("Tests:      ") CLUT_GREEN_TEXT("%zu\n"), result->total_tests);
   fprintf(stream, CLUT_BLUE_TEXT("Passed:     ") CLUT_GREEN_TEXT("%zu\n"), result->passed);
-  fprintf(stream, CLUT_BLUE_TEXT("Failed:     ") CLUT_RED_TEXT("%zu\n"), result->failures);
-  fprintf(stream, CLUT_BLUE_TEXT("Skipped:    ") CLUT_YELLOW_TEXT("%zu\n"), result->skips);
+  fprintf(stream, CLUT_BLUE_TEXT("Failed:     ") CLUT_RED_TEXT("%zu\n"), result->failed);
+  fprintf(stream, CLUT_BLUE_TEXT("Skipped:    ") CLUT_YELLOW_TEXT("%zu\n"), result->skipped);
   fprintf(stream, "--------------------------------\n");
   fprintf(stream, CLUT_BLUE_TEXT("Total time: %.3fs\n"), result->total_seconds);
   fprintf(stream, "\n");
@@ -670,10 +670,10 @@ static void clut_register_failure(const char *file, int line) {
   Clut.current.failed = true;
   ClutLogRecord record;
   clut_capture_failure_location(&record, file, line);
-  clut_report_format_failure(&record, &Clut.runner.output, &Clut.runner.test_message);
+  clut_report_format_failure(&record, &Clut.runner.failure_report, &Clut.runner.failure_message);
 }
 
-static void clut_message_append(const char *msg) { clut_string_builder_append(&Clut.runner.test_message, msg); }
+static void clut_message_append(const char *msg) { clut_string_builder_append(&Clut.runner.failure_message, msg); }
 static void clut_message_append_char(char c) {
   unsigned char uc = (unsigned char)c;
   const char *escaped = NULL;
@@ -697,29 +697,29 @@ static void clut_message_append_char(char c) {
   }
 
   if (escaped) {
-    clut_string_builder_append_format(&Clut.runner.test_message, "'%s' (0x%02X)", escaped, uc);
+    clut_string_builder_append_format(&Clut.runner.failure_message, "'%s' (0x%02X)", escaped, uc);
   } else if (isprint(uc)) {
-    clut_string_builder_append_format(&Clut.runner.test_message, "'%c' (0x%02X)", uc, uc);
+    clut_string_builder_append_format(&Clut.runner.failure_message, "'%c' (0x%02X)", uc, uc);
   } else {
-    clut_string_builder_append_format(&Clut.runner.test_message, "'\\x%02X' (0x%02X)", uc, uc);
+    clut_string_builder_append_format(&Clut.runner.failure_message, "'\\x%02X' (0x%02X)", uc, uc);
   }
 }
-static void clut_message_append_int(int v) { clut_string_builder_append_format(&Clut.runner.test_message, "%d", v); }
-static void clut_message_append_uint(size_t v) { clut_string_builder_append_format(&Clut.runner.test_message, "%zu", v); }
-static void clut_message_append_float(float v) { clut_string_builder_append_format(&Clut.runner.test_message, "%.5f", v); }
-static void clut_message_append_double(double v) { clut_string_builder_append_format(&Clut.runner.test_message, "%.9f", v); }
-static void clut_message_append_ptr(void *p) { clut_string_builder_append_format(&Clut.runner.test_message, "%p", p); }
-static void clut_message_append_hex(int v) { clut_string_builder_append_format(&Clut.runner.test_message, "0x%02X", v); }
+static void clut_message_append_int(int v) { clut_string_builder_append_format(&Clut.runner.failure_message, "%d", v); }
+static void clut_message_append_uint(size_t v) { clut_string_builder_append_format(&Clut.runner.failure_message, "%zu", v); }
+static void clut_message_append_float(float v) { clut_string_builder_append_format(&Clut.runner.failure_message, "%.5f", v); }
+static void clut_message_append_double(double v) { clut_string_builder_append_format(&Clut.runner.failure_message, "%.9f", v); }
+static void clut_message_append_ptr(void *p) { clut_string_builder_append_format(&Clut.runner.failure_message, "%p", p); }
+static void clut_message_append_hex(int v) { clut_string_builder_append_format(&Clut.runner.failure_message, "0x%02X", v); }
 static void clut_message_append_str(const char *str) {
   if (str == NULL) {
     clut_message_append("(null)");
   } else {
-    clut_string_builder_append_char(&Clut.runner.test_message, '"');
+    clut_string_builder_append_char(&Clut.runner.failure_message, '"');
     clut_message_append(str);
-    clut_string_builder_append_char(&Clut.runner.test_message, '"');
+    clut_string_builder_append_char(&Clut.runner.failure_message, '"');
   }
 }
-#define clut_message_append_format(fmt, ...) clut_string_builder_append_format(&Clut.runner.test_message, fmt, __VA_ARGS__)
+#define clut_message_append_format(fmt, ...) clut_string_builder_append_format(&Clut.runner.failure_message, fmt, __VA_ARGS__)
 
 static void clut_message_append_array_prefix(size_t index) {
   clut_message_append(CLUT_STR_ARRAY_MISMATCH_AT);
@@ -801,18 +801,18 @@ static void clut_message_append_array_prefix(size_t index) {
 CLUT_API void ClutRunnerBegin() { Clut.runner = (ClutRunner){0}; }
 
 CLUT_API int ClutRunnerEnd() {
-  clut_da_free(&Clut.runner.output);
-  clut_da_free(&Clut.runner.test_message);
-  clut_da_free(&Clut.suite.pending_tests);
-  return Clut.runner.global_failures > 255 ? 255 : (int)Clut.runner.global_failures;
+  clut_da_free(&Clut.runner.failure_report);
+  clut_da_free(&Clut.runner.failure_message);
+  clut_da_free(&Clut.suite.registered_tests);
+  return Clut.runner.total_failures > 255 ? 255 : (int)Clut.runner.total_failures;
 }
 
 static void clut_reset_suite(void) {
   Clut.suite.total_tests = 0;
   Clut.suite.passed = 0;
-  Clut.suite.failures = 0;
+  Clut.suite.failed = 0;
   Clut.suite.start_time = 0;
-  clut_da_clear(&Clut.suite.pending_tests);
+  clut_da_clear(&Clut.suite.registered_tests);
 }
 
 CLUT_API void ClutSuiteBegin(void) {
@@ -822,16 +822,16 @@ CLUT_API void ClutSuiteBegin(void) {
 
 CLUT_API void ClutSuiteAddTest(ClutTestFn run_test_fn, const char *test_name) {
   ClutPendingTest pending_test = (ClutPendingTest){run_test_fn, test_name};
-  clut_da_append(&Clut.suite.pending_tests, pending_test);
-  Clut.suite.total_tests = Clut.suite.pending_tests.count;
+  clut_da_append(&Clut.suite.registered_tests, pending_test);
+  Clut.suite.total_tests = Clut.suite.registered_tests.count;
 }
 
 static void clut_reset_current_test(void) {
   Clut.current.name = NULL;
   Clut.current.failed = false;
-  Clut.current.iteration_index = -1;
-  clut_da_clear(&Clut.runner.output);
-  clut_da_clear(&Clut.runner.test_message);
+  Clut.current.iteration = -1;
+  clut_da_clear(&Clut.runner.failure_report);
+  clut_da_clear(&Clut.runner.failure_message);
 }
 
 static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
@@ -847,10 +847,10 @@ static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
 
   if (Clut.current.failed) {
     clut_report_fail_header();
-    clut_report_print_failures(&Clut.runner.output);
-    Clut.suite.failures++;
+    clut_report_print_failures(&Clut.runner.failure_report);
+    Clut.suite.failed++;
   } else if (Clut.current.skipped) {
-    Clut.suite.skips++;
+    Clut.suite.skipped++;
     clut_report_skip(test_name);
   } else {
     clut_report_pass(test_name, ClutElapsedSeconds(Clut.current.start_time));
@@ -871,17 +871,17 @@ CLUT_API void ClutSuiteEnd(void) {
   if (Clut.hooks.before_all)
     Clut.hooks.before_all();
 
-  clut_da_foreach(ClutPendingTest, test, &Clut.suite.pending_tests) { clut_execute_test(test->fn, test->name); }
+  clut_da_foreach(ClutPendingTest, test, &Clut.suite.registered_tests) { clut_execute_test(test->fn, test->name); }
 
   double total_time = ClutElapsedSeconds(Clut.suite.start_time);
 
   if (Clut.hooks.after_all)
     Clut.hooks.after_all();
 
-  ClutSuiteResult result = {Clut.suite.total_tests, Clut.suite.passed, Clut.suite.failures, Clut.suite.skips, total_time};
+  ClutSuiteResult result = {Clut.suite.total_tests, Clut.suite.passed, Clut.suite.failed, Clut.suite.skipped, total_time};
   clut_report_suite_end(&result);
 
-  Clut.runner.global_failures += Clut.suite.failures;
+  Clut.runner.total_failures += Clut.suite.failed;
   clut_reset_suite();
 }
 
@@ -909,8 +909,8 @@ CLUT_API void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t repetitions
   volatile ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = repetitions};
   volatile bool failed = false;
   for (volatile size_t i = 1; i <= repetitions; ++i) {
-    clut_da_clear(&Clut.runner.test_message);
-    Clut.current.iteration_index = (int)i;
+    clut_da_clear(&Clut.runner.failure_message);
+    Clut.current.iteration = (int)i;
     input.current_repetition = i;
     CLUT_RUN_GUARDED(test_fn(input));
     if (Clut.current.failed) {
@@ -925,8 +925,8 @@ CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_
   volatile ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = repetitions};
   volatile size_t failures = 0;
   for (volatile size_t i = 1; i <= repetitions; ++i) {
-    clut_da_clear(&Clut.runner.test_message);
-    Clut.current.iteration_index = (int)i;
+    clut_da_clear(&Clut.runner.failure_message);
+    Clut.current.iteration = (int)i;
     input.current_repetition = i;
     CLUT_RUN_GUARDED(test_fn(input));
     if (Clut.current.failed) {
@@ -946,8 +946,8 @@ CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_
     size_t n = sizeof(input_arr) / sizeof(input_arr[0]);                                                                                                                                                                                                           \
     volatile bool failed = false;                                                                                                                                                                                                                                  \
     for (volatile size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                      \
-      clut_da_clear(&Clut.runner.test_message);                                                                                                                                                                                                                    \
-      Clut.current.iteration_index = (int)i;                                                                                                                                                                                                                       \
+      clut_da_clear(&Clut.runner.failure_message);                                                                                                                                                                                                                 \
+      Clut.current.iteration = (int)i;                                                                                                                                                                                                                             \
       CLUT_RUN_GUARDED(test_fn(input_arr[i]));                                                                                                                                                                                                                     \
       if (Clut.current.failed) {                                                                                                                                                                                                                                   \
         failed = true;                                                                                                                                                                                                                                             \
