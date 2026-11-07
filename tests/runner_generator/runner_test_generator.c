@@ -69,8 +69,8 @@ int main(void){
 	SUITE_END();
 
 	SUITE_BEGIN();
-		SET_BEFORE_ALL(wildcard_expansion_setup);
-		SET_AFTER_ALL(wildcard_expansion_teardown);
+		USE_HOOK_BEFORE_ALL(wildcard_expansion_setup);
+		USE_HOOK_AFTER_ALL(wildcard_expansion_teardown);
 
 		RUN_TEST(list_directory_lists_all_entries);
 		RUN_TEST(list_directory_missing_dir_fails);

@@ -127,10 +127,10 @@ typedef enum {
   TOKEN_UNKNOWN = 1 << 1,
   TOKEN_HOOK = 1 << 2,
 
-  TOKEN_BEFORE_ALL_HOOK = TOKEN_HOOK | (1 << 3),
-  TOKEN_BEFORE_EACH_HOOK = TOKEN_HOOK | (1 << 4),
-  TOKEN_AFTER_ALL_HOOK = TOKEN_HOOK | (1 << 5),
-  TOKEN_AFTER_EACH_HOOK = TOKEN_HOOK | (1 << 6),
+  TOKEN_HOOK_BEFORE_ALL = TOKEN_HOOK | (1 << 3),
+  TOKEN_HOOK_BEFORE_EACH = TOKEN_HOOK | (1 << 4),
+  TOKEN_HOOK_AFTER_ALL = TOKEN_HOOK | (1 << 5),
+  TOKEN_HOOK_AFTER_EACH = TOKEN_HOOK | (1 << 6),
 
   TOKEN_TEST = 1 << 7,
 
@@ -169,16 +169,16 @@ static const LiteralToken literal_tokens[] = {
   X(AFTER_EACH)
 
 static const LiteralToken hook_tokens[] = {
-#define X(name) {#name "_HOOK", TOKEN_##name##_HOOK},
+#define X(name) {"HOOK_" #name, TOKEN_HOOK_##name},
     HOOK_TOKEN_LIST(X)
 #undef X
 };
 
-static const char *get_macro_set_hook(TokenKind kind) {
+static const char *get_macro_use_hook(TokenKind kind) {
   switch (kind) {
 #define X(name)                                                                                                                                                                                                                                                    \
-  case TOKEN_##name##_HOOK:                                                                                                                                                                                                                                        \
-    return "SET_" #name;
+  case TOKEN_HOOK_##name:                                                                                                                                                                                                                                          \
+    return "USE_HOOK_" #name;
     HOOK_TOKEN_LIST(X)
 #undef X
   default:
@@ -212,7 +212,7 @@ static const char *token_kind_name(TokenKind kind) {
     return "'}'";
   default:
     if (kind & TOKEN_HOOK)
-      return "a hook macro (BEFORE_ALL_HOOK/BEFORE_EACH_HOOK/AFTER_ALL_HOOK/AFTER_EACH_HOOK)";
+      return "a hook macro (HOOK_BEFORE_ALL/HOOK_BEFORE_EACH/HOOK_AFTER_ALL/HOOK_AFTER_EACH)";
     return "an unknown token kind";
   }
 }
@@ -447,7 +447,7 @@ static void registration_list_append(RegistrationList *list, TokenKind kind, con
 }
 
 static void emit_hooks(FILE *out, const RegistrationList *hooks) {
-  da_foreach(RegistrationEntry, entry, hooks) { fprintf(out, "\t\t%s(%.*s);\n", get_macro_set_hook(entry->kind), (int)entry->name_len, entry->name); }
+  da_foreach(RegistrationEntry, entry, hooks) { fprintf(out, "\t\t%s(%.*s);\n", get_macro_use_hook(entry->kind), (int)entry->name_len, entry->name); }
 
   if (hooks->count)
     fputc('\n', out);
