@@ -560,7 +560,7 @@ static inline bool clut_doubles_are_close(double expected, double actual) {
   return clut_abs_double(expected - actual) < clut_abs_double(expected) * CLUT_DOUBLE_EPSILON;
 }
 
-static inline double ClutElapsedSeconds(long start) { return ((double)(clock() - start)) / CLOCKS_PER_SEC; }
+static inline double clut_elapsed_seconds(long start) { return ((double)(clock() - start)) / CLOCKS_PER_SEC; }
 
 CLUT_STATE_LINKAGE ClutData Clut = {0};
 
@@ -636,7 +636,7 @@ static void clut_report_suite_end(const ClutSuiteResult *result) {
 static void clut_report_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "%s%-50s%.3fs\n", CLUT_GREEN_TEXT("[ PASS ] "), test_name, elapsed_seconds); }
 static void clut_report_skip(const char *test_name) { fprintf(CLUT_STREAM_DEFAULT, "%s%-50s\n", CLUT_YELLOW_TEXT("[ SKIP ] "), test_name); }
 static void clut_report_fail_header() {
-  double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
+  double elapsed_seconds = clut_elapsed_seconds(Clut.current.start_time);
   fprintf(CLUT_STREAM_FAIL, "%s%s%-50s%.3fs%s\n", CLUT_RED_TEXT("[ FAIL ] "), CLUT_MSG_BEGIN_RED_TEXT, Clut.current.name, elapsed_seconds, CLUT_MSG_END_COLOR_TEXT);
 }
 
@@ -853,7 +853,7 @@ static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
     Clut.suite.skipped++;
     clut_report_skip(test_name);
   } else {
-    clut_report_pass(test_name, ClutElapsedSeconds(Clut.current.start_time));
+    clut_report_pass(test_name, clut_elapsed_seconds(Clut.current.start_time));
     Clut.suite.passed++;
   }
 
@@ -873,7 +873,7 @@ CLUT_API void ClutSuiteEnd(void) {
 
   clut_da_foreach(ClutPendingTest, test, &Clut.suite.registered_tests) { clut_execute_test(test->fn, test->name); }
 
-  double total_time = ClutElapsedSeconds(Clut.suite.start_time);
+  double total_time = clut_elapsed_seconds(Clut.suite.start_time);
 
   if (Clut.hooks.after_all)
     Clut.hooks.after_all();
