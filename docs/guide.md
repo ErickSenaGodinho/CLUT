@@ -36,7 +36,7 @@ gcc test.c -o test && ./test
 [ FAIL ] Strings                                       0.000s
 test_strings.c:7:Strings:Expected "Hella" to be equal to "Hello"
 --------------------------------
-Tests run:  2
+Tests:      2
 Passed:     1
 Failed:     1
 Skipped:    0
@@ -131,7 +131,7 @@ CLUT can print results in three formats. Same two tests as above (`Addition` pas
 [ FAIL ] Strings                                       0.000s
 test_strings.c:7:Strings:Expected "Hella" to be equal to "Hello"
 --------------------------------
-Tests run:  2
+Tests:      2
 Passed:     1
 Failed:     1
 Skipped:    0
@@ -157,5 +157,5 @@ Failures show up as annotations on the file and line.
 ok 1 - Addition # (0.000s)
 not ok 2 - Strings # (0.000s)
 # test_strings.c:7: Expected "Hella" to be equal to "Hello"
-# Tests run: 2, Passed: 1, Failed: 1, Skipped: 0, Time: 0.000s
+# Tests: 2, Passed: 1, Failed: 1, Skipped: 0, Time: 0.000s
 ```
