@@ -1,18 +1,11 @@
 # runner_generator
 
-A command-line tool that builds the `main()` test runner for you, so you don't have to
-hand-write `RUNNER_BEGIN` / `SUITE_BEGIN` / `RUN_TEST` / `SUITE_END` / `RUNNER_END` and
-keep it in sync every time you add a test file.
+Writes the `main()` of your test binary for you. No more hand-written
+`RUNNER_BEGIN` / `SUITE_BEGIN` / `RUN_TEST` / `SUITE_END` / `RUNNER_END`, and no more
+forgetting to add the new test you just wrote.
 
-## What it does
-
-Given one or more test files, `runner_generator`:
-
-1. Scans each file for `TEST`, `REPEATED_TEST`, `REPEATED_TEST_WITH_THRESHOLD`,
-   `PARAM_TEST`, and hook macros (`BEFORE_ALL_HOOK`, `BEFORE_EACH_HOOK`,
-   `AFTER_ALL_HOOK`, `AFTER_EACH_HOOK`).
-2. Generates a single `.c` file that `#include`s every test file and wires up a
-   `main()` that registers every test/hook it found, in a single suite per file.
+It's a command-line tool that ships next to CLUT. It is **not** a macro from `clut.h`.
+Macro list: [api-reference.md](api-reference.md).
 
 ## Usage
 
@@ -21,12 +14,32 @@ runner_generator -o <output_file> <test_file> [test_file...]
 runner_generator -h | --help
 ```
 
-| Option | Description |
+| Option | What it does |
 |---|---|
-| `-o, --output <file>` | Path of the generated runner (required) |
-| `-h, --help` | Show usage and exit |
+| `-o, --output <file>` | Where to write the generated runner. Required |
+| `-h, --help` | Print usage and exit |
 
-### Example
+## Example
+
+Two test files:
+
+```c
+/* tests/math_test.h */
+HOOK_BEFORE_EACH(reset_state) { /* ... */ }
+
+TEST(Addition) {
+  TEST_ASSERT_EQUAL_INT(5, 2 + 3);
+}
+```
+
+```c
+/* tests/string_test.h */
+TEST(Concat) {
+  TEST_ASSERT_EQUAL_STRING("ab", concat("a", "b"));
+}
+```
+
+Generate, build, run:
 
 ```sh
 runner_generator -o build/test_runner.c tests/math_test.h tests/string_test.h
@@ -34,7 +47,7 @@ gcc build/test_runner.c -o build/test_runner
 ./build/test_runner
 ```
 
-`build/test_runner.c` will look like:
+`build/test_runner.c` ends up like this:
 
 ```c
 #define CLUT_IMPLEMENTATION
@@ -45,7 +58,7 @@ gcc build/test_runner.c -o build/test_runner
 int main(void){
 	RUNNER_BEGIN();
 	SUITE_BEGIN();
-		SET_BEFORE_EACH(reset_state);
+		USE_HOOK_BEFORE_EACH(reset_state);
 		RUN_TEST(Addition);
 	SUITE_END();
 
@@ -56,27 +69,38 @@ int main(void){
 }
 ```
 
-## Include paths are resolved for you
+The generated file is the one place that defines `CLUT_IMPLEMENTATION`
+(see [Setup](api-reference.md#setup)).
 
-Test file paths on the command line are relative to wherever you *ran* `runner_generator`
-from, but the generated file gets compiled from wherever `-o` points to, which can be a
-completely different directory (e.g. a `build/` folder). If the tool just copied the paths
-you typed verbatim into `#include "..."`, they could easily point at the wrong file, or
-nowhere at all - once the runner is built somewhere else.
+## What it picks up
 
-`runner_generator` avoids this by resolving both the output directory and every test file
-to an absolute path, then computing each `#include` relative to *the runner's own
-location* instead of your current directory. That's why the example above shows
-`"../tests/math_test.c"` even though the CLI was invoked with a bare `tests/math_test.c` -
-the tool worked out that `build/` sits one level below the project root.
+It scans every test file you pass for:
 
-This means you can call `runner_generator` from any directory, point `-o` anywhere, and the
-generated file will always `#include` the right files.
+- `TEST`
+- `REPEATED_TEST`
+- `REPEATED_TEST_WITH_THRESHOLD`
+- `PARAM_TEST`
+- `HOOK_BEFORE_ALL`, `HOOK_BEFORE_EACH`, `HOOK_AFTER_ALL`, `HOOK_AFTER_EACH`
 
-## Notes
+Then it writes one `.c` file that `#include`s all the test files and registers everything
+it found: **one suite per file**, hooks first (as `USE_HOOK_*`), then the `RUN_TEST`s.
 
-- `runner_generator` does not create missing output directories - the folder passed to
-  `-o` must already exist.
-- If a relative path genuinely can't be computed (e.g. the output and a test file live on
-  different drives on Windows), the tool falls back to an absolute path in the
-  `#include`, so the build still works - it just won't be a pretty relative path.
+## Include paths just work
+
+You run `runner_generator` from one directory, but the generated file gets compiled from
+wherever `-o` points, maybe a `build/` folder. Pasting the paths you typed straight into
+`#include "..."` would break as soon as the two directories differ.
+
+So it doesn't. It turns the output directory and every test file into absolute paths, then
+writes each `#include` **relative to the runner's own location**. That's why the example
+above shows `"../tests/math_test.h"` even though you typed `tests/math_test.h`: it figured
+out that `build/` sits one level below the project root.
+
+Run it from any directory, point `-o` anywhere, and the includes stay correct.
+
+## Gotchas
+
+- It does **not** create the output directory. The folder you pass to `-o` must already exist.
+- If a relative path can't be computed (say the output and a test file are on different
+  drives on Windows), it falls back to an absolute path in the `#include`. Ugly, but the
+  build still works.
