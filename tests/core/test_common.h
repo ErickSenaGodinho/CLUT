@@ -4,12 +4,12 @@
 #define CLUT_IMPLEMENTATION
 #include "../../clut.h"
 
-ClutSB failure_message;
-ClutSB failure_report;
+ClutStringBuilder failure_message;
+ClutStringBuilder failure_report;
 
 BEFORE_ALL_HOOK(setup) {
-  failure_message = (ClutSB){0};
-  failure_report = (ClutSB){0};
+  failure_message = (ClutStringBuilder){0};
+  failure_report = (ClutStringBuilder){0};
 }
 
 AFTER_EACH_HOOK(dispatch_fail_flush) {
@@ -25,7 +25,7 @@ AFTER_ALL_HOOK(teardown) {
 }
 
 static void record_failure(const char *file, int line) {
-  ClutLogRecord record;
+  ClutFailureLocation record;
   clut_capture_failure_location(&record, file, line);
   clut_report_format_failure(&record, &failure_report, &failure_message);
   clut_da_clear(&failure_message);
