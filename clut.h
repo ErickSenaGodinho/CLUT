@@ -675,10 +675,10 @@ static void clut_register_failure(const char *file, int line) {
 
 static void clut_message_append(const char *msg) { clut_string_builder_append(&Clut.runner.failure_message, msg); }
 static void clut_message_append_char(char c) {
-  unsigned char uc = (unsigned char)c;
+  unsigned char byte_value = (unsigned char)c;
   const char *escaped = NULL;
 
-  switch (uc) {
+  switch (byte_value) {
   case '\n':
     escaped = "\\n";
     break;
@@ -697,11 +697,11 @@ static void clut_message_append_char(char c) {
   }
 
   if (escaped) {
-    clut_string_builder_append_format(&Clut.runner.failure_message, "'%s' (0x%02X)", escaped, uc);
-  } else if (isprint(uc)) {
-    clut_string_builder_append_format(&Clut.runner.failure_message, "'%c' (0x%02X)", uc, uc);
+    clut_string_builder_append_format(&Clut.runner.failure_message, "'%s' (0x%02X)", escaped, byte_value);
+  } else if (isprint(byte_value)) {
+    clut_string_builder_append_format(&Clut.runner.failure_message, "'%c' (0x%02X)", byte_value, byte_value);
   } else {
-    clut_string_builder_append_format(&Clut.runner.failure_message, "'\\x%02X' (0x%02X)", uc, uc);
+    clut_string_builder_append_format(&Clut.runner.failure_message, "'\\x%02X' (0x%02X)", byte_value, byte_value);
   }
 }
 static void clut_message_append_int(int v) { clut_string_builder_append_format(&Clut.runner.failure_message, "%d", v); }
@@ -907,18 +907,18 @@ CLUT_API void ClutRunSimpleTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()
 
 CLUT_API void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t repetitions) {
   volatile ClutRepeatedTestInput input = (ClutRepeatedTestInput){.total_repetitions = repetitions};
-  volatile bool failed = false;
+  volatile bool any_iteration_failed = false;
   for (volatile size_t i = 1; i <= repetitions; ++i) {
     clut_da_clear(&Clut.runner.failure_message);
     Clut.current.iteration = (int)i;
     input.current_repetition = i;
     CLUT_RUN_GUARDED(test_fn(input));
     if (Clut.current.failed) {
-      failed = true;
+      any_iteration_failed = true;
       Clut.current.failed = false;
     }
   }
-  Clut.current.failed = failed;
+  Clut.current.failed = any_iteration_failed;
 }
 
 CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold) {
@@ -942,13 +942,13 @@ CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_
 #undef ClutRunParamTest
 #define ClutRunParamTest(test_fn, Type, ...)                                                                                                                                                                                                                       \
   do {                                                                                                                                                                                                                                                             \
-    Type input_arr[] = __VA_ARGS__;                                                                                                                                                                                                                                \
-    size_t n = sizeof(input_arr) / sizeof(input_arr[0]);                                                                                                                                                                                                           \
+    Type cases[] = __VA_ARGS__;                                                                                                                                                                                                                                    \
+    size_t case_count = sizeof(cases) / sizeof(cases[0]);                                                                                                                                                                                                          \
     volatile bool failed = false;                                                                                                                                                                                                                                  \
-    for (volatile size_t i = 0; i < n; ++i) {                                                                                                                                                                                                                      \
+    for (volatile size_t i = 0; i < case_count; ++i) {                                                                                                                                                                                                             \
       clut_da_clear(&Clut.runner.failure_message);                                                                                                                                                                                                                 \
       Clut.current.iteration = (int)i;                                                                                                                                                                                                                             \
-      CLUT_RUN_GUARDED(test_fn(input_arr[i]));                                                                                                                                                                                                                     \
+      CLUT_RUN_GUARDED(test_fn(cases[i]));                                                                                                                                                                                                                         \
       if (Clut.current.failed) {                                                                                                                                                                                                                                   \
         failed = true;                                                                                                                                                                                                                                             \
         Clut.current.failed = false;                                                                                                                                                                                                                               \
@@ -1044,42 +1044,42 @@ CLUT_API void ClutTestAssertNotEqualDouble(double expected, double actual, const
 
 CLUT_API void ClutTestAssertNotEqualString(const char *expected, const char *actual, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
-  bool equal;
+  bool is_equal;
   if (expected == actual)
-    equal = true;
+    is_equal = true;
   else if (expected == NULL || actual == NULL)
-    equal = false;
+    is_equal = false;
   else {
-    equal = true;
+    is_equal = true;
     for (size_t i = 0; expected[i] || actual[i]; i++) {
       if (expected[i] != actual[i]) {
-        equal = false;
+        is_equal = false;
         break;
       }
     }
   }
-  if (!equal)
+  if (!is_equal)
     return;
-  CLUT_ASSERT_COMPARE(clut_message_append_str, !equal, actual, CLUT_MSG_NOT_EQUAL, expected, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_str, !is_equal, actual, CLUT_MSG_NOT_EQUAL, expected, file, line, msg);
 }
 
 CLUT_API void ClutTestAssertNotEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
-  bool equal;
+  bool is_equal;
   if (expected == actual)
-    equal = true;
+    is_equal = true;
   else if (expected == NULL || actual == NULL)
-    equal = false;
+    is_equal = false;
   else {
-    equal = true;
+    is_equal = true;
     for (size_t i = 0; i < len && (expected[i] || actual[i]); i++) {
       if (expected[i] != actual[i]) {
-        equal = false;
+        is_equal = false;
         break;
       }
     }
   }
-  if (!equal)
+  if (!is_equal)
     return;
   if (msg) {
     clut_message_append(msg);
@@ -1166,27 +1166,27 @@ CLUT_API void ClutTestAssertEqualMemory(const void *expected, const void *actual
   if (len == 0)
     return;
 
-  const unsigned char *ptr_expected = (const unsigned char *)expected;
-  const unsigned char *ptr_actual = (const unsigned char *)actual;
+  const unsigned char *expected_bytes = (const unsigned char *)expected;
+  const unsigned char *actual_bytes = (const unsigned char *)actual;
 
-  for (size_t idx = 0; idx < num_elements; idx++) {
-    for (size_t byte = 0; byte < len; byte++) {
-      size_t offset = idx * len + byte;
-      if (ptr_expected[offset] == ptr_actual[offset])
+  for (size_t element_index = 0; element_index < num_elements; element_index++) {
+    for (size_t byte_index = 0; byte_index < len; byte_index++) {
+      size_t offset = element_index * len + byte_index;
+      if (expected_bytes[offset] == actual_bytes[offset])
         continue;
 
       if (msg) {
         clut_message_append(msg);
       } else {
         if (num_elements > 1) {
-          clut_message_append_array_prefix(idx);
+          clut_message_append_array_prefix(element_index);
           clut_message_append(CLUT_MSG_BYTE_OFFSET);
-          clut_message_append_format("[%zu] ", byte);
+          clut_message_append_format("[%zu] ", byte_index);
         } else {
           clut_message_append(CLUT_MSG_MISMATCH_AT);
-          clut_message_append_uint(byte);
+          clut_message_append_uint(byte_index);
         }
-        CLUT_FORMAT_COMPARISON_MESSAGE(clut_message_append_hex, ptr_expected[offset], CLUT_MSG_WAS, ptr_actual[offset]);
+        CLUT_FORMAT_COMPARISON_MESSAGE(clut_message_append_hex, expected_bytes[offset], CLUT_MSG_WAS, actual_bytes[offset]);
       }
       clut_register_failure(file, line);
       return;
@@ -1264,24 +1264,24 @@ CLUT_API void ClutTestAssertEqualStringArray(const char **expected, const char *
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
   CLUT_CHECK_BUFFER_ARGS;
   for (size_t i = 0; i < num_elements; i++) {
-    const char *exp_str = expected[i];
-    const char *act_str = actual[i];
-    bool mismatch = false;
-    if (exp_str == act_str)
-      mismatch = false;
-    else if (exp_str == NULL || act_str == NULL)
-      mismatch = true;
+    const char *expected_text = expected[i];
+    const char *actual_text = actual[i];
+    bool is_equal = false;
+    if (expected_text == actual_text)
+      is_equal = true;
+    else if (expected_text == NULL || actual_text == NULL)
+      is_equal = false;
     else {
-      for (size_t j = 0; exp_str[j] || act_str[j]; j++) {
-        if (exp_str[j] != act_str[j]) {
-          mismatch = true;
+      for (size_t j = 0; expected_text[j] || actual_text[j]; j++) {
+        if (expected_text[j] != actual_text[j]) {
+          is_equal = false;
           break;
         }
       }
     }
-    if (!mismatch)
+    if (is_equal)
       continue;
-    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_str, exp_str, act_str);
+    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_str, expected_text, actual_text);
     return;
   }
 }
