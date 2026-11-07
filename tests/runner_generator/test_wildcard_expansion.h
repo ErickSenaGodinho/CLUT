@@ -31,14 +31,14 @@ static void wildcard_fixture_write_file(const char *name) {
   fclose(f);
 }
 
-BEFORE_ALL_HOOK(wildcard_expansion_setup) {
+HOOK_BEFORE_ALL(wildcard_expansion_setup) {
   WILDCARD_FIXTURE_MKDIR(WILDCARD_FIXTURE_DIR);
   wildcard_fixture_write_file("a_test.h");
   wildcard_fixture_write_file("b_test.h");
   wildcard_fixture_write_file("notes.txt");
 }
 
-AFTER_ALL_HOOK(wildcard_expansion_teardown) {
+HOOK_AFTER_ALL(wildcard_expansion_teardown) {
   remove(WILDCARD_FIXTURE_DIR "/a_test.h");
   remove(WILDCARD_FIXTURE_DIR "/b_test.h");
   remove(WILDCARD_FIXTURE_DIR "/notes.txt");

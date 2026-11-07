@@ -7,19 +7,19 @@
 ClutStringBuilder failure_message;
 ClutStringBuilder failure_report;
 
-BEFORE_ALL_HOOK(setup) {
+HOOK_BEFORE_ALL(setup) {
   failure_message = (ClutStringBuilder){0};
   failure_report = (ClutStringBuilder){0};
 }
 
-AFTER_EACH_HOOK(dispatch_fail_flush) {
+HOOK_AFTER_EACH(dispatch_fail_flush) {
   if (Clut.current.failed) {
     clut_report_print_failures(&failure_report);
     clut_da_clear(&failure_report);
   }
 }
 
-AFTER_ALL_HOOK(teardown) {
+HOOK_AFTER_ALL(teardown) {
   clut_da_free(&failure_report);
   clut_da_free(&failure_message);
 }

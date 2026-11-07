@@ -171,10 +171,10 @@ typedef struct {
 
 PARAM_TEST(all_hook_macros, HookMacroCase,
            {
-               {"BEFORE_ALL_HOOK(x)", TOKEN_BEFORE_ALL_HOOK},
-               {"BEFORE_EACH_HOOK(x)", TOKEN_BEFORE_EACH_HOOK},
-               {"AFTER_ALL_HOOK(x)", TOKEN_AFTER_ALL_HOOK},
-               {"AFTER_EACH_HOOK(x)", TOKEN_AFTER_EACH_HOOK},
+               {"HOOK_BEFORE_ALL(x)", TOKEN_HOOK_BEFORE_ALL},
+               {"HOOK_BEFORE_EACH(x)", TOKEN_HOOK_BEFORE_EACH},
+               {"HOOK_AFTER_ALL(x)", TOKEN_HOOK_AFTER_ALL},
+               {"HOOK_AFTER_EACH(x)", TOKEN_HOOK_AFTER_EACH},
            }) {
   Lexer lx = lexer_new("f.c", input.src, strlen(input.src));
   Token t = lexer_next(&lx);
@@ -183,7 +183,7 @@ PARAM_TEST(all_hook_macros, HookMacroCase,
 }
 
 TEST(keywords_inside_braces_ignored) {
-  const char *src = "{ TEST(x); BEFORE_ALL_HOOK(y); }";
+  const char *src = "{ TEST(x); HOOK_BEFORE_ALL(y); }";
   Lexer lx = lexer_new("f.c", src, strlen(src));
 
   TEST_ASSERT_EQUAL_INT(TOKEN_OPEN_BRACE, lexer_next(&lx).kind);  /* { */
