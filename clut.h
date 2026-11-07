@@ -142,28 +142,28 @@ typedef struct {
 } ClutContext;
 
 /* TEST / REPEATED_TEST / PARAM_TEST macros */
-#define CLUT_TEST_NAME(name) clut_test_##name
-#define CLUT_RUN_TEST_NAME(name) clut_run_test_##name
+#define CLUT_TEST_BODY(name) clut_test_##name
+#define CLUT_TEST_WRAPPER(name) clut_run_test_##name
 
 #define TEST(name)                                                                                                                                                                                                                                                 \
-  void CLUT_TEST_NAME(name)(void);                                                                                                                                                                                                                                 \
-  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunSimpleTest(CLUT_TEST_NAME(name)); }                                                                                                                                                                                 \
-  void CLUT_TEST_NAME(name)(void)
+  void CLUT_TEST_BODY(name)(void);                                                                                                                                                                                                                                 \
+  void CLUT_TEST_WRAPPER(name)(void) { ClutRunSimpleTest(CLUT_TEST_BODY(name)); }                                                                                                                                                                                  \
+  void CLUT_TEST_BODY(name)(void)
 
 #define REPEATED_TEST(name, repetitions)                                                                                                                                                                                                                           \
-  void CLUT_TEST_NAME(name)(ClutRepetitionInfo input);                                                                                                                                                                                                             \
-  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunRepeatedTest(CLUT_TEST_NAME(name), repetitions); }                                                                                                                                                                  \
-  void CLUT_TEST_NAME(name)(ClutRepetitionInfo input)
+  void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                             \
+  void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeatedTest(CLUT_TEST_BODY(name), repetitions); }                                                                                                                                                                   \
+  void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
 
 #define REPEATED_TEST_WITH_THRESHOLD(name, repetitions, failure_threshold)                                                                                                                                                                                         \
-  void CLUT_TEST_NAME(name)(ClutRepetitionInfo input);                                                                                                                                                                                                             \
-  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunRepeatedTestWithThreshold(CLUT_TEST_NAME(name), repetitions, failure_threshold); }                                                                                                                                  \
-  void CLUT_TEST_NAME(name)(ClutRepetitionInfo input)
+  void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                             \
+  void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeatedTestWithThreshold(CLUT_TEST_BODY(name), repetitions, failure_threshold); }                                                                                                                                   \
+  void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
 
 #define PARAM_TEST(name, Type, ...)                                                                                                                                                                                                                                \
-  void CLUT_TEST_NAME(name)(Type input);                                                                                                                                                                                                                           \
-  void CLUT_RUN_TEST_NAME(name)(void) { ClutRunParamTest(CLUT_TEST_NAME(name), Type, __VA_ARGS__); }                                                                                                                                                               \
-  void CLUT_TEST_NAME(name)(Type input)
+  void CLUT_TEST_BODY(name)(Type input);                                                                                                                                                                                                                           \
+  void CLUT_TEST_WRAPPER(name)(void) { ClutRunParamTest(CLUT_TEST_BODY(name), Type, __VA_ARGS__); }                                                                                                                                                                \
+  void CLUT_TEST_BODY(name)(Type input)
 
 /* Test Runner lifecycle macros */
 #define RUNNER_BEGIN() ClutRunnerBegin()
@@ -171,26 +171,26 @@ typedef struct {
 
 /* Test Suite lifecycle macros */
 #define SUITE_BEGIN() ClutSuiteBegin()
-#define RUN_TEST(test_name) ClutSuiteAddTest(CLUT_RUN_TEST_NAME(test_name), #test_name)
+#define RUN_TEST(test_name) ClutSuiteAddTest(CLUT_TEST_WRAPPER(test_name), #test_name)
 #define SUITE_END() ClutSuiteEnd()
 
 /* Hook definition / Hook registration macros */
-#define CLUT_HOOK_NAME(name, suffix) clut_##name##_##suffix
-#define CLUT_HOOK_DECL(name, suffix) void CLUT_HOOK_NAME(name, suffix)(void)
+#define CLUT_HOOK_SYMBOL(name, suffix) clut_##name##_##suffix
+#define CLUT_HOOK_PROTOTYPE(name, suffix) void CLUT_HOOK_SYMBOL(name, suffix)(void)
 
-#define CLUT_HOOK_DEFINE(name, suffix)                                                                                                                                                                                                                             \
-  CLUT_HOOK_DECL(name, suffix);                                                                                                                                                                                                                                    \
-  CLUT_HOOK_DECL(name, suffix)
+#define CLUT_HOOK_DEFINITION(name, suffix)                                                                                                                                                                                                                         \
+  CLUT_HOOK_PROTOTYPE(name, suffix);                                                                                                                                                                                                                               \
+  CLUT_HOOK_PROTOTYPE(name, suffix)
 
-#define BEFORE_ALL_HOOK(name) CLUT_HOOK_DEFINE(name, before_all)
-#define BEFORE_EACH_HOOK(name) CLUT_HOOK_DEFINE(name, before_each)
-#define AFTER_ALL_HOOK(name) CLUT_HOOK_DEFINE(name, after_all)
-#define AFTER_EACH_HOOK(name) CLUT_HOOK_DEFINE(name, after_each)
+#define HOOK_BEFORE_ALL(name) CLUT_HOOK_DEFINITION(name, before_all)
+#define HOOK_BEFORE_EACH(name) CLUT_HOOK_DEFINITION(name, before_each)
+#define HOOK_AFTER_ALL(name) CLUT_HOOK_DEFINITION(name, after_all)
+#define HOOK_AFTER_EACH(name) CLUT_HOOK_DEFINITION(name, after_each)
 
-#define SET_BEFORE_ALL(hook) ClutSetBeforeAll(CLUT_HOOK_NAME(hook, before_all))
-#define SET_BEFORE_EACH(hook) ClutSetBeforeEach(CLUT_HOOK_NAME(hook, before_each))
-#define SET_AFTER_ALL(hook) ClutSetAfterAll(CLUT_HOOK_NAME(hook, after_all))
-#define SET_AFTER_EACH(hook) ClutSetAfterEach(CLUT_HOOK_NAME(hook, after_each))
+#define USE_HOOK_BEFORE_ALL(hook) ClutSetBeforeAll(CLUT_HOOK_SYMBOL(hook, before_all))
+#define USE_HOOK_BEFORE_EACH(hook) ClutSetBeforeEach(CLUT_HOOK_SYMBOL(hook, before_each))
+#define USE_HOOK_AFTER_ALL(hook) ClutSetAfterAll(CLUT_HOOK_SYMBOL(hook, after_all))
+#define USE_HOOK_AFTER_EACH(hook) ClutSetAfterEach(CLUT_HOOK_SYMBOL(hook, after_each))
 
 /* Assertions */
 #define TEST_ASSERT(condition) ClutAssert((condition), __FILE__, __LINE__, "Expression Is False -> " #condition)
