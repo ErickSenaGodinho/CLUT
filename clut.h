@@ -597,7 +597,7 @@ static void clut_report_skip(const char *test_name) {
 static void clut_report_fail_header() {
   clut_report_plan();
   clut_tap_test_index++;
-  double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
+  double elapsed_seconds = clut_elapsed_seconds(Clut.current.start_time);
   fprintf(CLUT_STREAM_DEFAULT, "not ok %zu - %s # (%.3fs)\n", clut_tap_test_index, Clut.current.name, elapsed_seconds);
 }
 
@@ -622,7 +622,7 @@ static void clut_report_suite_end(const ClutSuiteSummary *result) {
 static void clut_report_pass(const char *test_name, double elapsed_seconds) { fprintf(CLUT_STREAM_DEFAULT, "::notice title=PASS::%s (%.3fs)\n", test_name, elapsed_seconds); }
 static void clut_report_skip(const char *test_name) { fprintf(CLUT_STREAM_DEFAULT, "::notice title=SKIP::%s\n", test_name); }
 static void clut_report_fail_header() {
-  double elapsed_seconds = ClutElapsedSeconds(Clut.current.start_time);
+  double elapsed_seconds = clut_elapsed_seconds(Clut.current.start_time);
   fprintf(CLUT_STREAM_FAIL, "::notice title=FAIL::%s (%.3fs)\n", Clut.current.name, elapsed_seconds);
 }
 static void clut_report_format_failure(const ClutFailureLocation *record, ClutStringBuilder *failure_report, ClutStringBuilder *failure_message) {
