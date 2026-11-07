@@ -147,17 +147,17 @@ typedef struct {
 
 #define TEST(name)                                                                                                                                                                                                                                                 \
   void CLUT_TEST_BODY(name)(void);                                                                                                                                                                                                                                 \
-  void CLUT_TEST_WRAPPER(name)(void) { ClutRunSimpleTest(CLUT_TEST_BODY(name)); }                                                                                                                                                                                  \
+  void CLUT_TEST_WRAPPER(name)(void) { ClutRunTest(CLUT_TEST_BODY(name)); }                                                                                                                                                                                        \
   void CLUT_TEST_BODY(name)(void)
 
 #define REPEATED_TEST(name, repetitions)                                                                                                                                                                                                                           \
   void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                             \
-  void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeatedTest(CLUT_TEST_BODY(name), repetitions); }                                                                                                                                                                   \
+  void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeated(CLUT_TEST_BODY(name), repetitions); }                                                                                                                                                                       \
   void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
 
 #define REPEATED_TEST_WITH_THRESHOLD(name, repetitions, failure_threshold)                                                                                                                                                                                         \
   void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                             \
-  void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeatedTestWithThreshold(CLUT_TEST_BODY(name), repetitions, failure_threshold); }                                                                                                                                   \
+  void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeatedWithThreshold(CLUT_TEST_BODY(name), repetitions, failure_threshold); }                                                                                                                                       \
   void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
 
 #define PARAM_TEST(name, Type, ...)                                                                                                                                                                                                                                \
@@ -171,7 +171,7 @@ typedef struct {
 
 /* Test Suite lifecycle macros */
 #define SUITE_BEGIN() ClutSuiteBegin()
-#define RUN_TEST(test_name) ClutSuiteAddTest(CLUT_TEST_WRAPPER(test_name), #test_name)
+#define RUN_TEST(test_name) ClutSuiteRegisterTest(CLUT_TEST_WRAPPER(test_name), #test_name)
 #define SUITE_END() ClutSuiteEnd()
 
 /* Hook definition / Hook registration macros */
@@ -187,10 +187,10 @@ typedef struct {
 #define HOOK_AFTER_ALL(name) CLUT_HOOK_DEFINITION(name, after_all)
 #define HOOK_AFTER_EACH(name) CLUT_HOOK_DEFINITION(name, after_each)
 
-#define USE_HOOK_BEFORE_ALL(hook) ClutSetBeforeAll(CLUT_HOOK_SYMBOL(hook, before_all))
-#define USE_HOOK_BEFORE_EACH(hook) ClutSetBeforeEach(CLUT_HOOK_SYMBOL(hook, before_each))
-#define USE_HOOK_AFTER_ALL(hook) ClutSetAfterAll(CLUT_HOOK_SYMBOL(hook, after_all))
-#define USE_HOOK_AFTER_EACH(hook) ClutSetAfterEach(CLUT_HOOK_SYMBOL(hook, after_each))
+#define USE_HOOK_BEFORE_ALL(hook) ClutSetHookBeforeAll(CLUT_HOOK_SYMBOL(hook, before_all))
+#define USE_HOOK_BEFORE_EACH(hook) ClutSetHookBeforeEach(CLUT_HOOK_SYMBOL(hook, before_each))
+#define USE_HOOK_AFTER_ALL(hook) ClutSetHookAfterAll(CLUT_HOOK_SYMBOL(hook, after_all))
+#define USE_HOOK_AFTER_EACH(hook) ClutSetHookAfterEach(CLUT_HOOK_SYMBOL(hook, after_each))
 
 /* Assertions */
 #define TEST_ASSERT(condition) ClutAssert((condition), __FILE__, __LINE__, "Expression Is False -> " #condition)
@@ -201,7 +201,7 @@ typedef struct {
 #define TEST_ASSERT_NOT_NULL(pointer) ClutAssert(((pointer) != NULL), __FILE__, __LINE__, "Expected Non-NULL")
 
 #define TEST_FAIL(msg) ClutAssert(0, __FILE__, __LINE__, (msg))
-#define TEST_SKIP() ClutSkipTest()
+#define TEST_SKIP() ClutMarkSkipped()
 
 #define TEST_ASSERT_EQUAL_CHAR(expected, actual) ClutAssertEqualChar((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_INT(expected, actual) ClutAssertEqualInt((expected), (actual), __FILE__, __LINE__, NULL)
@@ -343,7 +343,7 @@ CLUT_API void ClutRunnerBegin();
 CLUT_API int ClutRunnerEnd();
 
 CLUT_API void ClutSuiteBegin();
-CLUT_API void ClutSuiteAddTest(ClutTestFn test_fn, const char *test_name);
+CLUT_API void ClutSuiteRegisterTest(ClutTestFn test_fn, const char *test_name);
 CLUT_API void ClutSuiteEnd();
 
 CLUT_API void ClutSetBeforeAll(ClutHookFn hook_fn);
@@ -351,12 +351,12 @@ CLUT_API void ClutSetBeforeEach(ClutHookFn hook_fn);
 CLUT_API void ClutSetAfterAll(ClutHookFn hook_fn);
 CLUT_API void ClutSetAfterEach(ClutHookFn hook_fn);
 
-CLUT_API void ClutRunSimpleTest(ClutTestFn test_fn);
-CLUT_API void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t repetitions);
-CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold);
+CLUT_API void ClutRunTest(ClutTestFn test_fn);
+CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t repetitions);
+CLUT_API void ClutRunRepeatedWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold);
 #define ClutRunParamTest(test_fn, Type, ...)
 
-CLUT_API void ClutSkipTest();
+CLUT_API void ClutMarkSkipped();
 
 CLUT_API void ClutAssert(bool condition, const char *file, const int line, const char *msg);
 CLUT_API void ClutAssertEqualChar(char expected, char actual, const char *file, const int line, const char *msg);
@@ -820,7 +820,7 @@ CLUT_API void ClutSuiteBegin(void) {
   Clut.hooks = (ClutHooks){0};
 }
 
-CLUT_API void ClutSuiteAddTest(ClutTestFn run_test_fn, const char *test_name) {
+CLUT_API void ClutSuiteRegisterTest(ClutTestFn run_test_fn, const char *test_name) {
   ClutRegisteredTest pending_test = (ClutRegisteredTest){run_test_fn, test_name};
   clut_da_append(&Clut.suite.registered_tests, pending_test);
   Clut.suite.total_tests = Clut.suite.registered_tests.count;
@@ -885,10 +885,10 @@ CLUT_API void ClutSuiteEnd(void) {
   clut_reset_suite();
 }
 
-CLUT_API void ClutSetBeforeAll(ClutHookFn hook_fn) { Clut.hooks.before_all = hook_fn; }
-CLUT_API void ClutSetBeforeEach(ClutHookFn hook_fn) { Clut.hooks.before_each = hook_fn; }
-CLUT_API void ClutSetAfterAll(ClutHookFn hook_fn) { Clut.hooks.after_all = hook_fn; }
-CLUT_API void ClutSetAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each = hook_fn; }
+CLUT_API void ClutSetHookBeforeAll(ClutHookFn hook_fn) { Clut.hooks.before_all = hook_fn; }
+CLUT_API void ClutSetHookBeforeEach(ClutHookFn hook_fn) { Clut.hooks.before_each = hook_fn; }
+CLUT_API void ClutSetHookAfterAll(ClutHookFn hook_fn) { Clut.hooks.after_all = hook_fn; }
+CLUT_API void ClutSetHookAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each = hook_fn; }
 
 #ifdef CLUT_HAS_LONGJMP
 
@@ -903,9 +903,9 @@ CLUT_API void ClutSetAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each = hoo
   }
 #endif
 
-CLUT_API void ClutRunSimpleTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()); }
+CLUT_API void ClutRunTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()); }
 
-CLUT_API void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t repetitions) {
+CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t repetitions) {
   volatile ClutRepetitionInfo input = (ClutRepetitionInfo){.total_repetitions = repetitions};
   volatile bool any_iteration_failed = false;
   for (volatile size_t i = 1; i <= repetitions; ++i) {
@@ -921,7 +921,7 @@ CLUT_API void ClutRunRepeatedTest(ClutRepeatedTestFn test_fn, size_t repetitions
   Clut.current.failed = any_iteration_failed;
 }
 
-CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold) {
+CLUT_API void ClutRunRepeatedWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold) {
   volatile ClutRepetitionInfo input = (ClutRepetitionInfo){.total_repetitions = repetitions};
   volatile size_t failures = 0;
   for (volatile size_t i = 1; i <= repetitions; ++i) {
@@ -957,7 +957,7 @@ CLUT_API void ClutRunRepeatedTestWithThreshold(ClutRepeatedTestFn test_fn, size_
     Clut.current.failed = failed;                                                                                                                                                                                                                                  \
   } while (0)
 
-CLUT_API void ClutSkipTest() { Clut.current.skipped = true; }
+CLUT_API void ClutMarkSkipped() { Clut.current.skipped = true; }
 
 CLUT_API void ClutAssert(bool condition, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
