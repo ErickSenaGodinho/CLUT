@@ -37,6 +37,8 @@ Skipped:    0
 Total time: 0.000s
 ```
 
+CLUT is header-only, stb style: `#define CLUT_IMPLEMENTATION` before the include, in exactly one file.
+
 Don't want to write that `main()` by hand? Let `runner_generator` build it for you from your test files:
 
 ```sh
@@ -66,11 +68,11 @@ CLUT keeps things simple:
 
 ## Documentation
 
-| Guide | What's in it |
+| Doc | What's in it |
 |---|---|
-| [docs/guide.md](docs/guide.md) | Repeated tests, parameterized tests, custom assertion messages, output modes |
-| [docs/api-reference.md](docs/api-reference.md) | Every macro CLUT exposes: runner/suite, test definitions, hooks, assertions |
-| [docs/runner_generator.md](docs/runner_generator.md) | The `runner_generator` CLI tool: what it solves, usage, flags |
+| [docs/guide.md](docs/guide.md) | Examples first: your first test, repeated and parameterized tests, custom failure messages, output formats |
+| [docs/api-reference.md](docs/api-reference.md) | Cheatsheet of every macro: setup, runner/suite, test definitions, hooks, assertions, configuration |
+| [docs/runner_generator.md](docs/runner_generator.md) | The `runner_generator` CLI tool: usage, flags, generated runner, include paths |
 
 ---
 
@@ -82,7 +84,7 @@ CLUT/
 ├── docs/
 │   ├── guide.md
 │   ├── api-reference.md
-│   └── runner_generator.md/
+│   └── runner_generator.md
 ├── examples/
 ├── tests/
 ├── tools/
