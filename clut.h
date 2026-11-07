@@ -366,7 +366,7 @@ CLUT_API void ClutAssertEqualFloat(float expected, float actual, const char *fil
 CLUT_API void ClutAssertEqualDouble(double expected, double actual, const char *file, const int line, const char *msg);
 CLUT_API void ClutAssertEqualString(const char *expected, const char *actual, const char *file, const int line, const char *msg);
 CLUT_API void ClutAssertEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg);
-CLUT_API void ClutAssertEqualPtr(void *expected, void *actual, const char *file, const int line, const char *msg);
+CLUT_API void ClutAssertEqualPtr(const void *expected, const void *actual, const char *file, const int line, const char *msg);
 
 CLUT_API void ClutAssertNotEqualChar(char expected, char actual, const char *file, const int line, const char *msg);
 CLUT_API void ClutAssertNotEqualInt(int expected, int actual, const char *file, const int line, const char *msg);
@@ -375,7 +375,7 @@ CLUT_API void ClutAssertNotEqualFloat(float expected, float actual, const char *
 CLUT_API void ClutAssertNotEqualDouble(double expected, double actual, const char *file, const int line, const char *msg);
 CLUT_API void ClutAssertNotEqualString(const char *expected, const char *actual, const char *file, const int line, const char *msg);
 CLUT_API void ClutAssertNotEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg);
-CLUT_API void ClutAssertNotEqualPtr(void *expected, void *actual, const char *file, const int line, const char *msg);
+CLUT_API void ClutAssertNotEqualPtr(const void *expected, const void *actual, const char *file, const int line, const char *msg);
 
 CLUT_API void ClutAssertIntGreaterThan(int expected, int actual, const char *file, int line, const char *msg);
 CLUT_API void ClutAssertIntGreaterOrEqual(int expected, int actual, const char *file, int line, const char *msg);
@@ -708,7 +708,7 @@ static void clut_message_append_int(int v) { clut_string_builder_append_format(&
 static void clut_message_append_uint(size_t v) { clut_string_builder_append_format(&Clut.runner.failure_message, "%zu", v); }
 static void clut_message_append_float(float v) { clut_string_builder_append_format(&Clut.runner.failure_message, "%.5f", v); }
 static void clut_message_append_double(double v) { clut_string_builder_append_format(&Clut.runner.failure_message, "%.9f", v); }
-static void clut_message_append_ptr(void *p) { clut_string_builder_append_format(&Clut.runner.failure_message, "%p", p); }
+static void clut_message_append_ptr(const void *p) { clut_string_builder_append_format(&Clut.runner.failure_message, "%p", p); }
 static void clut_message_append_hex(int v) { clut_string_builder_append_format(&Clut.runner.failure_message, "0x%02X", v); }
 static void clut_message_append_str(const char *str) {
   if (str == NULL) {
@@ -1020,7 +1020,7 @@ CLUT_API void ClutAssertEqualStringLen(const char *expected, const char *actual,
   clut_register_failure(file, line);
 }
 
-CLUT_API void ClutAssertEqualPtr(void *expected, void *actual, const char *file, int line, const char *msg) {
+CLUT_API void ClutAssertEqualPtr(const void *expected, const void *actual, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
   if (expected == actual)
     return;
@@ -1094,7 +1094,7 @@ CLUT_API void ClutAssertNotEqualStringLen(const char *expected, const char *actu
   clut_register_failure(file, line);
 }
 
-CLUT_API void ClutAssertNotEqualPtr(void *expected, void *actual, const char *file, int line, const char *msg) {
+CLUT_API void ClutAssertNotEqualPtr(const void *expected, const void *actual, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
   if (expected != actual)
     return;
