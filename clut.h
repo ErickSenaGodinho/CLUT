@@ -346,10 +346,10 @@ CLUT_API void ClutSuiteBegin();
 CLUT_API void ClutSuiteRegisterTest(ClutTestFn test_fn, const char *test_name);
 CLUT_API void ClutSuiteEnd();
 
-CLUT_API void ClutSetBeforeAll(ClutHookFn hook_fn);
-CLUT_API void ClutSetBeforeEach(ClutHookFn hook_fn);
-CLUT_API void ClutSetAfterAll(ClutHookFn hook_fn);
-CLUT_API void ClutSetAfterEach(ClutHookFn hook_fn);
+CLUT_API void ClutSetHookBeforeAll(ClutHookFn hook_fn);
+CLUT_API void ClutSetHookBeforeEach(ClutHookFn hook_fn);
+CLUT_API void ClutSetHookAfterAll(ClutHookFn hook_fn);
+CLUT_API void ClutSetHookAfterEach(ClutHookFn hook_fn);
 
 CLUT_API void ClutRunTest(ClutTestFn test_fn);
 CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t repetitions);
@@ -377,25 +377,25 @@ CLUT_API void ClutAssertNotEqualString(const char *expected, const char *actual,
 CLUT_API void ClutAssertNotEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, const int line, const char *msg);
 CLUT_API void ClutAssertNotEqualPtr(const void *expected, const void *actual, const char *file, const int line, const char *msg);
 
-CLUT_API void ClutAssertIntGreaterThan(int expected, int actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertIntGreaterOrEqual(int expected, int actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertIntLessThan(int expected, int actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertIntLessOrEqual(int expected, int actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertGreaterThanInt(int expected, int actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertGreaterOrEqualInt(int expected, int actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertLessThanInt(int expected, int actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertLessOrEqualInt(int expected, int actual, const char *file, int line, const char *msg);
 
-CLUT_API void ClutAssertUintGreaterThan(size_t expected, size_t actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertUintGreaterOrEqual(size_t expected, size_t actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertUintLessThan(size_t expected, size_t actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertUintLessOrEqual(size_t expected, size_t actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertGreaterThanUint(size_t expected, size_t actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertGreaterOrEqualUint(size_t expected, size_t actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertLessThanUint(size_t expected, size_t actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertLessOrEqualUint(size_t expected, size_t actual, const char *file, int line, const char *msg);
 
-CLUT_API void ClutAssertFloatGreaterThan(float expected, float actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertFloatGreaterOrEqual(float expected, float actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertFloatLessThan(float expected, float actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertFloatLessOrEqual(float expected, float actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertGreaterThanFloat(float expected, float actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertGreaterOrEqualFloat(float expected, float actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertLessThanFloat(float expected, float actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertLessOrEqualFloat(float expected, float actual, const char *file, int line, const char *msg);
 
-CLUT_API void ClutAssertDoubleGreaterThan(double expected, double actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertDoubleGreaterOrEqual(double expected, double actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertDoubleLessThan(double expected, double actual, const char *file, int line, const char *msg);
-CLUT_API void ClutAssertDoubleLessOrEqual(double expected, double actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertGreaterThanDouble(double expected, double actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertGreaterOrEqualDouble(double expected, double actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertLessThanDouble(double expected, double actual, const char *file, int line, const char *msg);
+CLUT_API void ClutAssertLessOrEqualDouble(double expected, double actual, const char *file, int line, const char *msg);
 
 CLUT_API void ClutAssertWithinChar(char expected, size_t delta, char actual, const char *file, const int line, const char *msg);
 CLUT_API void ClutAssertWithinInt(int expected, size_t delta, int actual, const char *file, const int line, const char *msg);
