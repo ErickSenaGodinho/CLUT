@@ -1267,11 +1267,13 @@ CLUT_API void ClutAssertEqualStringArray(const char **expected, const char **act
     const char *expected_text = expected[i];
     const char *actual_text = actual[i];
     bool is_equal = false;
+
     if (expected_text == actual_text)
       is_equal = true;
     else if (expected_text == NULL || actual_text == NULL)
       is_equal = false;
     else {
+      is_equal = true;
       for (size_t j = 0; expected_text[j] || actual_text[j]; j++) {
         if (expected_text[j] != actual_text[j]) {
           is_equal = false;
