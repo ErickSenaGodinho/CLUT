@@ -1,15 +1,38 @@
-name: C/C++ CI
+name: Test Suite CI
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "develop", "staging" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "develop", "staging" ]
 
 jobs:
-  build-and-test:
+  test-generator:
     runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc
+
+    - name: Compile runner generator
+      run: gcc -o runner_generator tools/runner_generator.c
+
+    - name: Generate generator test runner
+      run: ./runner_generator -o tests/runner_generator/runner_test_generator.c tests/runner_generator/test_*.h
+
+    - name: Compile generator test runner
+      run: gcc -o tests/runner_generator/runner_test_generator tests/runner_generator/runner_test_generator.c -DCLUT_OUTPUT_GITHUB
+
+    - name: Run generator tests
+      run: ./tests/runner_generator/runner_test_generator
+
+  test-core:
+    needs: test-generator
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -30,12 +53,3 @@ jobs:
 
     - name: Run core tests
       run: ./tests/core/runner_test_core
-
-    - name: Generate generator test runner
-      run: ./runner_generator -o tests/runner_generator/runner_test_generator.c tests/runner_generator/test_*.h
-
-    - name: Compile generator test runner
-      run: gcc -o tests/runner_generator/runner_test_generator tests/runner_generator/runner_test_generator.c -DCLUT_OUTPUT_GITHUB
-
-    - name: Run generator tests
-      run: ./tests/runner_generator/runner_test_generator
