@@ -141,6 +141,8 @@ typedef enum {
   TOKEN_CLOSE_PAREN = 1 << 12,
   TOKEN_OPEN_BRACE = 1 << 13,
   TOKEN_CLOSE_BRACE = 1 << 14,
+
+  TOKEN_REPORTER = 1 << 15,
 } TokenKind;
 
 typedef struct {
@@ -186,6 +188,10 @@ static const char *get_macro_use_hook(TokenKind kind) {
   }
 }
 
+static const LiteralToken reporter_tokens[] = {
+    {"REPORTER", TOKEN_REPORTER},
+};
+
 static const char *token_kind_name(TokenKind kind) {
   switch (kind) {
   case TOKEN_END:
@@ -210,6 +216,8 @@ static const char *token_kind_name(TokenKind kind) {
     return "'{'";
   case TOKEN_CLOSE_BRACE:
     return "'}'";
+  case TOKEN_REPORTER:
+    return "a reporter macro (REPORTER)";
   default:
     if (kind & TOKEN_HOOK)
       return "a hook macro (HOOK_BEFORE_ALL/HOOK_BEFORE_EACH/HOOK_AFTER_ALL/HOOK_AFTER_EACH)";
@@ -325,6 +333,8 @@ static bool is_token_test(Lexer *lexer, Token *token) { return lexer->brace_dept
 
 static bool is_token_hook(Lexer *lexer, Token *token) { return lexer->brace_depth == 0 && lexer_match_keyword(lexer, hook_tokens, ARRAY_LEN(hook_tokens), token); }
 
+static bool is_token_reporter(Lexer *lexer, Token *token) { return lexer->brace_depth == 0 && lexer_match_keyword(lexer, reporter_tokens, ARRAY_LEN(reporter_tokens), token); }
+
 static bool is_token_literal(Lexer *lexer, Token *token) {
   for (size_t i = 0; i < ARRAY_LEN(literal_tokens); i++) {
     const LiteralToken *literal = &literal_tokens[i];
@@ -376,6 +386,9 @@ static Token lexer_next(Lexer *lexer) {
     return token;
 
   if (is_token_hook(lexer, &token))
+    return token;
+
+  if (is_token_reporter(lexer, &token))
     return token;
 
   if (is_token_literal(lexer, &token)) {
@@ -463,44 +476,57 @@ static void emit_suite(FILE *out, const RegistrationList *hooks, const Registrat
   fputs("\tSUITE_END();\n\n", out);
 }
 
-static int parse_test_file(const char *file_name, FILE *out) {
+typedef struct {
+  const char *content;
+  RegistrationList hooks;
+  RegistrationList tests;
+  RegistrationList reporters;
+} ParsedFile;
+
+static int parse_test_file(const char *file_name, ParsedFile *parsed) {
   size_t content_len;
-  const char *content = read_entire_file(file_name, &content_len);
-  if (!content) {
+  parsed->content = read_entire_file(file_name, &content_len);
+  if (!parsed->content) {
     fprintf(stderr, "error: could not read '%s'\n", file_name);
     return 1;
   }
 
-  Lexer lexer = lexer_new(file_name, content, content_len);
+  Lexer lexer = lexer_new(file_name, parsed->content, content_len);
   Token token = lexer_next(&lexer);
-
-  RegistrationList tests = {0};
-  RegistrationList hooks = {0};
 
   while (token.kind != TOKEN_END) {
     RegistrationList *target = NULL;
 
     if (token.kind == TOKEN_TEST)
-      target = &tests;
+      target = &parsed->tests;
+    else if (token.kind == TOKEN_REPORTER)
+      target = &parsed->reporters;
     else if (token.kind & TOKEN_HOOK)
-      target = &hooks;
+      target = &parsed->hooks;
 
     if (target) {
       lexer_expect_kind(&lexer, TOKEN_OPEN_PAREN, "'(' after macro name");
-      Token name = lexer_expect_kind(&lexer, TOKEN_SYMBOL, "an identifier (test/hook name)");
+      Token name = lexer_expect_kind(&lexer, TOKEN_SYMBOL, "an identifier (test/hook/reporter name)");
       lexer_skip_balanced_parens(&lexer);
       registration_list_append(target, token.kind, name.text, name.text_len);
     }
 
     token = lexer_next(&lexer);
   }
-
-  emit_suite(out, &hooks, &tests);
-
-  da_free(&tests);
-  da_free(&hooks);
-  free((void *)content);
   return 0;
+}
+
+static void parsed_file_free(ParsedFile *parsed) {
+  da_free(&parsed->hooks);
+  da_free(&parsed->tests);
+  da_free(&parsed->reporters);
+  free((void *)parsed->content);
+}
+
+static void emit_reporters(FILE *out, const ParsedFile *files, int count) {
+  for (int i = 0; i < count; ++i) {
+    da_foreach(RegistrationEntry, entry, &files[i].reporters) { fprintf(out, "\tUSE_REPORTER(%.*s);\n", (int)entry->name_len, entry->name); }
+  }
 }
 
 /* Path Helpers */
@@ -1006,22 +1032,31 @@ int main(int argc, char *argv[]) {
             args.output_file);
   }
 
+  ParsedFile *files = calloc((size_t)args.test_files_count, sizeof(*files));
+  bool had_parse_error = (files == NULL);
+  for (int i = 0; i < args.test_files_count && files; ++i) {
+    if (parse_test_file(args.test_files[i], &files[i]) != 0)
+      had_parse_error = true;
+  }
+
   fputs("#define CLUT_IMPLEMENTATION\n\n", out);
 
   for (int i = 0; i < args.test_files_count; ++i)
     emit_include(out, args.test_files[i], output_dir_abs, have_output_dir_abs);
 
   fputs("\nint main(void){\n", out);
-  fputs("\tRUNNER_BEGIN();\n", out);
-
-  bool had_parse_error = false;
-  for (int i = 0; i < args.test_files_count; ++i) {
-    if (parse_test_file(args.test_files[i], out) != 0)
-      had_parse_error = true;
+  if (!had_parse_error) {
+    emit_reporters(out, files, args.test_files_count);
+    fputs("\tRUNNER_BEGIN();\n\n", out);
+    for (int i = 0; i < args.test_files_count; ++i)
+      emit_suite(out, &files[i].hooks, &files[i].tests);
   }
-
   fputs("\treturn RUNNER_END();\n", out);
   fputs("}\n", out);
+
+  for (int i = 0; files && i < args.test_files_count; ++i)
+    parsed_file_free(&files[i]);
+  free(files);
 
   if (fclose(out) != 0) {
     fprintf(stderr, "error: failed writing '%s'\n", temp_file_name);
