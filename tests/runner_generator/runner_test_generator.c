@@ -10,6 +10,7 @@
 
 int main(void){
 	RUNNER_BEGIN();
+
 	SUITE_BEGIN();
 		RUN_TEST(plain_symbol);
 		RUN_TEST(underscore_symbol);

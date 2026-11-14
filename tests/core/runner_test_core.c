@@ -8,6 +8,7 @@
 
 int main(void){
 	RUNNER_BEGIN();
+
 	SUITE_BEGIN();
 		RUN_TEST(char_array);
 		RUN_TEST(int_array);
