@@ -117,8 +117,8 @@ error:
   return NULL;
 }
 
-static bool is_symbol_start(char x) { return isalpha(x) || x == '_'; }
-static bool is_symbol(char x) { return isalnum(x) || x == '_'; }
+static bool is_symbol_start(char x) { return isalpha((unsigned char)x) || x == '_'; }
+static bool is_symbol(char x) { return isalnum((unsigned char)x) || x == '_'; }
 
 /* Tokens */
 typedef enum {
@@ -262,7 +262,7 @@ static void lexer_advance(Lexer *lexer, size_t len) {
 }
 
 static void lexer_trim_left(Lexer *lexer) {
-  while (lexer->cursor < lexer->content_len && isspace(lexer->content[lexer->cursor])) {
+  while (lexer->cursor < lexer->content_len && isspace((unsigned char)lexer->content[lexer->cursor])) {
     lexer_advance(lexer, 1);
   }
 }
@@ -287,13 +287,30 @@ static bool lexer_matches_word(Lexer *lexer, const char *prefix) {
   return next >= lexer->content_len || !is_symbol(lexer->content[next]);
 }
 
-static void lexer_consume_until_char(Lexer *lexer, Token *token, char end) {
-  while (lexer->cursor < lexer->content_len && lexer->content[lexer->cursor] != end) {
+static void lexer_consume_quoted(Lexer *lexer, Token *token, char quote) {
+  while (lexer->cursor < lexer->content_len) {
+    char x = lexer->content[lexer->cursor];
+    if (x == '\n')
+      return;
     token->text_len++;
     lexer_advance(lexer, 1);
+    if (x == quote)
+      return;
+    if (x == '\\' && lexer->cursor < lexer->content_len) {
+      token->text_len++;
+      lexer_advance(lexer, 1);
+    }
   }
-  token->text_len++;
-  lexer_advance(lexer, 1);
+}
+
+static void lexer_consume_until_char(Lexer *lexer, Token *token, char end) {
+  while (lexer->cursor < lexer->content_len) {
+    char x = lexer->content[lexer->cursor];
+    token->text_len++;
+    lexer_advance(lexer, 1);
+    if (x == end)
+      return;
+  }
 }
 
 static void lexer_consume_until_str(Lexer *lexer, Token *token, const char *end) {
@@ -301,18 +318,34 @@ static void lexer_consume_until_str(Lexer *lexer, Token *token, const char *end)
     token->text_len++;
     lexer_advance(lexer, 1);
   }
+  if (lexer->cursor >= lexer->content_len)
+    return;
   size_t end_str_len = strlen(end);
   token->text_len += end_str_len;
   lexer_advance(lexer, end_str_len);
 }
 
 static Token lexer_read_line_token(Lexer *lexer, TokenKind kind) {
-  Token token = {
-      .kind = kind,
-      .text = &lexer->content[lexer->cursor],
-      .text_len = 0,
-  };
+  Token token = {.kind = kind, .text = &lexer->content[lexer->cursor], .text_len = 0};
   lexer_consume_until_char(lexer, &token, '\n');
+  return token;
+}
+
+static Token lexer_read_preproc_token(Lexer *lexer) {
+  Token token = {.kind = TOKEN_PREPROC, .text = &lexer->content[lexer->cursor], .text_len = 0};
+  while (lexer->cursor < lexer->content_len) {
+    char x = lexer->content[lexer->cursor];
+    token.text_len++;
+    lexer_advance(lexer, 1);
+    if (x != '\n')
+      continue;
+    size_t end = token.text_len - 1;
+    if (end > 0 && token.text[end - 1] == '\r')
+      end--;
+    if (end > 0 && token.text[end - 1] == '\\')
+      continue; /* linha continuada */
+    break;
+  }
   return token;
 }
 
@@ -360,11 +393,12 @@ static Token lexer_next(Lexer *lexer) {
   if (lexer->cursor >= lexer->content_len)
     return token;
 
-  if (lexer->content[lexer->cursor] == '"') {
+  char c = lexer->content[lexer->cursor];
+  if (c == '"' || c == '\'') {
     token.kind = TOKEN_STRING;
-    token.text_len += 1;
+    token.text_len = 1;
     lexer_advance(lexer, 1);
-    lexer_consume_until_char(lexer, &token, '"');
+    lexer_consume_quoted(lexer, &token, c);
     return token;
   }
 
@@ -380,7 +414,7 @@ static Token lexer_next(Lexer *lexer) {
   }
 
   if (lexer->content[lexer->cursor] == '#')
-    return lexer_read_line_token(lexer, TOKEN_PREPROC);
+    return lexer_read_preproc_token(lexer);
 
   if (is_token_test(lexer, &token))
     return token;
@@ -394,8 +428,21 @@ static Token lexer_next(Lexer *lexer) {
   if (is_token_literal(lexer, &token)) {
     if (token.kind == TOKEN_OPEN_BRACE)
       lexer->brace_depth++;
-    else if (token.kind == TOKEN_CLOSE_BRACE)
+    else if (token.kind == TOKEN_CLOSE_BRACE && lexer->brace_depth > 0)
       lexer->brace_depth--;
+    return token;
+  }
+
+  if (isdigit((unsigned char)lexer->content[lexer->cursor])) {
+    token.kind = TOKEN_UNKNOWN;
+    while (lexer->cursor < lexer->content_len) {
+      char x = lexer->content[lexer->cursor];
+      bool separator = x == '\'' && lexer->cursor + 1 < lexer->content_len && is_symbol(lexer->content[lexer->cursor + 1]);
+      if (!is_symbol(x) && x != '.' && !separator)
+        break;
+      token.text_len++;
+      lexer_advance(lexer, 1);
+    }
     return token;
   }
 
@@ -414,31 +461,34 @@ static Token lexer_next(Lexer *lexer) {
   return token;
 }
 
-static Token lexer_expect_kind(Lexer *lexer, TokenKind kind, const char *what) {
+static bool lexer_expect_kind(Lexer *lexer, TokenKind kind, const char *what, Token *out) {
   Token token = lexer_next(lexer);
   if (token.kind != kind) {
     fprintf(stderr, "%s:%zu: error: expected %s, but got %s", lexer->file_name, lexer->line + 1, what, token_kind_name(token.kind));
     if (token.kind != TOKEN_END && token.text_len > 0 && token.text_len < 40)
       fprintf(stderr, " ('%.*s')", (int)token.text_len, token.text);
     fprintf(stderr, "\n");
-    exit(1);
+    return false;
   }
-  return token;
+  if (out)
+    *out = token;
+  return true;
 }
 
-static void lexer_skip_balanced_parens(Lexer *lexer) {
+static bool lexer_skip_balanced_parens(Lexer *lexer) {
   size_t depth = 1;
   while (depth > 0) {
     Token token = lexer_next(lexer);
     if (token.kind == TOKEN_END) {
       fprintf(stderr, "%s:%zu: error: unexpected end of file inside argument list, unterminated '('\n", lexer->file_name, lexer->line + 1);
-      exit(1);
+      return false;
     }
     if (token.kind == TOKEN_OPEN_PAREN)
       depth++;
     else if (token.kind == TOKEN_CLOSE_PAREN)
       depth--;
   }
+  return true;
 }
 
 /* Parser */
@@ -505,9 +555,9 @@ static int parse_test_file(const char *file_name, ParsedFile *parsed) {
       target = &parsed->hooks;
 
     if (target) {
-      lexer_expect_kind(&lexer, TOKEN_OPEN_PAREN, "'(' after macro name");
-      Token name = lexer_expect_kind(&lexer, TOKEN_SYMBOL, "an identifier (test/hook/reporter name)");
-      lexer_skip_balanced_parens(&lexer);
+      Token name = {0};
+      if (!lexer_expect_kind(&lexer, TOKEN_OPEN_PAREN, "'(' after macro name", NULL) || !lexer_expect_kind(&lexer, TOKEN_SYMBOL, "an identifier (test/hook/reporter name)", &name) || !lexer_skip_balanced_parens(&lexer))
+        return 1;
       registration_list_append(target, token.kind, name.text, name.text_len);
     }
 

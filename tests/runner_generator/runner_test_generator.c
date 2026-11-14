@@ -29,11 +29,33 @@ int main(void){
 		RUN_TEST(identifier_prefix_not_keyword);
 		RUN_TEST(all_hook_macros);
 		RUN_TEST(keywords_inside_braces_ignored);
+		RUN_TEST(quoted_literal_is_single_token_and_keeps_depth);
+		RUN_TEST(unterminated_string_stops_at_newline);
+		RUN_TEST(stray_apostrophe_only_costs_one_line);
+		RUN_TEST(digit_separator_is_not_a_char_literal);
+		RUN_TEST(unterminated_block_comment_does_not_overrun);
+		RUN_TEST(line_comment_at_eof_without_newline_does_not_overrun);
+		RUN_TEST(directive_at_eof_without_newline_does_not_overrun);
+		RUN_TEST(unterminated_string_at_eof_does_not_overrun);
+		RUN_TEST(directive_continuation_swallows_next_line);
+		RUN_TEST(directive_continuation_with_crlf);
+		RUN_TEST(stray_close_brace_does_not_underflow_depth);
+		RUN_TEST(reporter_macro_detected_top_level);
+		RUN_TEST(reporter_lookalikes_are_symbols);
+		RUN_TEST(reporter_inside_braces_ignored);
 	SUITE_END();
 
 	SUITE_BEGIN();
+		USE_HOOK_AFTER_ALL(parser_fixture_teardown);
+
 		RUN_TEST(get_macro_set_hook_maps_all_known_hooks);
 		RUN_TEST(get_macro_set_hook_returns_null_for_non_hook_kind);
+		RUN_TEST(parse_registers_tests_after_char_and_string_literals);
+		RUN_TEST(parse_registers_reporter_with_designated_initializers);
+		RUN_TEST(parse_ignores_reporter_inside_function_body);
+		RUN_TEST(parse_collects_hooks_and_tests_separately);
+		RUN_TEST(parse_malformed_macro_returns_error);
+		RUN_TEST(parse_missing_file_returns_error);
 	SUITE_END();
 
 	SUITE_BEGIN();

@@ -195,4 +195,161 @@ TEST(keywords_inside_braces_ignored) {
   TEST_ASSERT_EQUAL_INT(TOKEN_SYMBOL, lexer_next(&lx).kind);      /* BEFORE_ALL_HOOK (not TOKEN_BEFORE_ALL_HOOK) */
 }
 
+typedef struct {
+  const char *src;
+  int expected_len;
+} QuotedLiteralCase;
+
+PARAM_TEST(quoted_literal_is_single_token_and_keeps_depth, QuotedLiteralCase,
+           {
+               {"'{' TEST(x)", 3},
+               {"'}' TEST(x)", 3},
+               {"'\"' TEST(x)", 3},
+               {"'\\'' TEST(x)", 4},
+               {"'\\\\' TEST(x)", 4},
+               {"\"{\" TEST(x)", 3},
+               {"\"\\\"}\" TEST(x)", 5},
+               {"\"\\\\\" TEST(x)", 4},
+           }) {
+  Lexer lx = lexer_new("f.c", input.src, strlen(input.src));
+  Token lit = lexer_next(&lx);
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_STRING, lit.kind);
+  TEST_ASSERT_EQUAL_INT(input.expected_len, (int)lit.text_len);
+  TEST_ASSERT_EQUAL_INT(0, (int)lx.brace_depth);
+  TEST_ASSERT_EQUAL_INT(TOKEN_TEST, lexer_next(&lx).kind);
+}
+
+TEST(unterminated_string_stops_at_newline) {
+  const char *src = "\"abc\nTEST(x)";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+  Token lit = lexer_next(&lx);
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_STRING, lit.kind);
+  TEST_ASSERT_EQUAL_INT(4, (int)lit.text_len);
+  TEST_ASSERT_EQUAL_INT(TOKEN_TEST, lexer_next(&lx).kind);
+}
+
+TEST(stray_apostrophe_only_costs_one_line) {
+  const char *src = "don't\nTEST(x)";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_SYMBOL, lexer_next(&lx).kind);
+  TEST_ASSERT_EQUAL_INT(TOKEN_STRING, lexer_next(&lx).kind);
+  TEST_ASSERT_EQUAL_INT(TOKEN_TEST, lexer_next(&lx).kind);
+}
+
+TEST(digit_separator_is_not_a_char_literal) {
+  const char *src = "1'000'000 TEST(x)";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+  Token num = lexer_next(&lx);
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_UNKNOWN, num.kind);
+  TEST_ASSERT_EQUAL_INT(9, (int)num.text_len);
+  TEST_ASSERT_EQUAL_INT(TOKEN_TEST, lexer_next(&lx).kind);
+}
+
+TEST(unterminated_block_comment_does_not_overrun) {
+  const char *src = "/* never closed";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+  Token t = lexer_next(&lx);
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_COMMENT, t.kind);
+  TEST_ASSERT_EQUAL_INT((int)strlen(src), (int)t.text_len);
+  TEST_ASSERT_EQUAL_INT((int)strlen(src), (int)lx.cursor);
+  TEST_ASSERT_EQUAL_INT(TOKEN_END, lexer_next(&lx).kind);
+}
+
+TEST(line_comment_at_eof_without_newline_does_not_overrun) {
+  const char *src = "// last line";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+  Token t = lexer_next(&lx);
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_COMMENT, t.kind);
+  TEST_ASSERT_EQUAL_INT((int)strlen(src), (int)t.text_len);
+  TEST_ASSERT_EQUAL_INT((int)strlen(src), (int)lx.cursor);
+}
+
+TEST(directive_at_eof_without_newline_does_not_overrun) {
+  const char *src = "#endif";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+  Token t = lexer_next(&lx);
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_PREPROC, t.kind);
+  TEST_ASSERT_EQUAL_INT((int)strlen(src), (int)t.text_len);
+  TEST_ASSERT_EQUAL_INT((int)strlen(src), (int)lx.cursor);
+}
+
+TEST(unterminated_string_at_eof_does_not_overrun) {
+  const char *src = "\"abc";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+  Token t = lexer_next(&lx);
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_STRING, t.kind);
+  TEST_ASSERT_EQUAL_INT((int)strlen(src), (int)t.text_len);
+  TEST_ASSERT_EQUAL_INT((int)strlen(src), (int)lx.cursor);
+}
+
+TEST(directive_continuation_swallows_next_line) {
+  const char *src = "#define M \\\n  TEST(fake)\nTEST(real)";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_PREPROC, lexer_next(&lx).kind);
+  TEST_ASSERT_EQUAL_INT(TOKEN_TEST, lexer_next(&lx).kind);
+  TEST_ASSERT_EQUAL_INT(TOKEN_OPEN_PAREN, lexer_next(&lx).kind);
+
+  Token name = lexer_next(&lx);
+  TEST_ASSERT_EQUAL_INT(TOKEN_SYMBOL, name.kind);
+  TEST_ASSERT_EQUAL_STRING_LEN("real", name.text, name.text_len);
+}
+
+TEST(directive_continuation_with_crlf) {
+  const char *src = "#define M \\\r\n  TEST(fake)\r\nTEST(real)";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_PREPROC, lexer_next(&lx).kind);
+  TEST_ASSERT_EQUAL_INT(TOKEN_TEST, lexer_next(&lx).kind);
+  TEST_ASSERT_EQUAL_INT(TOKEN_OPEN_PAREN, lexer_next(&lx).kind);
+
+  Token name = lexer_next(&lx);
+  TEST_ASSERT_EQUAL_INT(TOKEN_SYMBOL, name.kind);
+  TEST_ASSERT_EQUAL_STRING_LEN("real", name.text, name.text_len);
+}
+
+TEST(stray_close_brace_does_not_underflow_depth) {
+  const char *src = "} TEST(x)";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_CLOSE_BRACE, lexer_next(&lx).kind);
+  TEST_ASSERT_EQUAL_INT(0, (int)lx.brace_depth);
+  TEST_ASSERT_EQUAL_INT(TOKEN_TEST, lexer_next(&lx).kind);
+}
+
+TEST(reporter_macro_detected_top_level) {
+  const char *src = "REPORTER(r)";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+  Token t = lexer_next(&lx);
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_REPORTER, t.kind);
+  TEST_ASSERT_EQUAL_STRING_LEN("REPORTER", t.text, t.text_len);
+}
+
+PARAM_TEST(reporter_lookalikes_are_symbols, const char *,
+           {
+               "USE_REPORTER(r)",
+               "REPORTER_X(r)",
+               "MY_REPORTER(r)",
+           }) {
+  Lexer lx = lexer_new("f.c", input, strlen(input));
+  TEST_ASSERT_EQUAL_INT(TOKEN_SYMBOL, lexer_next(&lx).kind);
+}
+
+TEST(reporter_inside_braces_ignored) {
+  const char *src = "{ REPORTER(r) }";
+  Lexer lx = lexer_new("f.c", src, strlen(src));
+
+  TEST_ASSERT_EQUAL_INT(TOKEN_OPEN_BRACE, lexer_next(&lx).kind);
+  TEST_ASSERT_EQUAL_INT(TOKEN_SYMBOL, lexer_next(&lx).kind);
+}
+
 #endif /* RUNNER_GENERATOR_TEST_LEXER_H */
