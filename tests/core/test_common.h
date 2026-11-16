@@ -8,6 +8,14 @@ static ClutStringBuilder captured_message;
 
 HOOK_AFTER_ALL(test_common) { clut_da_free(&captured_message); }
 
+static const char *clut_string_builder_to_cstr(ClutStringBuilder *sb) {
+  if (!sb->items)
+    return "";
+  clut_da_reserve(sb, sb->count + 1);
+  sb->items[sb->count] = '\0';
+  return sb->items;
+}
+
 static bool clut_take_assert_failure(void) {
   clut_da_clear(&captured_message);
   if (!Clut.current_test.failed || Clut.runner.failures.count == 0) {

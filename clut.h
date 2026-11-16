@@ -583,14 +583,6 @@ static void clut_string_builder_append_format(ClutStringBuilder *sb, const char 
   sb->count += (size_t)n;
 }
 
-static const char *clut_string_builder_to_cstr(ClutStringBuilder *sb) {
-  if (!sb->items)
-    return "";
-  clut_da_reserve(sb, sb->count + 1);
-  sb->items[sb->count] = '\0';
-  return sb->items;
-}
-
 /* Helpers */
 static inline float clut_abs_float(float x) { return x < 0.0f ? -x : x; }
 static inline double clut_abs_double(double x) { return x < 0.0 ? -x : x; }
