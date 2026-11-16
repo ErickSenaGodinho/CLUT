@@ -1,3 +1,4 @@
 .cache
 compile_commands.json
 *.exe
+**/runner_test_*.c
