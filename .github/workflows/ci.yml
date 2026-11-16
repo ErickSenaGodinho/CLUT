@@ -7,7 +7,24 @@ on:
     branches: [ "main", "master", "develop", "staging" ]
 
 jobs:
+  check-format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install clang-format
+      run: pip install clang-format==23.1.5
+
+    - name: Check C/C++ formatting
+      run: |
+        find . \
+          \( -path './.*' -o -path './build*' \) -prune -o \
+          \( -name '*.c' -o -name '*.h' \) \
+          -exec clang-format --dry-run --Werror {} +
+
   test-generator:
+    needs: check-format
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
