@@ -81,6 +81,7 @@ typedef struct {
 typedef void (*ClutHookFn)();
 typedef void (*ClutTestFn)();
 typedef void (*ClutRepeatedTestFn)(ClutRepetitionInfo);
+typedef void (*ClutParamTestFn)(const void *param);
 
 /* Test Data */
 typedef struct {
@@ -183,24 +184,25 @@ typedef struct {
 #define CLUT_TEST_WRAPPER(name) clut_run_test_##name
 
 #define TEST(name)                                                                                                                                                                                                                                                 \
-  CLUT_API void CLUT_TEST_BODY(name)(void);                                                                                                                                                                                                                        \
+  static void CLUT_TEST_BODY(name)(void);                                                                                                                                                                                                                          \
   CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunTest(CLUT_TEST_BODY(name)); }                                                                                                                                                                               \
-  CLUT_API void CLUT_TEST_BODY(name)(void)
+  static void CLUT_TEST_BODY(name)(void)
 
 #define REPEATED_TEST(name, repetitions)                                                                                                                                                                                                                           \
-  CLUT_API void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                    \
+  static void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                      \
   CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeated(CLUT_TEST_BODY(name), repetitions); }                                                                                                                                                              \
-  CLUT_API void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
+  static void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
 
 #define REPEATED_TEST_WITH_THRESHOLD(name, repetitions, failure_threshold)                                                                                                                                                                                         \
-  CLUT_API void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                    \
+  static void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                      \
   CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeatedWithThreshold(CLUT_TEST_BODY(name), repetitions, failure_threshold); }                                                                                                                              \
-  CLUT_API void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
+  static void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
 
 #define PARAM_TEST(name, Type, ...)                                                                                                                                                                                                                                \
-  CLUT_API void CLUT_TEST_BODY(name)(Type input);                                                                                                                                                                                                                  \
-  CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunParamTest(CLUT_TEST_BODY(name), Type, __VA_ARGS__); }                                                                                                                                                       \
-  CLUT_API void CLUT_TEST_BODY(name)(Type input)
+  static void CLUT_TEST_BODY(name)(Type input);                                                                                                                                                                                                                    \
+  static void clut_param_thunk_##name(const void *p) { CLUT_TEST_BODY(name)(*(const Type *)p); }                                                                                                                                                                   \
+  CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunParamTest(clut_param_thunk_##name, Type, __VA_ARGS__); }                                                                                                                                                    \
+  static void CLUT_TEST_BODY(name)(Type input)
 
 /* Test Runner lifecycle macros */
 #define RUNNER_BEGIN() ClutRunnerBegin()
@@ -393,7 +395,13 @@ CLUT_API void ClutSetHookAfterEach(ClutHookFn hook_fn);
 CLUT_API void ClutRunTest(ClutTestFn test_fn);
 CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t repetitions);
 CLUT_API void ClutRunRepeatedWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold);
-#define ClutRunParamTest(test_fn, Type, ...)
+CLUT_API void ClutRunParamTestImpl(ClutParamTestFn test_fn, const void *items, size_t item_size, size_t count);
+
+#define ClutRunParamTest(test_fn, Type, ...)                                                                                                                                                                                                                       \
+  do {                                                                                                                                                                                                                                                             \
+    static const Type clut_params_[] = __VA_ARGS__;                                                                                                                                                                                                                \
+    ClutRunParamTestImpl((test_fn), clut_params_, sizeof(Type), sizeof(clut_params_) / sizeof(Type));                                                                                                                                                              \
+  } while (0)
 
 CLUT_API void ClutMarkSkipped();
 
@@ -1138,22 +1146,19 @@ CLUT_API void ClutRunRepeatedWithThreshold(ClutRepeatedTestFn test_fn, size_t re
   }
 }
 
-#undef ClutRunParamTest
-#define ClutRunParamTest(test_fn, Type, ...)                                                                                                                                                                                                                       \
-  do {                                                                                                                                                                                                                                                             \
-    Type cases[] = __VA_ARGS__;                                                                                                                                                                                                                                    \
-    size_t case_count = sizeof(cases) / sizeof(cases[0]);                                                                                                                                                                                                          \
-    volatile bool failed = false;                                                                                                                                                                                                                                  \
-    for (volatile size_t i = 0; i < case_count; ++i) {                                                                                                                                                                                                             \
-      Clut.current_test.iteration = (int)i;                                                                                                                                                                                                                        \
-      CLUT_RUN_GUARDED(test_fn(cases[i]));                                                                                                                                                                                                                         \
-      if (Clut.current_test.failed) {                                                                                                                                                                                                                              \
-        failed = true;                                                                                                                                                                                                                                             \
-        Clut.current_test.failed = false;                                                                                                                                                                                                                          \
-      }                                                                                                                                                                                                                                                            \
-    }                                                                                                                                                                                                                                                              \
-    Clut.current_test.failed = failed;                                                                                                                                                                                                                             \
-  } while (0)
+CLUT_API void ClutRunParamTestImpl(ClutParamTestFn test_fn, const void *items, size_t item_size, size_t count) {
+  const unsigned char *base = (const unsigned char *)items;
+  volatile bool failed = false;
+  for (volatile size_t i = 0; i < count; ++i) {
+    Clut.current_test.iteration = (int)i;
+    CLUT_RUN_GUARDED(test_fn(base + i * item_size));
+    if (Clut.current_test.failed) {
+      failed = true;
+      Clut.current_test.failed = false;
+    }
+  }
+  Clut.current_test.failed = failed;
+}
 
 CLUT_API void ClutMarkSkipped() { Clut.current_test.skipped = true; }
 
