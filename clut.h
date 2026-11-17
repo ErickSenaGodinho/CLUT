@@ -609,6 +609,18 @@ static inline bool clut_doubles_are_close(double expected, double actual) {
   return clut_abs_double(expected - actual) < clut_abs_double(expected) * CLUT_DOUBLE_EPSILON;
 }
 
+static bool clut_strings_equal(const char *expected, const char *actual, size_t limit) {
+  if (expected == actual)
+    return true;
+  if (expected == NULL || actual == NULL)
+    return false;
+  for (size_t i = 0; i < limit && (expected[i] || actual[i]); i++) {
+    if (expected[i] != actual[i])
+      return false;
+  }
+  return true;
+}
+
 static inline double clut_elapsed_seconds(long start) { return ((double)(clock() - start)) / CLOCKS_PER_SEC; }
 
 /* ===== Global State ===== */
@@ -1288,37 +1300,12 @@ CLUT_API void ClutAssertEqualDouble(double expected, double actual, const char *
 }
 
 CLUT_API void ClutAssertEqualString(const char *expected, const char *actual, const char *file, int line, const char *msg) {
-  CLUT_ABORT_IF_FAILED_OR_SKIPPED;
-  if (expected == actual)
-    return;
-  bool failed = (expected == NULL || actual == NULL);
-  if (!failed) {
-    for (size_t i = 0; expected[i] || actual[i]; i++) {
-      if (expected[i] != actual[i]) {
-        failed = true;
-        break;
-      }
-    }
-  }
-  if (!failed)
-    return;
-  CLUT_ASSERT_COMPARE(clut_message_append_str, !failed, actual, CLUT_MSG_EQUAL, expected, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_str, clut_strings_equal(expected, actual, SIZE_MAX), actual, CLUT_MSG_EQUAL, expected, file, line, msg);
 }
 
 CLUT_API void ClutAssertEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
-  if (expected == actual)
-    return;
-  bool failed = (expected == NULL || actual == NULL);
-  if (!failed) {
-    for (size_t i = 0; i < len && (expected[i] || actual[i]); i++) {
-      if (expected[i] != actual[i]) {
-        failed = true;
-        break;
-      }
-    }
-  }
-  if (!failed)
+  if (clut_strings_equal(expected, actual, len))
     return;
   clut_message_append_user_text(msg);
   clut_message_append(CLUT_MSG_EXPECTED);
@@ -1350,43 +1337,12 @@ CLUT_API void ClutAssertNotEqualDouble(double expected, double actual, const cha
 }
 
 CLUT_API void ClutAssertNotEqualString(const char *expected, const char *actual, const char *file, int line, const char *msg) {
-  CLUT_ABORT_IF_FAILED_OR_SKIPPED;
-  bool is_equal;
-  if (expected == actual)
-    is_equal = true;
-  else if (expected == NULL || actual == NULL)
-    is_equal = false;
-  else {
-    is_equal = true;
-    for (size_t i = 0; expected[i] || actual[i]; i++) {
-      if (expected[i] != actual[i]) {
-        is_equal = false;
-        break;
-      }
-    }
-  }
-  if (!is_equal)
-    return;
-  CLUT_ASSERT_COMPARE(clut_message_append_str, !is_equal, actual, CLUT_MSG_NOT_EQUAL, expected, file, line, msg);
+  CLUT_ASSERT_COMPARE(clut_message_append_str, !clut_strings_equal(expected, actual, SIZE_MAX), actual, CLUT_MSG_NOT_EQUAL, expected, file, line, msg);
 }
 
 CLUT_API void ClutAssertNotEqualStringLen(const char *expected, const char *actual, size_t len, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
-  bool is_equal;
-  if (expected == actual)
-    is_equal = true;
-  else if (expected == NULL || actual == NULL)
-    is_equal = false;
-  else {
-    is_equal = true;
-    for (size_t i = 0; i < len && (expected[i] || actual[i]); i++) {
-      if (expected[i] != actual[i]) {
-        is_equal = false;
-        break;
-      }
-    }
-  }
-  if (!is_equal)
+  if (!clut_strings_equal(expected, actual, len))
     return;
   clut_message_append_user_text(msg);
   clut_message_append(CLUT_MSG_EXPECTED);
@@ -1552,26 +1508,9 @@ CLUT_API void ClutAssertEqualStringArray(const char **expected, const char **act
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
   CLUT_CHECK_BUFFER_ARGS;
   for (size_t i = 0; i < num_elements; i++) {
-    const char *expected_text = expected[i];
-    const char *actual_text = actual[i];
-    bool is_equal = false;
-
-    if (expected_text == actual_text)
-      is_equal = true;
-    else if (expected_text == NULL || actual_text == NULL)
-      is_equal = false;
-    else {
-      is_equal = true;
-      for (size_t j = 0; expected_text[j] || actual_text[j]; j++) {
-        if (expected_text[j] != actual_text[j]) {
-          is_equal = false;
-          break;
-        }
-      }
-    }
-    if (is_equal)
+    if (clut_strings_equal(expected[i], actual[i], SIZE_MAX))
       continue;
-    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_str, expected_text, actual_text);
+    CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, i, clut_message_append_str, expected[i], actual[i]);
     return;
   }
 }
