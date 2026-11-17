@@ -825,9 +825,7 @@ static void clut_report_skip(void *context, const ClutTestResult *result) {
   fprintf(CLUT_STREAM_DEFAULT, "%s%-50s\n", CLUT_YELLOW_TEXT("[ SKIP ] "), result->test_name);
 }
 
-static void clut_report_suite_end(void *context, const ClutSummary *summary) {
-  (void)context;
-  fprintf(CLUT_STREAM_DEFAULT, "--------------------------------\n");
+static void clut_print_summary(const ClutSummary *summary) {
   fprintf(CLUT_STREAM_DEFAULT, CLUT_BLUE_TEXT("Tests:      ") CLUT_GREEN_TEXT("%zu\n"), summary->total_tests);
   fprintf(CLUT_STREAM_DEFAULT, CLUT_BLUE_TEXT("Passed:     ") CLUT_GREEN_TEXT("%zu\n"), summary->passed);
   fprintf(CLUT_STREAM_DEFAULT, CLUT_BLUE_TEXT("Failed:     ") CLUT_RED_TEXT("%zu\n"), summary->failed);
@@ -837,18 +835,18 @@ static void clut_report_suite_end(void *context, const ClutSummary *summary) {
   fprintf(CLUT_STREAM_DEFAULT, "\n");
 }
 
+static void clut_report_suite_end(void *context, const ClutSummary *summary) {
+  (void)context;
+  fprintf(CLUT_STREAM_DEFAULT, "--------------------------------\n");
+  clut_print_summary(summary);
+}
+
 static void clut_report_runner_end(void *context, const ClutSummary *summary) {
   (void)context;
   fprintf(CLUT_STREAM_DEFAULT, "================================\n");
   fprintf(CLUT_STREAM_DEFAULT, CLUT_BLUE_TEXT("RUNNER SUMMARY\n"));
   fprintf(CLUT_STREAM_DEFAULT, "================================\n");
-  fprintf(CLUT_STREAM_DEFAULT, CLUT_BLUE_TEXT("Tests:      ") CLUT_GREEN_TEXT("%zu\n"), summary->total_tests);
-  fprintf(CLUT_STREAM_DEFAULT, CLUT_BLUE_TEXT("Passed:     ") CLUT_GREEN_TEXT("%zu\n"), summary->passed);
-  fprintf(CLUT_STREAM_DEFAULT, CLUT_BLUE_TEXT("Failed:     ") CLUT_RED_TEXT("%zu\n"), summary->failed);
-  fprintf(CLUT_STREAM_DEFAULT, CLUT_BLUE_TEXT("Skipped:    ") CLUT_YELLOW_TEXT("%zu\n"), summary->skipped);
-  fprintf(CLUT_STREAM_DEFAULT, "--------------------------------\n");
-  fprintf(CLUT_STREAM_DEFAULT, CLUT_BLUE_TEXT("Total time: %.3fs\n"), summary->total_seconds);
-  fprintf(CLUT_STREAM_DEFAULT, "\n");
+  clut_print_summary(summary);
 }
 
 static const ClutReporter ClutDefaultReporter = {
