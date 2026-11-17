@@ -106,6 +106,7 @@ typedef struct {
   const ClutTestFailure *failures;
   size_t failure_count;
   double duration;
+  size_t skipped_iterations;
 } ClutTestResult;
 
 /* Test Registration */
@@ -151,6 +152,7 @@ typedef struct {
   int iteration;
   bool failed;
   bool skipped;
+  size_t skipped_iterations;
   long start_time;
 #ifdef CLUT_HAS_LONGJMP
   jmp_buf jmp_buffer;
@@ -641,7 +643,10 @@ CLUT_STATE_LINKAGE const ClutReporter *ClutCustomReporter = NULL;
 #if defined(CLUT_OUTPUT_GITHUB)
 static void clut_report_pass(void *context, const ClutTestResult *result) {
   (void)context;
-  fprintf(CLUT_STREAM_DEFAULT, "::notice title=PASS::%s (%.3fs)\n", result->test_name, result->duration);
+  fprintf(CLUT_STREAM_DEFAULT, "::notice title=PASS::%s (%.3fs", result->test_name, result->duration);
+  if (result->skipped_iterations > 0)
+    fprintf(CLUT_STREAM_DEFAULT, ", %zu skipped", result->skipped_iterations);
+  fputs(")\n", CLUT_STREAM_DEFAULT);
 }
 
 static void clut_github_print_escaped(FILE *stream, const char *text) {
@@ -724,6 +729,8 @@ static void clut_report_pass(void *context, const ClutTestResult *result) {
   ClutTapContext *ctx = (ClutTapContext *)context;
   ctx->clut_tap_test_index++;
   fprintf(CLUT_STREAM_DEFAULT, "ok %zu - %s # (%.3fs)\n", ctx->clut_tap_test_index, result->test_name, result->duration);
+  if (result->skipped_iterations > 0)
+    fprintf(CLUT_STREAM_DEFAULT, "# %s: %zu skipped\n", result->test_name, result->skipped_iterations);
 }
 
 static void clut_tap_print_failure(const ClutTestFailure *failure) {
@@ -789,7 +796,10 @@ static const ClutReporter ClutTapReporter = {
 
 static void clut_report_pass(void *context, const ClutTestResult *result) {
   (void)context;
-  fprintf(CLUT_STREAM_DEFAULT, "%s%-50s%.3fs\n", CLUT_GREEN_TEXT("[ PASS ] "), result->test_name, result->duration);
+  fprintf(CLUT_STREAM_DEFAULT, "%s%-50s%.3fs", CLUT_GREEN_TEXT("[ PASS ] "), result->test_name, result->duration);
+  if (result->skipped_iterations > 0)
+    fprintf(CLUT_STREAM_DEFAULT, " (%zu skipped)", result->skipped_iterations);
+  fputc('\n', CLUT_STREAM_DEFAULT);
 }
 
 static void clut_report_fail(void *context, const ClutTestResult *result) {
@@ -1024,6 +1034,7 @@ static void clut_reset_current_test(void) {
   Clut.current_test.failed = false;
   Clut.current_test.skipped = false;
   Clut.current_test.iteration = -1;
+  Clut.current_test.skipped_iterations = 0;
   Clut.runner.next_message_offset = 0;
   clut_da_clear(&Clut.runner.failures);
   clut_da_clear(&Clut.runner.failure_message);
@@ -1082,7 +1093,7 @@ static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
   clut_run_after_each();
 
   clut_da_foreach(ClutTestFailure, f, &Clut.runner.failures) { f->message = Clut.runner.failure_message.items + f->message_offset; }
-  ClutTestResult result = {test_name, Clut.runner.failures.items, Clut.runner.failures.count, duration};
+  ClutTestResult result = {test_name, Clut.runner.failures.items, Clut.runner.failures.count, duration, Clut.current_test.skipped_iterations};
 
   if (Clut.current_test.failed) {
     Clut.suite.failed++;
@@ -1159,6 +1170,7 @@ static bool clut_tally_iteration(volatile size_t *failed, volatile size_t *skipp
 static void clut_set_test_outcome(size_t failed, size_t skipped, size_t ran) {
   Clut.current_test.failed = failed > 0;
   Clut.current_test.skipped = failed == 0 && ran > 0 && skipped == ran;
+  Clut.current_test.skipped_iterations = skipped;
 }
 
 CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t repetitions) {
