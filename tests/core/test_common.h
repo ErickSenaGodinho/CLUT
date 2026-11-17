@@ -1,6 +1,7 @@
 #ifndef CLUT_TEST_COMMON_H
 #define CLUT_TEST_COMMON_H
 
+#define CLUT_DISABLE_LONGJMP
 #define CLUT_IMPLEMENTATION
 #include "../../clut.h"
 
