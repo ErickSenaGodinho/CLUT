@@ -203,7 +203,7 @@ typedef struct {
 
 #define PARAM_TEST(name, Type, ...)                                                                                                                                                                                                                                \
   static void CLUT_TEST_BODY(name)(Type input);                                                                                                                                                                                                                    \
-  static void clut_param_thunk_##name(const void *p) { CLUT_TEST_BODY(name)(*(const Type *)p); }                                                                                                                                                                   \
+  static void clut_param_thunk_##name(const void *p) { CLUT_TEST_BODY(name)(*(Type const *)p); }                                                                                                                                                                   \
   CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunParamTest(clut_param_thunk_##name, Type, __VA_ARGS__); }                                                                                                                                                    \
   static void CLUT_TEST_BODY(name)(Type input)
 
@@ -402,7 +402,7 @@ CLUT_API void ClutRunParamTestImpl(ClutParamTestFn test_fn, const void *items, s
 
 #define ClutRunParamTest(test_fn, Type, ...)                                                                                                                                                                                                                       \
   do {                                                                                                                                                                                                                                                             \
-    static const Type clut_params_[] = __VA_ARGS__;                                                                                                                                                                                                                \
+    static Type const clut_params_[] = __VA_ARGS__;                                                                                                                                                                                                                \
     ClutRunParamTestImpl((test_fn), clut_params_, sizeof(Type), sizeof(clut_params_) / sizeof(Type));                                                                                                                                                              \
   } while (0)
 
