@@ -1,6 +1,8 @@
 #ifndef INCLUDE_CLUT_H
 #define INCLUDE_CLUT_H
 
+/* ===== Configuration ===== */
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -22,13 +24,11 @@
 #define CLUT_DOUBLE_EPSILON 1e-9
 #endif
 
-/* Abort / long-jump */
 #ifndef CLUT_DISABLE_LONGJMP
 #include <setjmp.h>
 #define CLUT_HAS_LONGJMP
 #endif
 
-/* Linkage */
 #ifdef CLUT_STATIC
 #define CLUT_API static
 #define CLUT_STATE_LINKAGE static
@@ -37,7 +37,8 @@
 #define CLUT_STATE_LINKAGE
 #endif
 
-/* Assertion message strings */
+/* ===== Message Strings ===== */
+
 #define CLUT_MSG_EXPECTED "Expected "
 #define CLUT_MSG_RECEIVED " Received "
 #define CLUT_MSG_EQUAL " to be equal to "
@@ -56,11 +57,13 @@
 #define CLUT_MSG_ARRAY_INDEX_END "] "
 #define CLUT_MSG_BYTE_OFFSET ", Byte Offset "
 #define CLUT_MSG_WAS " but was "
+
 #ifndef CLUT_MSG_USER_SEPARATOR
 #define CLUT_MSG_USER_SEPARATOR ": "
 #endif
 
-/* Utility Types */
+/* ===== Types ===== */
+
 typedef struct {
   char *items;
   size_t count;
@@ -86,7 +89,6 @@ typedef void (*ClutTestFn)();
 typedef void (*ClutRepeatedTestFn)(ClutRepetitionInfo);
 typedef void (*ClutParamTestFn)(const void *param);
 
-/* Test Data */
 typedef struct {
   const char *file;
   int line;
@@ -109,7 +111,6 @@ typedef struct {
   size_t skipped_iterations;
 } ClutTestResult;
 
-/* Test Registration */
 typedef struct {
   ClutTestFn fn;
   const char *name;
@@ -119,9 +120,8 @@ typedef struct {
   ClutRegisteredTest *items;
   size_t count;
   size_t capacity;
-} ClutRegisteredTests;
+} ClutRegisteredTestList;
 
-/* Runner State */
 typedef struct {
   ClutTestFailureList failures;
   size_t next_message_offset;
@@ -129,17 +129,15 @@ typedef struct {
   ClutSummary summary;
 } ClutRunnerState;
 
-/* Suite State */
 typedef struct {
   size_t total_tests;
   size_t passed;
   size_t failed;
   size_t skipped;
   long start_time;
-  ClutRegisteredTests registered_tests;
+  ClutRegisteredTestList registered_tests;
 } ClutSuiteState;
 
-/* Test Lifecycle */
 typedef struct {
   ClutHookFn before_all;
   ClutHookFn before_each;
@@ -159,7 +157,6 @@ typedef struct {
 #endif
 } ClutTestState;
 
-/* Core Context */
 typedef struct {
   ClutRunnerState runner;
   ClutSuiteState suite;
@@ -167,7 +164,6 @@ typedef struct {
   ClutTestState current_test;
 } ClutContext;
 
-/* Reporter */
 typedef struct {
   void (*on_runner_start)(void *context);
   void (*on_test_start)(void *context, const char *test_name);
@@ -180,11 +176,29 @@ typedef struct {
   void *context;
 } ClutReporter;
 
+/* ===== Definition Macros ===== */
+
 #define CLUT_REPORTER_SYMBOL(name) clut_reporter_##name
 #define REPORTER(name, ...) CLUT_API const ClutReporter CLUT_REPORTER_SYMBOL(name) = {__VA_ARGS__}
 #define USE_REPORTER(name) ClutSetReporter(&CLUT_REPORTER_SYMBOL(name))
 
-/* TEST / REPEATED_TEST / PARAM_TEST macros */
+#define CLUT_HOOK_SYMBOL(name, suffix) clut_##name##_##suffix
+#define CLUT_HOOK_PROTOTYPE(name, suffix) CLUT_API void CLUT_HOOK_SYMBOL(name, suffix)(void)
+
+#define CLUT_HOOK_DEFINITION(name, suffix)                                                                                                                                                                                                                         \
+  CLUT_HOOK_PROTOTYPE(name, suffix);                                                                                                                                                                                                                               \
+  CLUT_HOOK_PROTOTYPE(name, suffix)
+
+#define HOOK_BEFORE_ALL(name) CLUT_HOOK_DEFINITION(name, before_all)
+#define HOOK_BEFORE_EACH(name) CLUT_HOOK_DEFINITION(name, before_each)
+#define HOOK_AFTER_ALL(name) CLUT_HOOK_DEFINITION(name, after_all)
+#define HOOK_AFTER_EACH(name) CLUT_HOOK_DEFINITION(name, after_each)
+
+#define USE_HOOK_BEFORE_ALL(hook) ClutSetHookBeforeAll(CLUT_HOOK_SYMBOL(hook, before_all))
+#define USE_HOOK_BEFORE_EACH(hook) ClutSetHookBeforeEach(CLUT_HOOK_SYMBOL(hook, before_each))
+#define USE_HOOK_AFTER_ALL(hook) ClutSetHookAfterAll(CLUT_HOOK_SYMBOL(hook, after_all))
+#define USE_HOOK_AFTER_EACH(hook) ClutSetHookAfterEach(CLUT_HOOK_SYMBOL(hook, after_each))
+
 #define CLUT_TEST_BODY(name) clut_test_##name
 #define CLUT_TEST_WRAPPER(name) clut_run_test_##name
 
@@ -209,43 +223,27 @@ typedef struct {
   CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunParamTest(clut_param_thunk_##name, Type, __VA_ARGS__); }                                                                                                                                                    \
   static void CLUT_TEST_BODY(name)(Type input)
 
-/* Test Runner lifecycle macros */
+/* ===== Lifecycle Macros ===== */
+
 #define RUNNER_BEGIN() ClutRunnerBegin()
 #define RUNNER_END() ClutRunnerEnd()
 
-/* Test Suite lifecycle macros */
 #define SUITE_BEGIN() ClutSuiteBegin()
-#define RUN_TEST(test_name) ClutSuiteRegisterTest(CLUT_TEST_WRAPPER(test_name), #test_name)
 #define SUITE_END() ClutSuiteEnd()
 
-/* Hook definition / Hook registration macros */
-#define CLUT_HOOK_SYMBOL(name, suffix) clut_##name##_##suffix
-#define CLUT_HOOK_PROTOTYPE(name, suffix) CLUT_API void CLUT_HOOK_SYMBOL(name, suffix)(void)
+#define RUN_TEST(test_name) ClutSuiteRegisterTest(CLUT_TEST_WRAPPER(test_name), #test_name)
 
-#define CLUT_HOOK_DEFINITION(name, suffix)                                                                                                                                                                                                                         \
-  CLUT_HOOK_PROTOTYPE(name, suffix);                                                                                                                                                                                                                               \
-  CLUT_HOOK_PROTOTYPE(name, suffix)
+/* ===== Assertion Macros ===== */
 
-#define HOOK_BEFORE_ALL(name) CLUT_HOOK_DEFINITION(name, before_all)
-#define HOOK_BEFORE_EACH(name) CLUT_HOOK_DEFINITION(name, before_each)
-#define HOOK_AFTER_ALL(name) CLUT_HOOK_DEFINITION(name, after_all)
-#define HOOK_AFTER_EACH(name) CLUT_HOOK_DEFINITION(name, after_each)
+#define TEST_FAIL(msg) ClutAssert(0, __FILE__, __LINE__, (msg))
+#define TEST_SKIP() ClutSkipTest()
 
-#define USE_HOOK_BEFORE_ALL(hook) ClutSetHookBeforeAll(CLUT_HOOK_SYMBOL(hook, before_all))
-#define USE_HOOK_BEFORE_EACH(hook) ClutSetHookBeforeEach(CLUT_HOOK_SYMBOL(hook, before_each))
-#define USE_HOOK_AFTER_ALL(hook) ClutSetHookAfterAll(CLUT_HOOK_SYMBOL(hook, after_all))
-#define USE_HOOK_AFTER_EACH(hook) ClutSetHookAfterEach(CLUT_HOOK_SYMBOL(hook, after_each))
-
-/* Assertions */
 #define TEST_ASSERT(condition) ClutAssert((condition), __FILE__, __LINE__, "Expression Is False -> " #condition)
 #define TEST_ASSERT_TRUE(condition) ClutAssert((condition), __FILE__, __LINE__, "Expected True But Was False -> " #condition)
 #define TEST_ASSERT_FALSE(condition) ClutAssert(!(condition), __FILE__, __LINE__, "Expected False But Was True -> " #condition)
 #define TEST_ASSERT_UNLESS(condition) ClutAssert(!(condition), __FILE__, __LINE__, "Expression Is True -> " #condition)
 #define TEST_ASSERT_NULL(pointer) ClutAssert(((pointer) == NULL), __FILE__, __LINE__, "Expected NULL")
 #define TEST_ASSERT_NOT_NULL(pointer) ClutAssert(((pointer) != NULL), __FILE__, __LINE__, "Expected Non-NULL")
-
-#define TEST_FAIL(msg) ClutAssert(0, __FILE__, __LINE__, (msg))
-#define TEST_SKIP() ClutSkipTest()
 
 #define TEST_ASSERT_EQUAL_CHAR(expected, actual) ClutAssertEqualChar((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_INT(expected, actual) ClutAssertEqualInt((expected), (actual), __FILE__, __LINE__, NULL)
@@ -311,7 +309,6 @@ typedef struct {
 #define TEST_ASSERT_WITHIN_FLOAT_ARRAY(expected, delta, actual, num_elements) ClutAssertWithinFloatArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_WITHIN_DOUBLE_ARRAY(expected, delta, actual, num_elements) ClutAssertWithinDoubleArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, NULL)
 
-/* Messages */
 #define TEST_ASSERT_MESSAGE(condition, msg) ClutAssert((condition), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_TRUE_MESSAGE(condition, msg) ClutAssert((condition), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_FALSE_MESSAGE(condition, msg) ClutAssert(!(condition), __FILE__, __LINE__, (msg))
@@ -383,15 +380,17 @@ typedef struct {
 #define TEST_ASSERT_WITHIN_FLOAT_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutAssertWithinFloatArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_WITHIN_DOUBLE_ARRAY_MESSAGE(expected, delta, actual, num_elements, msg) ClutAssertWithinDoubleArray((expected), (delta), (actual), (num_elements), __FILE__, __LINE__, (msg))
 
-/* Public API Declarations */
+/* ===== Public API ===== */
+
 CLUT_API void ClutSetReporter(const ClutReporter *reporter);
 
 CLUT_API void ClutRunnerBegin();
 CLUT_API int ClutRunnerEnd();
 
 CLUT_API void ClutSuiteBegin();
-CLUT_API void ClutSuiteRegisterTest(ClutTestFn test_fn, const char *test_name);
 CLUT_API void ClutSuiteEnd();
+
+CLUT_API void ClutSuiteRegisterTest(ClutTestFn test_fn, const char *test_name);
 
 CLUT_API void ClutSetHookBeforeAll(ClutHookFn hook_fn);
 CLUT_API void ClutSetHookBeforeEach(ClutHookFn hook_fn);
@@ -472,6 +471,8 @@ CLUT_API void ClutAssertWithinDoubleArray(const double *expected, double delta, 
 
 #endif /* INCLUDE_CLUT_H */
 
+/* ===== Implementation: Includes and Allocation ===== */
+
 #ifdef CLUT_IMPLEMENTATION
 #ifndef CLUT_IMPLEMENTATION_INCLUDED
 #define CLUT_IMPLEMENTATION_INCLUDED
@@ -493,7 +494,8 @@ CLUT_API void ClutAssertWithinDoubleArray(const double *expected, double delta, 
 #define CLUT_FREE free
 #endif
 
-/* Color macros */
+/* ===== Colors ===== */
+
 #ifdef CLUT_OUTPUT_COLOR
 #define CLUT_MSG_END_COLOR_TEXT "\033[0m"
 
@@ -520,7 +522,8 @@ CLUT_API void ClutAssertWithinDoubleArray(const double *expected, double delta, 
 #define CLUT_BLUE_TEXT(text) text
 #endif
 
-/* Dynamic Array */
+/* ===== Data Structures ===== */
+
 #ifndef CLUT_DA_INIT_CAP
 #define CLUT_DA_INIT_CAP 256
 #endif
@@ -566,7 +569,6 @@ CLUT_API void ClutAssertWithinDoubleArray(const double *expected, double delta, 
     (da)->count = 0;                                                                                                                                                                                                                                               \
   } while (0)
 
-/* String Builder Implementation */
 static void clut_string_builder_append(ClutStringBuilder *sb, const char *str) {
   if (!str)
     str = "(null)";
@@ -590,7 +592,8 @@ static void clut_string_builder_append_format(ClutStringBuilder *sb, const char 
   sb->count += (size_t)n;
 }
 
-/* Helpers */
+/* ===== Helpers ===== */
+
 static inline float clut_abs_float(float x) { return x < 0.0f ? -x : x; }
 static inline double clut_abs_double(double x) { return x < 0.0 ? -x : x; }
 
@@ -608,10 +611,13 @@ static inline bool clut_doubles_are_close(double expected, double actual) {
 
 static inline double clut_elapsed_seconds(long start) { return ((double)(clock() - start)) / CLOCKS_PER_SEC; }
 
+/* ===== Global State ===== */
+
 CLUT_STATE_LINKAGE ClutContext Clut = {0};
 CLUT_STATE_LINKAGE const ClutReporter *ClutCustomReporter = NULL;
 
-/* Abort Helpers */
+/* ===== Abort and Guarded Execution ===== */
+
 #ifndef CLUT_ABORT_TEST
 #ifdef CLUT_HAS_LONGJMP
 #define CLUT_ABORT_TEST longjmp(Clut.current_test.jmp_buffer, 1)
@@ -639,7 +645,8 @@ CLUT_STATE_LINKAGE const ClutReporter *ClutCustomReporter = NULL;
   }
 #endif
 
-/* Reporters implementation */
+/* ===== Reporters ===== */
+
 #if defined(CLUT_OUTPUT_GITHUB)
 static void clut_report_pass(void *context, const ClutTestResult *result) {
   (void)context;
@@ -852,6 +859,8 @@ static const ClutReporter *clut_get_reporter(void) {
   return &CLUT_REPORTER;
 }
 
+/* ===== Message Building ===== */
+
 static void clut_register_failure(const char *file, int line) {
   Clut.current_test.failed = true;
   clut_string_builder_append_char(&Clut.runner.failure_message, '\0');
@@ -938,6 +947,8 @@ static void clut_message_append_array_prefix(size_t index) {
     append_num((diff));                                                                                                                                                                                                                                            \
   } while (0)
 
+/* ===== Internal Assertion Macros ===== */
+
 #define CLUT_ASSERT_COMPARE(append_fn, condition, lhs, op_str, rhs, file, line, msg)                                                                                                                                                                               \
   do {                                                                                                                                                                                                                                                             \
     CLUT_ABORT_IF_FAILED_OR_SKIPPED;                                                                                                                                                                                                                               \
@@ -972,29 +983,23 @@ static void clut_message_append_array_prefix(size_t index) {
     }                                                                                                                                                                                                                                                              \
   } while (0)
 
-CLUT_API void ClutSetReporter(const ClutReporter *reporter) { ClutCustomReporter = reporter; }
+#define CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, index, append_fn, exp_val, act_val)                                                                                                                                                                            \
+  do {                                                                                                                                                                                                                                                             \
+    clut_message_append_user_text(msg);                                                                                                                                                                                                                            \
+    clut_message_append_array_prefix((index));                                                                                                                                                                                                                     \
+    CLUT_FORMAT_COMPARISON_MESSAGE(append_fn, (exp_val), CLUT_MSG_WAS, (act_val));                                                                                                                                                                                 \
+    clut_register_failure(file, line);                                                                                                                                                                                                                             \
+  } while (0)
 
-CLUT_API void ClutRunnerBegin() {
-  Clut.runner = (ClutRunnerState){0};
+#define CLUT_ARRAY_WITHIN_RECORD(file, line, msg, index, append_fn_val, append_fn_num, exp_val, delta_val, diff_val)                                                                                                                                               \
+  do {                                                                                                                                                                                                                                                             \
+    clut_message_append_user_text(msg);                                                                                                                                                                                                                            \
+    clut_message_append_array_prefix((index));                                                                                                                                                                                                                     \
+    CLUT_FORMAT_WITHIN_MESSAGE(append_fn_val, append_fn_num, (exp_val), (delta_val), (diff_val));                                                                                                                                                                  \
+    clut_register_failure(file, line);                                                                                                                                                                                                                             \
+  } while (0)
 
-  const ClutReporter *reporter = clut_get_reporter();
-  if (reporter->on_runner_start) {
-    reporter->on_runner_start(reporter->context);
-  }
-}
-
-CLUT_API int ClutRunnerEnd() {
-  clut_da_free(&Clut.runner.failures);
-  clut_da_free(&Clut.runner.failure_message);
-  clut_da_free(&Clut.suite.registered_tests);
-
-  const ClutReporter *reporter = clut_get_reporter();
-  if (reporter->on_runner_end) {
-    reporter->on_runner_end(reporter->context, &Clut.runner.summary);
-  }
-
-  return Clut.runner.summary.failed > 255 ? 255 : (int)Clut.runner.summary.failed;
-}
+/* ===== Internal Lifecycle ===== */
 
 static void clut_reset_suite(void) {
   Clut.suite.total_tests = 0;
@@ -1003,17 +1008,6 @@ static void clut_reset_suite(void) {
   Clut.suite.skipped = 0;
   Clut.suite.start_time = 0;
   clut_da_clear(&Clut.suite.registered_tests);
-}
-
-CLUT_API void ClutSuiteBegin(void) {
-  clut_reset_suite();
-  Clut.hooks = (ClutHooks){0};
-}
-
-CLUT_API void ClutSuiteRegisterTest(ClutTestFn run_test_fn, const char *test_name) {
-  ClutRegisteredTest pending_test = (ClutRegisteredTest){run_test_fn, test_name};
-  clut_da_append(&Clut.suite.registered_tests, pending_test);
-  Clut.suite.total_tests = Clut.suite.registered_tests.count;
 }
 
 static void clut_reset_current_test(void) {
@@ -1025,6 +1019,11 @@ static void clut_reset_current_test(void) {
   Clut.runner.next_message_offset = 0;
   clut_da_clear(&Clut.runner.failures);
   clut_da_clear(&Clut.runner.failure_message);
+}
+
+static ClutTestResult clut_make_result(const char *name, double duration) {
+  clut_da_foreach(ClutTestFailure, f, &Clut.runner.failures) { f->message = Clut.runner.failure_message.items + f->message_offset; }
+  return (ClutTestResult){name, Clut.runner.failures.items, Clut.runner.failures.count, duration, Clut.current_test.skipped_iterations};
 }
 
 static void clut_run_hook(ClutHookFn hook) {
@@ -1048,11 +1047,6 @@ static void clut_run_after_each(void) {
 
   Clut.current_test.failed = test_failed || Clut.current_test.failed;
   Clut.current_test.skipped = test_skipped || Clut.current_test.skipped;
-}
-
-static ClutTestResult clut_make_result(const char *name, double duration) {
-  clut_da_foreach(ClutTestFailure, f, &Clut.runner.failures) { f->message = Clut.runner.failure_message.items + f->message_offset; }
-  return (ClutTestResult){name, Clut.runner.failures.items, Clut.runner.failures.count, duration, Clut.current_test.skipped_iterations};
 }
 
 static bool clut_run_suite_hook(ClutHookFn hook, const char *hook_name) {
@@ -1128,6 +1122,56 @@ static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
   }
 }
 
+static bool clut_tally_iteration(volatile size_t *failed, volatile size_t *skipped) {
+  bool iteration_failed = Clut.current_test.failed;
+
+  if (iteration_failed)
+    (*failed)++;
+  else if (Clut.current_test.skipped)
+    (*skipped)++;
+
+  Clut.current_test.failed = false;
+  Clut.current_test.skipped = false;
+  return iteration_failed;
+}
+
+static void clut_set_test_outcome(size_t failed, size_t skipped, size_t ran) {
+  Clut.current_test.failed = failed > 0;
+  Clut.current_test.skipped = failed == 0 && ran > 0 && skipped == ran;
+  Clut.current_test.skipped_iterations = skipped;
+}
+
+/* ===== Public API: Reporter, Runner, Suite, Hooks ===== */
+
+CLUT_API void ClutSetReporter(const ClutReporter *reporter) { ClutCustomReporter = reporter; }
+
+CLUT_API void ClutRunnerBegin() {
+  Clut.runner = (ClutRunnerState){0};
+
+  const ClutReporter *reporter = clut_get_reporter();
+  if (reporter->on_runner_start) {
+    reporter->on_runner_start(reporter->context);
+  }
+}
+
+CLUT_API int ClutRunnerEnd() {
+  clut_da_free(&Clut.runner.failures);
+  clut_da_free(&Clut.runner.failure_message);
+  clut_da_free(&Clut.suite.registered_tests);
+
+  const ClutReporter *reporter = clut_get_reporter();
+  if (reporter->on_runner_end) {
+    reporter->on_runner_end(reporter->context, &Clut.runner.summary);
+  }
+
+  return Clut.runner.summary.failed > 255 ? 255 : (int)Clut.runner.summary.failed;
+}
+
+CLUT_API void ClutSuiteBegin(void) {
+  clut_reset_suite();
+  Clut.hooks = (ClutHooks){0};
+}
+
 CLUT_API void ClutSuiteEnd(void) {
   if (Clut.suite.total_tests == 0) {
     return;
@@ -1163,31 +1207,20 @@ CLUT_API void ClutSuiteEnd(void) {
   clut_reset_suite();
 }
 
+CLUT_API void ClutSuiteRegisterTest(ClutTestFn run_test_fn, const char *test_name) {
+  ClutRegisteredTest pending_test = (ClutRegisteredTest){run_test_fn, test_name};
+  clut_da_append(&Clut.suite.registered_tests, pending_test);
+  Clut.suite.total_tests = Clut.suite.registered_tests.count;
+}
+
 CLUT_API void ClutSetHookBeforeAll(ClutHookFn hook_fn) { Clut.hooks.before_all = hook_fn; }
 CLUT_API void ClutSetHookBeforeEach(ClutHookFn hook_fn) { Clut.hooks.before_each = hook_fn; }
 CLUT_API void ClutSetHookAfterAll(ClutHookFn hook_fn) { Clut.hooks.after_all = hook_fn; }
 CLUT_API void ClutSetHookAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each = hook_fn; }
 
+/* ===== Public API: Test Execution ===== */
+
 CLUT_API void ClutRunTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()); }
-
-static bool clut_tally_iteration(volatile size_t *failed, volatile size_t *skipped) {
-  bool iteration_failed = Clut.current_test.failed;
-
-  if (iteration_failed)
-    (*failed)++;
-  else if (Clut.current_test.skipped)
-    (*skipped)++;
-
-  Clut.current_test.failed = false;
-  Clut.current_test.skipped = false;
-  return iteration_failed;
-}
-
-static void clut_set_test_outcome(size_t failed, size_t skipped, size_t ran) {
-  Clut.current_test.failed = failed > 0;
-  Clut.current_test.skipped = failed == 0 && ran > 0 && skipped == ran;
-  Clut.current_test.skipped_iterations = skipped;
-}
 
 CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t repetitions) {
   volatile ClutRepetitionInfo input = (ClutRepetitionInfo){.total_repetitions = repetitions};
@@ -1236,6 +1269,8 @@ CLUT_API void ClutSkipTest() {
   Clut.current_test.skipped = true;
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
 }
+
+/* ===== Public API: Assertions ===== */
 
 CLUT_API void ClutAssert(bool condition, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
@@ -1458,14 +1493,6 @@ CLUT_API void ClutAssertEqualMemory(const void *expected, const void *actual, si
   }
 }
 
-#define CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, index, append_fn, exp_val, act_val)                                                                                                                                                                            \
-  do {                                                                                                                                                                                                                                                             \
-    clut_message_append_user_text(msg);                                                                                                                                                                                                                            \
-    clut_message_append_array_prefix((index));                                                                                                                                                                                                                     \
-    CLUT_FORMAT_COMPARISON_MESSAGE(append_fn, (exp_val), CLUT_MSG_WAS, (act_val));                                                                                                                                                                                 \
-    clut_register_failure(file, line);                                                                                                                                                                                                                             \
-  } while (0)
-
 CLUT_API void ClutAssertEqualCharArray(const char *expected, const char *actual, size_t num_elements, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
   CLUT_CHECK_BUFFER_ARGS;
@@ -1548,14 +1575,6 @@ CLUT_API void ClutAssertEqualStringArray(const char **expected, const char **act
     return;
   }
 }
-
-#define CLUT_ARRAY_WITHIN_RECORD(file, line, msg, index, append_fn_val, append_fn_num, exp_val, delta_val, diff_val)                                                                                                                                               \
-  do {                                                                                                                                                                                                                                                             \
-    clut_message_append_user_text(msg);                                                                                                                                                                                                                            \
-    clut_message_append_array_prefix((index));                                                                                                                                                                                                                     \
-    CLUT_FORMAT_WITHIN_MESSAGE(append_fn_val, append_fn_num, (exp_val), (delta_val), (diff_val));                                                                                                                                                                  \
-    clut_register_failure(file, line);                                                                                                                                                                                                                             \
-  } while (0)
 
 CLUT_API void ClutAssertWithinCharArray(const char *expected, size_t delta, const char *actual, size_t num_elements, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
