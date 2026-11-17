@@ -127,6 +127,7 @@ typedef struct {
   size_t next_message_offset;
   ClutStringBuilder failure_message;
   ClutSummary summary;
+  size_t hook_failures;
 } ClutRunnerState;
 
 /* Suite State */
@@ -1006,7 +1007,8 @@ CLUT_API int ClutRunnerEnd() {
     reporter->on_runner_end(reporter->context, &Clut.runner.summary);
   }
 
-  return Clut.runner.summary.failed > 255 ? 255 : (int)Clut.runner.summary.failed;
+  size_t total_failures = Clut.runner.summary.failed + Clut.runner.hook_failures;
+  return total_failures > 255 ? 255 : (int)total_failures;
 }
 
 static void clut_reset_suite(void) {
@@ -1065,6 +1067,7 @@ static void clut_run_after_each(void) {
 
 static void clut_print_hook_failure(const char *hook_name) {
   if (Clut.current_test.failed) {
+    Clut.runner.hook_failures++;
     const ClutTestFailure *failure = &Clut.runner.failures.items[0];
     fprintf(CLUT_STREAM_FAIL, "%s:%d: %s hook failed: %s\n", failure->file, failure->line, hook_name, Clut.runner.failure_message.items + failure->message_offset);
   }
