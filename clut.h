@@ -1143,50 +1143,65 @@ CLUT_API void ClutSetHookAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each =
 
 CLUT_API void ClutRunTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()); }
 
+static bool clut_tally_iteration(volatile size_t *failed, volatile size_t *skipped) {
+  bool iteration_failed = Clut.current_test.failed;
+
+  if (iteration_failed)
+    (*failed)++;
+  else if (Clut.current_test.skipped)
+    (*skipped)++;
+
+  Clut.current_test.failed = false;
+  Clut.current_test.skipped = false;
+  return iteration_failed;
+}
+
+static void clut_set_test_outcome(size_t failed, size_t skipped, size_t ran) {
+  Clut.current_test.failed = failed > 0;
+  Clut.current_test.skipped = failed == 0 && ran > 0 && skipped == ran;
+}
+
 CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t repetitions) {
   volatile ClutRepetitionInfo input = (ClutRepetitionInfo){.total_repetitions = repetitions};
-  volatile bool any_iteration_failed = false;
+  volatile size_t failed = 0;
+  volatile size_t skipped = 0;
   for (volatile size_t i = 1; i <= repetitions; ++i) {
     Clut.current_test.iteration = (int)i;
     input.current_repetition = i;
     CLUT_RUN_GUARDED(test_fn(input));
-    if (Clut.current_test.failed) {
-      any_iteration_failed = true;
-      Clut.current_test.failed = false;
-    }
+    clut_tally_iteration(&failed, &skipped);
   }
-  Clut.current_test.failed = any_iteration_failed;
+  clut_set_test_outcome(failed, skipped, repetitions);
 }
 
 CLUT_API void ClutRunRepeatedWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold) {
   volatile ClutRepetitionInfo input = (ClutRepetitionInfo){.total_repetitions = repetitions};
-  volatile size_t failures = 0;
+  volatile size_t failed = 0;
+  volatile size_t skipped = 0;
+  volatile size_t ran = 0;
   for (volatile size_t i = 1; i <= repetitions; ++i) {
     Clut.current_test.iteration = (int)i;
     input.current_repetition = i;
     CLUT_RUN_GUARDED(test_fn(input));
-    if (Clut.current_test.failed) {
-      failures++;
-      if (failures >= failure_threshold) {
-        break;
-      }
-      Clut.current_test.failed = false;
+    ran++;
+    if (clut_tally_iteration(&failed, &skipped) && failed >= failure_threshold) {
+      break;
     }
   }
+  size_t counted_failures = failed >= failure_threshold ? failed : 0;
+  clut_set_test_outcome(counted_failures, skipped, ran);
 }
 
 CLUT_API void ClutRunParamTestImpl(ClutParamTestFn test_fn, const void *items, size_t item_size, size_t count) {
   const unsigned char *base = (const unsigned char *)items;
-  volatile bool failed = false;
+  volatile size_t failed = 0;
+  volatile size_t skipped = 0;
   for (volatile size_t i = 0; i < count; ++i) {
     Clut.current_test.iteration = (int)i;
     CLUT_RUN_GUARDED(test_fn(base + i * item_size));
-    if (Clut.current_test.failed) {
-      failed = true;
-      Clut.current_test.failed = false;
-    }
+    clut_tally_iteration(&failed, &skipped);
   }
-  Clut.current_test.failed = failed;
+  clut_set_test_outcome(failed, skipped, count);
 }
 
 CLUT_API void ClutSkipTest() {
