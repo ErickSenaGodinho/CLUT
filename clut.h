@@ -243,7 +243,7 @@ typedef struct {
 #define TEST_ASSERT_NOT_NULL(pointer) ClutAssert(((pointer) != NULL), __FILE__, __LINE__, "Expected Non-NULL")
 
 #define TEST_FAIL(msg) ClutAssert(0, __FILE__, __LINE__, (msg))
-#define TEST_SKIP() ClutMarkSkipped()
+#define TEST_SKIP() ClutSkipTest()
 
 #define TEST_ASSERT_EQUAL_CHAR(expected, actual) ClutAssertEqualChar((expected), (actual), __FILE__, __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_INT(expected, actual) ClutAssertEqualInt((expected), (actual), __FILE__, __LINE__, NULL)
@@ -324,6 +324,7 @@ typedef struct {
 #define TEST_ASSERT_EQUAL_DOUBLE_MESSAGE(expected, actual, msg) ClutAssertEqualDouble((expected), (actual), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_EQUAL_STRING_MESSAGE(expected, actual, msg) ClutAssertEqualString((const char *)(expected), (const char *)(actual), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_EQUAL_STRING_LEN_MESSAGE(expected, actual, len, msg) ClutAssertEqualStringLen((expected), (actual), (len), __FILE__, __LINE__, (msg))
+#define TEST_ASSERT_EQUAL_PTR_MESSAGE(expected, actual, msg) ClutAssertEqualPtr((expected), (actual), __FILE__, __LINE__, (msg))
 
 #define TEST_ASSERT_NOT_EQUAL_CHAR_MESSAGE(expected, actual, msg) ClutAssertNotEqualChar((expected), (actual), __FILE__, __LINE__, (msg))
 #define TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(expected, actual, msg) ClutAssertNotEqualInt((expected), (actual), __FILE__, __LINE__, (msg))
@@ -406,7 +407,7 @@ CLUT_API void ClutRunParamTestImpl(ClutParamTestFn test_fn, const void *items, s
     ClutRunParamTestImpl((test_fn), clut_params_, sizeof(Type), sizeof(clut_params_) / sizeof(Type));                                                                                                                                                              \
   } while (0)
 
-CLUT_API void ClutMarkSkipped();
+CLUT_API void ClutSkipTest();
 
 CLUT_API void ClutAssert(bool condition, const char *file, const int line, const char *msg);
 CLUT_API void ClutAssertEqualChar(char expected, char actual, const char *file, const int line, const char *msg);
@@ -517,6 +518,7 @@ CLUT_API void ClutAssertWithinDoubleArray(const double *expected, double delta, 
 #define CLUT_BLUE_TEXT(text) text
 #endif
 
+/* Dynamic Array */
 #ifndef CLUT_DA_INIT_CAP
 #define CLUT_DA_INIT_CAP 256
 #endif
@@ -607,8 +609,23 @@ static inline double clut_elapsed_seconds(long start) { return ((double)(clock()
 CLUT_STATE_LINKAGE ClutContext Clut = {0};
 CLUT_STATE_LINKAGE const ClutReporter *ClutCustomReporter = NULL;
 
-/* Reporters implementation */
+/* Abort Helpers */
+#ifndef CLUT_ABORT_TEST
+#ifdef CLUT_HAS_LONGJMP
+#define CLUT_ABORT_TEST longjmp(Clut.current_test.jmp_buffer, 1)
+#else
+#define CLUT_ABORT_TEST return
+#endif // CLUT_HAS_LONGJMP
+#endif // CLUT_ABORT_TEST
 
+#define CLUT_ABORT_IF_FAILED_OR_SKIPPED                                                                                                                                                                                                                            \
+  do {                                                                                                                                                                                                                                                             \
+    if (Clut.current_test.failed || Clut.current_test.skipped) {                                                                                                                                                                                                   \
+      CLUT_ABORT_TEST;                                                                                                                                                                                                                                             \
+    }                                                                                                                                                                                                                                                              \
+  } while (0)
+
+/* Reporters implementation */
 #if defined(CLUT_OUTPUT_GITHUB)
 static void clut_report_pass(void *context, const ClutTestResult *result) {
   (void)context;
@@ -832,6 +849,7 @@ static void clut_register_failure(const char *file, int line) {
   ClutTestFailure failure = {file, line, Clut.current_test.iteration, NULL, Clut.runner.next_message_offset};
   Clut.runner.next_message_offset = Clut.runner.failure_message.count;
   clut_da_append(&Clut.runner.failures, failure);
+  CLUT_ABORT_TEST;
 }
 
 static void clut_message_append(const char *msg) { clut_string_builder_append(&Clut.runner.failure_message, msg); }
@@ -909,21 +927,6 @@ static void clut_message_append_array_prefix(size_t index) {
     append_num((delta));                                                                                                                                                                                                                                           \
     clut_message_append(CLUT_MSG_BUT_DIFF);                                                                                                                                                                                                                        \
     append_num((diff));                                                                                                                                                                                                                                            \
-  } while (0)
-
-#ifndef CLUT_ABORT_TEST
-#ifdef CLUT_HAS_LONGJMP
-#define CLUT_ABORT_TEST longjmp(Clut.current_test.jmp_buffer, 1)
-#else
-#define CLUT_ABORT_TEST return
-#endif // CLUT_HAS_LONGJMP
-#endif // CLUT_ABORT_TEST
-
-#define CLUT_ABORT_IF_FAILED_OR_SKIPPED                                                                                                                                                                                                                            \
-  do {                                                                                                                                                                                                                                                             \
-    if (Clut.current_test.failed || Clut.current_test.skipped) {                                                                                                                                                                                                   \
-      CLUT_ABORT_TEST;                                                                                                                                                                                                                                             \
-    }                                                                                                                                                                                                                                                              \
   } while (0)
 
 #define CLUT_ASSERT_COMPARE(append_fn, condition, lhs, op_str, rhs, file, line, msg)                                                                                                                                                                               \
@@ -1156,7 +1159,10 @@ CLUT_API void ClutRunParamTestImpl(ClutParamTestFn test_fn, const void *items, s
   Clut.current_test.failed = failed;
 }
 
-CLUT_API void ClutMarkSkipped() { Clut.current_test.skipped = true; }
+CLUT_API void ClutSkipTest() {
+  Clut.current_test.skipped = true;
+  CLUT_ABORT_IF_FAILED_OR_SKIPPED;
+}
 
 CLUT_API void ClutAssert(bool condition, const char *file, int line, const char *msg) {
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
