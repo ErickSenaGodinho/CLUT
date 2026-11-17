@@ -939,6 +939,18 @@ static void clut_message_append_array_prefix(size_t index) {
   clut_message_append_format("[%zu]: ", index);
 }
 
+static void clut_message_append_memory_location(size_t num_elements, size_t element_index, size_t byte_index) {
+  if (num_elements > 1) {
+    clut_message_append(CLUT_MSG_ARRAY_MISMATCH_AT);
+    clut_message_append_format("[%zu]", element_index);
+    clut_message_append(CLUT_MSG_BYTE_OFFSET);
+    clut_message_append_format("[%zu]: ", byte_index);
+  } else {
+    clut_message_append(CLUT_MSG_MISMATCH_AT);
+    clut_message_append_format("%zu: ", byte_index);
+  }
+}
+
 #define CLUT_FORMAT_COMPARISON_MESSAGE(append_val, lhs, op_str, rhs)                                                                                                                                                                                               \
   do {                                                                                                                                                                                                                                                             \
     clut_message_append(CLUT_MSG_EXPECTED);                                                                                                                                                                                                                        \
@@ -1431,15 +1443,7 @@ CLUT_API void ClutAssertEqualMemory(const void *expected, const void *actual, si
         continue;
 
       clut_message_append_user_text(msg);
-      if (num_elements > 1) {
-        clut_message_append(CLUT_MSG_ARRAY_MISMATCH_AT);
-        clut_message_append_format("[%zu]", element_index);
-        clut_message_append(CLUT_MSG_BYTE_OFFSET);
-        clut_message_append_format("[%zu]: ", byte_index);
-      } else {
-        clut_message_append(CLUT_MSG_MISMATCH_AT);
-        clut_message_append_format("%zu: ", byte_index);
-      }
+      clut_message_append_memory_location(num_elements, element_index, byte_index);
       CLUT_FORMAT_COMPARISON_MESSAGE(clut_message_append_hex, expected_bytes[offset], CLUT_MSG_WAS, actual_bytes[offset]);
       clut_register_failure(file, line);
       return;
