@@ -1103,6 +1103,22 @@ static void clut_skip_test(const char *test_name) {
     reporter->on_test_skip(reporter->context, &result);
 }
 
+static void clut_report_test_result(const ClutReporter *reporter, const ClutTestResult *result) {
+  if (Clut.current_test.failed) {
+    Clut.suite.failed++;
+    if (reporter->on_test_fail)
+      reporter->on_test_fail(reporter->context, result);
+  } else if (Clut.current_test.skipped) {
+    Clut.suite.skipped++;
+    if (reporter->on_test_skip)
+      reporter->on_test_skip(reporter->context, result);
+  } else {
+    Clut.suite.passed++;
+    if (reporter->on_test_pass)
+      reporter->on_test_pass(reporter->context, result);
+  }
+}
+
 static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
   clut_reset_current_test();
   const ClutReporter *reporter = clut_get_reporter();
@@ -1125,23 +1141,7 @@ static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
   clut_run_after_each();
 
   ClutTestResult result = clut_make_result(test_name, duration);
-
-  if (Clut.current_test.failed) {
-    Clut.suite.failed++;
-    if (reporter->on_test_fail) {
-      reporter->on_test_fail(reporter->context, &result);
-    }
-  } else if (Clut.current_test.skipped) {
-    Clut.suite.skipped++;
-    if (reporter->on_test_skip) {
-      reporter->on_test_skip(reporter->context, &result);
-    }
-  } else {
-    Clut.suite.passed++;
-    if (reporter->on_test_pass) {
-      reporter->on_test_pass(reporter->context, &result);
-    }
-  }
+  clut_report_test_result(reporter, &result);
 }
 
 static bool clut_tally_iteration(volatile size_t *failed, volatile size_t *skipped) {
@@ -1161,6 +1161,32 @@ static void clut_set_test_outcome(size_t failed, size_t skipped, size_t ran) {
   Clut.current_test.failed = failed > 0;
   Clut.current_test.skipped = failed == 0 && ran > 0 && skipped == ran;
   Clut.current_test.skipped_iterations = skipped;
+}
+
+static void clut_run_suite_tests(void) {
+  bool setup_ok = clut_run_suite_hook(Clut.hooks.before_all, "before_all");
+
+  clut_da_foreach(ClutRegisteredTest, test, &Clut.suite.registered_tests) {
+    if (setup_ok)
+      clut_execute_test(test->fn, test->name);
+    else
+      clut_skip_test(test->name);
+  }
+}
+
+static void clut_finish_suite(double total_time) {
+  const ClutSummary suite_summary = {Clut.suite.total_tests, Clut.suite.passed, Clut.suite.failed, Clut.suite.skipped, total_time};
+  const ClutReporter *reporter = clut_get_reporter();
+  if (reporter->on_suite_end) {
+    reporter->on_suite_end(reporter->context, &suite_summary);
+  }
+
+  Clut.runner.summary.passed += Clut.suite.passed;
+  Clut.runner.summary.failed += Clut.suite.failed;
+  Clut.runner.summary.skipped += Clut.suite.skipped;
+  Clut.runner.summary.total_tests += Clut.suite.total_tests;
+  Clut.runner.summary.total_seconds += total_time;
+  clut_reset_suite();
 }
 
 /* ===== Public API: Reporter, Runner, Suite, Hooks ===== */
@@ -1200,33 +1226,10 @@ CLUT_API void ClutSuiteEnd(void) {
   }
 
   Clut.suite.start_time = clock();
-
-  bool setup_ok = clut_run_suite_hook(Clut.hooks.before_all, "before_all");
-
-  clut_da_foreach(ClutRegisteredTest, test, &Clut.suite.registered_tests) {
-    if (setup_ok)
-      clut_execute_test(test->fn, test->name);
-    else
-      clut_skip_test(test->name);
-  }
-
+  clut_run_suite_tests();
   double total_time = clut_elapsed_seconds(Clut.suite.start_time);
-
   clut_run_suite_hook(Clut.hooks.after_all, "after_all");
-
-  const ClutSummary suite_summary = {Clut.suite.total_tests, Clut.suite.passed, Clut.suite.failed, Clut.suite.skipped, total_time};
-  const ClutReporter *reporter = clut_get_reporter();
-
-  if (reporter->on_suite_end) {
-    reporter->on_suite_end(reporter->context, &suite_summary);
-  }
-
-  Clut.runner.summary.passed += Clut.suite.passed;
-  Clut.runner.summary.failed += Clut.suite.failed;
-  Clut.runner.summary.skipped += Clut.suite.skipped;
-  Clut.runner.summary.total_tests += Clut.suite.total_tests;
-  Clut.runner.summary.total_seconds += total_time;
-  clut_reset_suite();
+  clut_finish_suite(total_time);
 }
 
 CLUT_API void ClutSuiteRegisterTest(ClutTestFn run_test_fn, const char *test_name) {
