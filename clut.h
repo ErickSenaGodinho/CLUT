@@ -127,7 +127,6 @@ typedef struct {
   size_t next_message_offset;
   ClutStringBuilder failure_message;
   ClutSummary summary;
-  size_t hook_failures;
 } ClutRunnerState;
 
 /* Suite State */
@@ -713,20 +712,11 @@ static const ClutReporter ClutGithubReporter = {
 
 typedef struct {
   size_t clut_tap_test_index;
-  bool clut_tap_plan_printed;
 } ClutTapContext;
 
 static ClutTapContext clut_tap_context = {0};
 
-static void clut_report_tap_plan(ClutTapContext *context) {
-  if (!context->clut_tap_plan_printed) {
-    fprintf(CLUT_STREAM_DEFAULT, "1..%zu\n", Clut.suite.total_tests);
-    context->clut_tap_plan_printed = true;
-  }
-}
-
 static void clut_report_pass(void *context, const ClutTestResult *result) {
-  clut_report_tap_plan(context);
   ClutTapContext *ctx = (ClutTapContext *)context;
   ctx->clut_tap_test_index++;
   fprintf(CLUT_STREAM_DEFAULT, "ok %zu - %s # (%.3fs)\n", ctx->clut_tap_test_index, result->test_name, result->duration);
@@ -750,7 +740,6 @@ static void clut_tap_print_failure(const ClutTestFailure *failure) {
 }
 
 static void clut_report_fail(void *context, const ClutTestResult *result) {
-  clut_report_tap_plan(context);
   ClutTapContext *ctx = (ClutTapContext *)context;
   ctx->clut_tap_test_index++;
   fprintf(CLUT_STREAM_DEFAULT, "not ok %zu - %s # (%.3fs)\n", ctx->clut_tap_test_index, result->test_name, result->duration);
@@ -760,20 +749,17 @@ static void clut_report_fail(void *context, const ClutTestResult *result) {
 }
 
 static void clut_report_skip(void *context, const ClutTestResult *result) {
-  clut_report_tap_plan(context);
   ClutTapContext *ctx = (ClutTapContext *)context;
   ctx->clut_tap_test_index++;
   fprintf(CLUT_STREAM_DEFAULT, "ok %zu - %s # SKIP\n", ctx->clut_tap_test_index, result->test_name);
 }
 
 static void clut_report_suite_end(void *context, const ClutSummary *summary) {
-  clut_report_tap_plan(context);
+  ClutTapContext *ctx = (ClutTapContext *)context;
+  fprintf(CLUT_STREAM_DEFAULT, "1..%zu\n", ctx->clut_tap_test_index);
   fprintf(CLUT_STREAM_DEFAULT, "# Suite Summary: Tests: %zu, Passed: %zu, Failed: %zu, Skipped: %zu, Time: %.3fs\n", summary->total_tests, summary->passed, summary->failed, summary->skipped, summary->total_seconds);
   fprintf(CLUT_STREAM_DEFAULT, "\n");
-
-  ClutTapContext *ctx = (ClutTapContext *)context;
   ctx->clut_tap_test_index = 0;
-  ctx->clut_tap_plan_printed = false;
 }
 
 static void clut_report_runner_end(void *context, const ClutSummary *summary) {
@@ -1007,8 +993,7 @@ CLUT_API int ClutRunnerEnd() {
     reporter->on_runner_end(reporter->context, &Clut.runner.summary);
   }
 
-  size_t total_failures = Clut.runner.summary.failed + Clut.runner.hook_failures;
-  return total_failures > 255 ? 255 : (int)total_failures;
+  return Clut.runner.summary.failed > 255 ? 255 : (int)Clut.runner.summary.failed;
 }
 
 static void clut_reset_suite(void) {
@@ -1065,13 +1050,41 @@ static void clut_run_after_each(void) {
   Clut.current_test.skipped = test_skipped || Clut.current_test.skipped;
 }
 
-static void clut_print_hook_failure(const char *hook_name) {
-  if (Clut.current_test.failed) {
-    Clut.runner.hook_failures++;
-    const ClutTestFailure *failure = &Clut.runner.failures.items[0];
-    fprintf(CLUT_STREAM_FAIL, "%s:%d: %s hook failed: %s\n", failure->file, failure->line, hook_name, Clut.runner.failure_message.items + failure->message_offset);
-  }
+static ClutTestResult clut_make_result(const char *name, double duration) {
+  clut_da_foreach(ClutTestFailure, f, &Clut.runner.failures) { f->message = Clut.runner.failure_message.items + f->message_offset; }
+  return (ClutTestResult){name, Clut.runner.failures.items, Clut.runner.failures.count, duration, Clut.current_test.skipped_iterations};
+}
+
+static bool clut_run_suite_hook(ClutHookFn hook, const char *hook_name) {
+  if (hook == NULL)
+    return true;
+
   clut_reset_current_test();
+  Clut.current_test.name = hook_name;
+  long start_time = clock();
+  clut_run_hook(hook);
+
+  if (!Clut.current_test.failed)
+    return true;
+
+  ClutTestResult result = clut_make_result(hook_name, clut_elapsed_seconds(start_time));
+  Clut.suite.total_tests++;
+  Clut.suite.failed++;
+
+  const ClutReporter *reporter = clut_get_reporter();
+  if (reporter->on_test_fail)
+    reporter->on_test_fail(reporter->context, &result);
+  return false;
+}
+
+static void clut_skip_test(const char *test_name) {
+  clut_reset_current_test();
+  Clut.suite.skipped++;
+
+  ClutTestResult result = {test_name, NULL, 0, 0.0, 0};
+  const ClutReporter *reporter = clut_get_reporter();
+  if (reporter->on_test_skip)
+    reporter->on_test_skip(reporter->context, &result);
 }
 
 static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
@@ -1095,8 +1108,7 @@ static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
 
   clut_run_after_each();
 
-  clut_da_foreach(ClutTestFailure, f, &Clut.runner.failures) { f->message = Clut.runner.failure_message.items + f->message_offset; }
-  ClutTestResult result = {test_name, Clut.runner.failures.items, Clut.runner.failures.count, duration, Clut.current_test.skipped_iterations};
+  ClutTestResult result = clut_make_result(test_name, duration);
 
   if (Clut.current_test.failed) {
     Clut.suite.failed++;
@@ -1123,17 +1135,18 @@ CLUT_API void ClutSuiteEnd(void) {
 
   Clut.suite.start_time = clock();
 
-  clut_reset_current_test();
-  clut_run_hook(Clut.hooks.before_all);
-  clut_print_hook_failure("before_all");
+  bool setup_ok = clut_run_suite_hook(Clut.hooks.before_all, "before_all");
 
-  clut_da_foreach(ClutRegisteredTest, test, &Clut.suite.registered_tests) { clut_execute_test(test->fn, test->name); }
+  clut_da_foreach(ClutRegisteredTest, test, &Clut.suite.registered_tests) {
+    if (setup_ok)
+      clut_execute_test(test->fn, test->name);
+    else
+      clut_skip_test(test->name);
+  }
 
   double total_time = clut_elapsed_seconds(Clut.suite.start_time);
 
-  clut_reset_current_test();
-  clut_run_hook(Clut.hooks.after_all);
-  clut_print_hook_failure("after_all");
+  clut_run_suite_hook(Clut.hooks.after_all, "after_all");
 
   const ClutSummary suite_summary = {Clut.suite.total_tests, Clut.suite.passed, Clut.suite.failed, Clut.suite.skipped, total_time};
   const ClutReporter *reporter = clut_get_reporter();
