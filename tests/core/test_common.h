@@ -67,6 +67,26 @@ static void clut_validate_fail(bool assert_failed, const char *expr, const char 
   clut_register_failure(file, line);
 }
 
+static void clut_validate_fail_prefix(bool assert_failed, const char *expr, const char *expected_prefix, const char *file, int line) {
+  if (!assert_failed) {
+    clut_message_append("FALSE-NEGATIVE (expected FAIL, got PASS)\n  expr: ");
+    clut_message_append(expr);
+    clut_register_failure(file, line);
+    return;
+  }
+  const char *actual_msg = clut_string_builder_to_cstr(&captured_message);
+  if (strncmp(actual_msg, expected_prefix, strlen(expected_prefix)) == 0) {
+    return;
+  }
+  clut_message_append("WRONG PREFIX\n  expr    : ");
+  clut_message_append(expr);
+  clut_message_append("\n  expected: ");
+  clut_message_append(expected_prefix);
+  clut_message_append("...\n  actual  : ");
+  clut_message_append(actual_msg);
+  clut_register_failure(file, line);
+}
+
 #define CLUT_VALIDATE(assertion_expr, validate_call)                                                                                                                                                                                                               \
   do {                                                                                                                                                                                                                                                             \
     bool clut_prev_failed = Clut.current_test.failed;                                                                                                                                                                                                              \
@@ -82,6 +102,6 @@ static void clut_validate_fail(bool assert_failed, const char *expr, const char 
 #define VALIDATE_PASS(assertion_expr) CLUT_VALIDATE(assertion_expr, clut_validate_pass(clut_assert_failed, #assertion_expr, __FILE__, __LINE__))
 #define VALIDATE_FAIL(assertion_expr) CLUT_VALIDATE(assertion_expr, clut_validate_fail(clut_assert_failed, #assertion_expr, NULL, __FILE__, __LINE__))
 #define VALIDATE_FAIL_MSG(assertion_expr, expected_msg) CLUT_VALIDATE(assertion_expr, clut_validate_fail(clut_assert_failed, #assertion_expr, (expected_msg), __FILE__, __LINE__))
-#define VALIDATE_CUSTOM_MESSAGE(assertion_expr, expected_msg) VALIDATE_FAIL_MSG(assertion_expr, expected_msg)
+#define VALIDATE_FAIL_MSG_PREFIX(assertion_expr, expected_prefix) CLUT_VALIDATE(assertion_expr, clut_validate_fail_prefix(clut_assert_failed, #assertion_expr, (expected_prefix), __FILE__, __LINE__))
 
 #endif /* CLUT_TEST_COMMON_H */

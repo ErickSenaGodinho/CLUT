@@ -30,12 +30,12 @@ TEST(char_comparisons) {
 
   VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_OR_EQUAL_CHAR('A', 'B'), "Expected 'B' (0x42) to be less or equal than 'A' (0x41)");
 
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_CHAR_MESSAGE('A', 'B', "custom eq char"), "custom eq char");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_CHAR_MESSAGE('\n', '\n', "custom neq char"), "custom neq char");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_THAN_CHAR_MESSAGE('B', 'A', "custom gt char"), "custom gt char");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_THAN_CHAR_MESSAGE('A', 'B', "custom lt char"), "custom lt char");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_OR_EQUAL_CHAR_MESSAGE('B', 'A', "custom gte char"), "custom gte char");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_CHAR_MESSAGE('A', 'B', "custom lte char"), "custom lte char");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_CHAR_MESSAGE('A', 'B', "custom eq char"), "custom eq char: Expected 'A' (0x41) Received 'B' (0x42)");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_CHAR_MESSAGE('\n', '\n', "custom neq char"), "custom neq char: Expected '\\n' (0x0A) to not be equal to '\\n' (0x0A)");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_THAN_CHAR_MESSAGE('B', 'A', "custom gt char"), "custom gt char: Expected 'A' (0x41) to be greater than 'B' (0x42)");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_THAN_CHAR_MESSAGE('A', 'B', "custom lt char"), "custom lt char: Expected 'B' (0x42) to be less than 'A' (0x41)");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_OR_EQUAL_CHAR_MESSAGE('B', 'A', "custom gte char"), "custom gte char: Expected 'A' (0x41) to be greater or equal than 'B' (0x42)");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_OR_EQUAL_CHAR_MESSAGE('A', 'B', "custom lte char"), "custom lte char: Expected 'B' (0x42) to be less or equal than 'A' (0x41)");
 }
 
 TEST(integer_comparisons) {
@@ -61,12 +61,12 @@ TEST(integer_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_INT(5, 5));
   VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_OR_EQUAL_INT(5, 10), "Expected 10 to be less or equal than 5");
 
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_INT_MESSAGE(10, 20, "custom eq int"), "custom eq int");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(10, 10, "custom neq int"), "custom neq int");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_THAN_INT_MESSAGE(10, 5, "custom gt int"), "custom gt int");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_THAN_INT_MESSAGE(5, 10, "custom lt int"), "custom lt int");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_OR_EQUAL_INT_MESSAGE(10, 5, "custom gte int"), "custom gte int");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_INT_MESSAGE(5, 10, "custom lte int"), "custom lte int");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_INT_MESSAGE(-10, 20, "custom eq int"), "custom eq int: Expected -10 Received 20");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_INT_MESSAGE(-10, -10, "custom neq int"), "custom neq int: Expected -10 to not be equal to -10");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_THAN_INT_MESSAGE(10, -5, "custom gt int"), "custom gt int: Expected -5 to be greater than 10");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_THAN_INT_MESSAGE(-5, 10, "custom lt int"), "custom lt int: Expected 10 to be less than -5");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_OR_EQUAL_INT_MESSAGE(10, -5, "custom gte int"), "custom gte int: Expected -5 to be greater or equal than 10");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_OR_EQUAL_INT_MESSAGE(-5, 10, "custom lte int"), "custom lte int: Expected 10 to be less or equal than -5");
 }
 
 TEST(uint_comparisons) {
@@ -92,12 +92,12 @@ TEST(uint_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_UINT(5, 5));
   VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_OR_EQUAL_UINT(5, 10), "Expected 10 to be less or equal than 5");
 
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_UINT_MESSAGE(10, 20, "custom eq uint"), "custom eq uint");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_UINT_MESSAGE(10, 10, "custom neq uint"), "custom neq uint");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_THAN_UINT_MESSAGE(10, 5, "custom gt uint"), "custom gt uint");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_THAN_UINT_MESSAGE(5, 10, "custom lt uint"), "custom lt uint");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_OR_EQUAL_UINT_MESSAGE(10, 5, "custom gte uint"), "custom gte uint");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_UINT_MESSAGE(5, 10, "custom lte uint"), "custom lte uint");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_UINT_MESSAGE(10, 20, "custom eq uint"), "custom eq uint: Expected 10 Received 20");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_UINT_MESSAGE(10, 10, "custom neq uint"), "custom neq uint: Expected 10 to not be equal to 10");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_THAN_UINT_MESSAGE(10, 5, "custom gt uint"), "custom gt uint: Expected 5 to be greater than 10");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_THAN_UINT_MESSAGE(5, 10, "custom lt uint"), "custom lt uint: Expected 10 to be less than 5");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_OR_EQUAL_UINT_MESSAGE(10, 5, "custom gte uint"), "custom gte uint: Expected 5 to be greater or equal than 10");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_OR_EQUAL_UINT_MESSAGE(5, 10, "custom lte uint"), "custom lte uint: Expected 10 to be less or equal than 5");
 }
 
 TEST(floating_point_numbers) {
@@ -159,18 +159,18 @@ TEST(floating_point_numbers) {
   VALIDATE_PASS(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(-1.0, -2.0));
   VALIDATE_FAIL(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE(-2.0, -1.0));
 
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_FLOAT_MESSAGE(3.14f, 2.71f, "custom eq float"), "custom eq float");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_FLOAT_MESSAGE(3.14f, 3.14f, "custom neq float"), "custom neq float");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_THAN_FLOAT_MESSAGE(2.0f, 1.0f, "custom gt float"), "custom gt float");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_OR_EQUAL_FLOAT_MESSAGE(2.0f, 1.0f, "custom gte float"), "custom gte float");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_THAN_FLOAT_MESSAGE(1.0f, 2.0f, "custom lt float"), "custom lt float");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_FLOAT_MESSAGE(1.0f, 2.0f, "custom lte float"), "custom lte float");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_DOUBLE_MESSAGE(3.14159, 2.71828, "custom eq double"), "custom eq double");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_DOUBLE_MESSAGE(3.14159, 3.14159, "custom neq double"), "custom neq double");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_THAN_DOUBLE_MESSAGE(2.0, 1.0, "custom gt double"), "custom gt double");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE_MESSAGE(2.0, 1.0, "custom gte double"), "custom gte double");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_THAN_DOUBLE_MESSAGE(1.0, 2.0, "custom lt double"), "custom lt double");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE_MESSAGE(1.0, 2.0, "custom lte double"), "custom lte double");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_FLOAT_MESSAGE(3.14f, 2.71f, "custom eq float"), "custom eq float: Expected 3.14000 Received 2.71000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_FLOAT_MESSAGE(3.14f, 3.14f, "custom neq float"), "custom neq float: Expected 3.14000 to not be equal to 3.14000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_THAN_FLOAT_MESSAGE(2.0f, 1.0f, "custom gt float"), "custom gt float: Expected 1.00000 to be greater than 2.00000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_OR_EQUAL_FLOAT_MESSAGE(2.0f, 1.0f, "custom gte float"), "custom gte float: Expected 1.00000 to be greater or equal than 2.00000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_THAN_FLOAT_MESSAGE(1.0f, 2.0f, "custom lt float"), "custom lt float: Expected 2.00000 to be less than 1.00000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_OR_EQUAL_FLOAT_MESSAGE(1.0f, 2.0f, "custom lte float"), "custom lte float: Expected 2.00000 to be less or equal than 1.00000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_DOUBLE_MESSAGE(3.14159, 2.71828, "custom eq double"), "custom eq double: Expected 3.141590000 Received 2.718280000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_EQUAL_DOUBLE_MESSAGE(3.14159, 3.14159, "custom neq double"), "custom neq double: Expected 3.141590000 to not be equal to 3.141590000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_THAN_DOUBLE_MESSAGE(2.0, 1.0, "custom gt double"), "custom gt double: Expected 1.000000000 to be greater than 2.000000000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_GREATER_OR_EQUAL_DOUBLE_MESSAGE(2.0, 1.0, "custom gte double"), "custom gte double: Expected 1.000000000 to be greater or equal than 2.000000000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_THAN_DOUBLE_MESSAGE(1.0, 2.0, "custom lt double"), "custom lt double: Expected 2.000000000 to be less than 1.000000000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_LESS_OR_EQUAL_DOUBLE_MESSAGE(1.0, 2.0, "custom lte double"), "custom lte double: Expected 2.000000000 to be less or equal than 1.000000000");
 }
 
 TEST(floating_point_zero) {
@@ -258,9 +258,9 @@ TEST(within_comparisons) {
   VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_UINT(1000, 50, 1051), "Expected 1000 within +/- 50 but actual diff was 51");
   VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_UINT(1000, 50, 949), "Expected 1000 within +/- 50 but actual diff was 51");
 
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_CHAR_MESSAGE(50, 5, 56, "custom within char"), "custom within char");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_INT_MESSAGE(100, 10, 111, "custom within int"), "custom within int");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_UINT_MESSAGE(1000, 50, 1051, "custom within uint"), "custom within uint");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_CHAR_MESSAGE(50, 5, 56, "custom within char"), "custom within char: Expected '2' (0x32) within +/- 5 but actual diff was 6");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_INT_MESSAGE(100, 10, 111, "custom within int"), "custom within int: Expected 100 within +/- 10 but actual diff was 11");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_UINT_MESSAGE(1000, 50, 1051, "custom within uint"), "custom within uint: Expected 1000 within +/- 50 but actual diff was 51");
 
   float accumulated_float = 0.0f;
   for (int i = 0; i < 10; i++)
@@ -278,8 +278,8 @@ TEST(within_comparisons) {
   VALIDATE_PASS(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.00001, accumulated_double));
   VALIDATE_FAIL(TEST_ASSERT_WITHIN_DOUBLE(expected_double, 0.0000001, accumulated_double + 0.1));
 
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_FLOAT_MESSAGE(expected_float, 0.0000001f, accumulated_float + 0.1f, "custom within float"), "custom within float");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_WITHIN_DOUBLE_MESSAGE(expected_double, 0.0000001, accumulated_double + 0.1, "custom within double"), "custom within double");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_FLOAT_MESSAGE(expected_float, 0.0000001f, accumulated_float + 0.1f, "custom within float"), "custom within float: Expected 1.00000 within +/- 0.00000 but actual diff was 0.10000");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_DOUBLE_MESSAGE(expected_double, 0.0000001, accumulated_double + 0.1, "custom within double"), "custom within double: Expected 1.000000000 within +/- 0.000000100 but actual diff was 0.100000000");
 }
 
 #endif

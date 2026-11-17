@@ -19,10 +19,10 @@ TEST(boolean_and_basic) {
 
   VALIDATE_FAIL_MSG(TEST_FAIL("Test Failed"), "Test Failed");
 
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_MESSAGE(false, "custom assert"), "custom assert");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_TRUE_MESSAGE(false, "custom true"), "custom true");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_FALSE_MESSAGE(true, "custom false"), "custom false");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_UNLESS_MESSAGE(true, "custom unless"), "custom unless");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_MESSAGE(false, "custom assert"), "custom assert");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_TRUE_MESSAGE(false, "custom true"), "custom true");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_FALSE_MESSAGE(true, "custom false"), "custom false");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_UNLESS_MESSAGE(true, "custom unless"), "custom unless");
 }
 
 TEST(pointers_and_nullness) {
@@ -41,9 +41,9 @@ TEST(pointers_and_nullness) {
   VALIDATE_PASS(TEST_ASSERT_NOT_EQUAL_PTR(ptr, NULL));
   VALIDATE_FAIL(TEST_ASSERT_NOT_EQUAL_PTR(ptr, ptr));
 
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NULL_MESSAGE(ptr, "custom null"), "custom null");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_NULL_MESSAGE(NULL, "custom not null"), "custom not null");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_NOT_EQUAL_PTR_MESSAGE(ptr, ptr, "custom ptr"), "custom ptr");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_NULL_MESSAGE(ptr, "custom null"), "custom null");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_NOT_NULL_MESSAGE(NULL, "custom not null"), "custom not null");
+  VALIDATE_FAIL_MSG_PREFIX(TEST_ASSERT_NOT_EQUAL_PTR_MESSAGE(ptr, ptr, "custom ptr"), "custom ptr: Expected ");
 }
 
 TEST(memory) {
@@ -91,8 +91,8 @@ TEST(memory) {
   VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_MEMORY(NULL, buf2, sizeof(buf2)), "One of the pointers is NULL");
   VALIDATE_PASS(TEST_ASSERT_EQUAL_MEMORY(&s1, &s2, 0));
 
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_MEMORY_MESSAGE(buf1, NULL, sizeof(buf1), "custom memory"), "custom memory");
-  VALIDATE_CUSTOM_MESSAGE(TEST_ASSERT_EQUAL_MEMORY_ARRAY_MESSAGE(buf1, buf3, sizeof(DummyStruct), 3, "custom memory array"), "custom memory array");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_MEMORY_MESSAGE(buf1, NULL, sizeof(buf1), "custom memory"), "custom memory: One of the pointers is NULL");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_EQUAL_MEMORY_ARRAY_MESSAGE(buf1, buf3, sizeof(DummyStruct), 3, "custom memory array"), "custom memory array: Array mismatch at Element [1], Byte Offset [4]: Expected 0x28 but was 0x63");
 }
 
 #endif

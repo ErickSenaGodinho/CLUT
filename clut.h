@@ -56,6 +56,9 @@
 #define CLUT_MSG_ARRAY_INDEX_END "] "
 #define CLUT_MSG_BYTE_OFFSET ", Byte Offset "
 #define CLUT_MSG_WAS " but was "
+#ifndef CLUT_MSG_USER_SEPARATOR
+#define CLUT_MSG_USER_SEPARATOR ": "
+#endif
 
 /* Utility Types */
 typedef struct {
@@ -832,6 +835,12 @@ static void clut_register_failure(const char *file, int line) {
 }
 
 static void clut_message_append(const char *msg) { clut_string_builder_append(&Clut.runner.failure_message, msg); }
+static void clut_message_append_user_text(const char *msg) {
+  if (msg) {
+    clut_message_append(msg);
+    clut_message_append(CLUT_MSG_USER_SEPARATOR);
+  }
+}
 static void clut_message_append_char(char c) {
   unsigned char byte_value = (unsigned char)c;
   const char *escaped = NULL;
@@ -881,7 +890,7 @@ static void clut_message_append_str(const char *str) {
 
 static void clut_message_append_array_prefix(size_t index) {
   clut_message_append(CLUT_MSG_ARRAY_MISMATCH_AT);
-  clut_message_append_format("[%zu] ", index);
+  clut_message_append_format("[%zu]: ", index);
 }
 
 #define CLUT_FORMAT_COMPARISON_MESSAGE(append_val, lhs, op_str, rhs)                                                                                                                                                                                               \
@@ -922,11 +931,8 @@ static void clut_message_append_array_prefix(size_t index) {
     CLUT_ABORT_IF_FAILED_OR_SKIPPED;                                                                                                                                                                                                                               \
     if (condition)                                                                                                                                                                                                                                                 \
       return;                                                                                                                                                                                                                                                      \
-    if (msg) {                                                                                                                                                                                                                                                     \
-      clut_message_append((msg));                                                                                                                                                                                                                                  \
-    } else {                                                                                                                                                                                                                                                       \
-      CLUT_FORMAT_COMPARISON_MESSAGE(append_fn, (lhs), (op_str), (rhs));                                                                                                                                                                                           \
-    }                                                                                                                                                                                                                                                              \
+    clut_message_append_user_text(msg);                                                                                                                                                                                                                            \
+    CLUT_FORMAT_COMPARISON_MESSAGE(append_fn, (lhs), (op_str), (rhs));                                                                                                                                                                                             \
     clut_register_failure(file, line);                                                                                                                                                                                                                             \
   } while (0)
 
@@ -935,11 +941,8 @@ static void clut_message_append_array_prefix(size_t index) {
     CLUT_ABORT_IF_FAILED_OR_SKIPPED;                                                                                                                                                                                                                               \
     if ((diff_val) <= (delta))                                                                                                                                                                                                                                     \
       return;                                                                                                                                                                                                                                                      \
-    if (msg) {                                                                                                                                                                                                                                                     \
-      clut_message_append((msg));                                                                                                                                                                                                                                  \
-    } else {                                                                                                                                                                                                                                                       \
-      CLUT_FORMAT_WITHIN_MESSAGE(append_fn_val, append_fn_num, (expected), (delta), (diff_val));                                                                                                                                                                   \
-    }                                                                                                                                                                                                                                                              \
+    clut_message_append_user_text(msg);                                                                                                                                                                                                                            \
+    CLUT_FORMAT_WITHIN_MESSAGE(append_fn_val, append_fn_num, (expected), (delta), (diff_val));                                                                                                                                                                     \
     clut_register_failure(file, line);                                                                                                                                                                                                                             \
   } while (0)
 
@@ -950,7 +953,8 @@ static void clut_message_append_array_prefix(size_t index) {
     if (expected == actual)                                                                                                                                                                                                                                        \
       return;                                                                                                                                                                                                                                                      \
     if (expected == NULL || actual == NULL) {                                                                                                                                                                                                                      \
-      clut_message_append(msg ? msg : CLUT_MSG_MEMORY_NULL);                                                                                                                                                                                                       \
+      clut_message_append_user_text(msg);                                                                                                                                                                                                                          \
+      clut_message_append(CLUT_MSG_MEMORY_NULL);                                                                                                                                                                                                                   \
       clut_register_failure(file, line);                                                                                                                                                                                                                           \
       return;                                                                                                                                                                                                                                                      \
     }                                                                                                                                                                                                                                                              \
@@ -1202,16 +1206,13 @@ CLUT_API void ClutAssertEqualStringLen(const char *expected, const char *actual,
   }
   if (!failed)
     return;
-  if (msg) {
-    clut_message_append(msg);
-  } else {
-    clut_message_append(CLUT_MSG_EXPECTED);
-    clut_message_append_str(actual);
-    clut_message_append(CLUT_MSG_EQUAL);
-    clut_message_append_str(expected);
-    clut_message_append(CLUT_MSG_UNTIL_LEN);
-    clut_message_append_uint(len);
-  }
+  clut_message_append_user_text(msg);
+  clut_message_append(CLUT_MSG_EXPECTED);
+  clut_message_append_str(actual);
+  clut_message_append(CLUT_MSG_EQUAL);
+  clut_message_append_str(expected);
+  clut_message_append(CLUT_MSG_UNTIL_LEN);
+  clut_message_append_uint(len);
   clut_register_failure(file, line);
 }
 
@@ -1219,11 +1220,8 @@ CLUT_API void ClutAssertEqualPtr(const void *expected, const void *actual, const
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
   if (expected == actual)
     return;
-  if (msg) {
-    clut_message_append(msg);
-  } else {
-    CLUT_FORMAT_COMPARISON_MESSAGE(clut_message_append_ptr, expected, CLUT_MSG_RECEIVED, actual);
-  }
+  clut_message_append_user_text(msg);
+  CLUT_FORMAT_COMPARISON_MESSAGE(clut_message_append_ptr, expected, CLUT_MSG_RECEIVED, actual);
   clut_register_failure(file, line);
 }
 
@@ -1276,16 +1274,13 @@ CLUT_API void ClutAssertNotEqualStringLen(const char *expected, const char *actu
   }
   if (!is_equal)
     return;
-  if (msg) {
-    clut_message_append(msg);
-  } else {
-    clut_message_append(CLUT_MSG_EXPECTED);
-    clut_message_append_str(actual);
-    clut_message_append(CLUT_MSG_NOT_EQUAL);
-    clut_message_append_str(expected);
-    clut_message_append(CLUT_MSG_UNTIL_LEN);
-    clut_message_append_uint(len);
-  }
+  clut_message_append_user_text(msg);
+  clut_message_append(CLUT_MSG_EXPECTED);
+  clut_message_append_str(actual);
+  clut_message_append(CLUT_MSG_NOT_EQUAL);
+  clut_message_append_str(expected);
+  clut_message_append(CLUT_MSG_UNTIL_LEN);
+  clut_message_append_uint(len);
   clut_register_failure(file, line);
 }
 
@@ -1293,11 +1288,8 @@ CLUT_API void ClutAssertNotEqualPtr(const void *expected, const void *actual, co
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
   if (expected != actual)
     return;
-  if (msg) {
-    clut_message_append(msg);
-  } else {
-    CLUT_FORMAT_COMPARISON_MESSAGE(clut_message_append_ptr, actual, CLUT_MSG_NOT_EQUAL, expected);
-  }
+  clut_message_append_user_text(msg);
+  CLUT_FORMAT_COMPARISON_MESSAGE(clut_message_append_ptr, actual, CLUT_MSG_NOT_EQUAL, expected);
   clut_register_failure(file, line);
 }
 
@@ -1370,19 +1362,17 @@ CLUT_API void ClutAssertEqualMemory(const void *expected, const void *actual, si
       if (expected_bytes[offset] == actual_bytes[offset])
         continue;
 
-      if (msg) {
-        clut_message_append(msg);
+      clut_message_append_user_text(msg);
+      if (num_elements > 1) {
+        clut_message_append(CLUT_MSG_ARRAY_MISMATCH_AT);
+        clut_message_append_format("[%zu]", element_index);
+        clut_message_append(CLUT_MSG_BYTE_OFFSET);
+        clut_message_append_format("[%zu]: ", byte_index);
       } else {
-        if (num_elements > 1) {
-          clut_message_append_array_prefix(element_index);
-          clut_message_append(CLUT_MSG_BYTE_OFFSET);
-          clut_message_append_format("[%zu] ", byte_index);
-        } else {
-          clut_message_append(CLUT_MSG_MISMATCH_AT);
-          clut_message_append_uint(byte_index);
-        }
-        CLUT_FORMAT_COMPARISON_MESSAGE(clut_message_append_hex, expected_bytes[offset], CLUT_MSG_WAS, actual_bytes[offset]);
+        clut_message_append(CLUT_MSG_MISMATCH_AT);
+        clut_message_append_format("%zu: ", byte_index);
       }
+      CLUT_FORMAT_COMPARISON_MESSAGE(clut_message_append_hex, expected_bytes[offset], CLUT_MSG_WAS, actual_bytes[offset]);
       clut_register_failure(file, line);
       return;
     }
@@ -1391,12 +1381,9 @@ CLUT_API void ClutAssertEqualMemory(const void *expected, const void *actual, si
 
 #define CLUT_ARRAY_MISMATCH_RECORD(file, line, msg, index, append_fn, exp_val, act_val)                                                                                                                                                                            \
   do {                                                                                                                                                                                                                                                             \
-    if (msg) {                                                                                                                                                                                                                                                     \
-      clut_message_append((msg));                                                                                                                                                                                                                                  \
-    } else {                                                                                                                                                                                                                                                       \
-      clut_message_append_array_prefix((index));                                                                                                                                                                                                                   \
-      CLUT_FORMAT_COMPARISON_MESSAGE(append_fn, (exp_val), CLUT_MSG_WAS, (act_val));                                                                                                                                                                               \
-    }                                                                                                                                                                                                                                                              \
+    clut_message_append_user_text(msg);                                                                                                                                                                                                                            \
+    clut_message_append_array_prefix((index));                                                                                                                                                                                                                     \
+    CLUT_FORMAT_COMPARISON_MESSAGE(append_fn, (exp_val), CLUT_MSG_WAS, (act_val));                                                                                                                                                                                 \
     clut_register_failure(file, line);                                                                                                                                                                                                                             \
   } while (0)
 
@@ -1485,12 +1472,9 @@ CLUT_API void ClutAssertEqualStringArray(const char **expected, const char **act
 
 #define CLUT_ARRAY_WITHIN_RECORD(file, line, msg, index, append_fn_val, append_fn_num, exp_val, delta_val, diff_val)                                                                                                                                               \
   do {                                                                                                                                                                                                                                                             \
-    if (msg) {                                                                                                                                                                                                                                                     \
-      clut_message_append((msg));                                                                                                                                                                                                                                  \
-    } else {                                                                                                                                                                                                                                                       \
-      clut_message_append_array_prefix((index));                                                                                                                                                                                                                   \
-      CLUT_FORMAT_WITHIN_MESSAGE(append_fn_val, append_fn_num, (exp_val), (delta_val), (diff_val));                                                                                                                                                                \
-    }                                                                                                                                                                                                                                                              \
+    clut_message_append_user_text(msg);                                                                                                                                                                                                                            \
+    clut_message_append_array_prefix((index));                                                                                                                                                                                                                     \
+    CLUT_FORMAT_WITHIN_MESSAGE(append_fn_val, append_fn_num, (exp_val), (delta_val), (diff_val));                                                                                                                                                                  \
     clut_register_failure(file, line);                                                                                                                                                                                                                             \
   } while (0)
 
