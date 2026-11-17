@@ -625,6 +625,18 @@ CLUT_STATE_LINKAGE const ClutReporter *ClutCustomReporter = NULL;
     }                                                                                                                                                                                                                                                              \
   } while (0)
 
+#ifdef CLUT_HAS_LONGJMP
+#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
+  if (setjmp(Clut.current_test.jmp_buffer) == 0) {                                                                                                                                                                                                                 \
+    call;                                                                                                                                                                                                                                                          \
+  }
+#else
+#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
+  {                                                                                                                                                                                                                                                                \
+    call;                                                                                                                                                                                                                                                          \
+  }
+#endif
+
 /* Reporters implementation */
 #if defined(CLUT_OUTPUT_GITHUB)
 static void clut_report_pass(void *context, const ClutTestResult *result) {
@@ -1017,6 +1029,37 @@ static void clut_reset_current_test(void) {
   clut_da_clear(&Clut.runner.failure_message);
 }
 
+static void clut_run_hook(ClutHookFn hook) {
+  if (hook == NULL)
+    return;
+  CLUT_RUN_GUARDED(hook());
+}
+
+static void clut_run_after_each(void) {
+  if (Clut.hooks.after_each == NULL)
+    return;
+
+  bool test_failed = Clut.current_test.failed;
+  bool test_skipped = Clut.current_test.skipped;
+
+  Clut.current_test.failed = false;
+  Clut.current_test.skipped = false;
+  Clut.current_test.iteration = -1;
+
+  clut_run_hook(Clut.hooks.after_each);
+
+  Clut.current_test.failed = test_failed || Clut.current_test.failed;
+  Clut.current_test.skipped = test_skipped || Clut.current_test.skipped;
+}
+
+static void clut_print_hook_failure(const char *hook_name) {
+  if (Clut.current_test.failed) {
+    const ClutTestFailure *failure = &Clut.runner.failures.items[0];
+    fprintf(CLUT_STREAM_FAIL, "%s:%d: %s hook failed: %s\n", failure->file, failure->line, hook_name, Clut.runner.failure_message.items + failure->message_offset);
+  }
+  clut_reset_current_test();
+}
+
 static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
   clut_reset_current_test();
   const ClutReporter *reporter = clut_get_reporter();
@@ -1025,17 +1068,21 @@ static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
     reporter->on_test_start(reporter->context, test_name);
   }
 
-  if (Clut.hooks.before_each) {
-    Clut.hooks.before_each();
-  }
+  clut_run_hook(Clut.hooks.before_each);
 
   Clut.current_test.name = test_name;
   Clut.current_test.start_time = clock();
 
-  run_test_fn();
+  if (!Clut.current_test.failed && !Clut.current_test.skipped) {
+    run_test_fn();
+  }
+
+  double duration = clut_elapsed_seconds(Clut.current_test.start_time);
+
+  clut_run_after_each();
 
   clut_da_foreach(ClutTestFailure, f, &Clut.runner.failures) { f->message = Clut.runner.failure_message.items + f->message_offset; }
-  ClutTestResult result = {test_name, Clut.runner.failures.items, Clut.runner.failures.count, clut_elapsed_seconds(Clut.current_test.start_time)};
+  ClutTestResult result = {test_name, Clut.runner.failures.items, Clut.runner.failures.count, duration};
 
   if (Clut.current_test.failed) {
     Clut.suite.failed++;
@@ -1053,10 +1100,6 @@ static void clut_execute_test(ClutTestFn run_test_fn, const char *test_name) {
       reporter->on_test_pass(reporter->context, &result);
     }
   }
-
-  if (Clut.hooks.after_each) {
-    Clut.hooks.after_each();
-  }
 }
 
 CLUT_API void ClutSuiteEnd(void) {
@@ -1066,17 +1109,17 @@ CLUT_API void ClutSuiteEnd(void) {
 
   Clut.suite.start_time = clock();
 
-  if (Clut.hooks.before_all) {
-    Clut.hooks.before_all();
-  }
+  clut_reset_current_test();
+  clut_run_hook(Clut.hooks.before_all);
+  clut_print_hook_failure("before_all");
 
   clut_da_foreach(ClutRegisteredTest, test, &Clut.suite.registered_tests) { clut_execute_test(test->fn, test->name); }
 
   double total_time = clut_elapsed_seconds(Clut.suite.start_time);
 
-  if (Clut.hooks.after_all) {
-    Clut.hooks.after_all();
-  }
+  clut_reset_current_test();
+  clut_run_hook(Clut.hooks.after_all);
+  clut_print_hook_failure("after_all");
 
   const ClutSummary suite_summary = {Clut.suite.total_tests, Clut.suite.passed, Clut.suite.failed, Clut.suite.skipped, total_time};
   const ClutReporter *reporter = clut_get_reporter();
@@ -1097,19 +1140,6 @@ CLUT_API void ClutSetHookBeforeAll(ClutHookFn hook_fn) { Clut.hooks.before_all =
 CLUT_API void ClutSetHookBeforeEach(ClutHookFn hook_fn) { Clut.hooks.before_each = hook_fn; }
 CLUT_API void ClutSetHookAfterAll(ClutHookFn hook_fn) { Clut.hooks.after_all = hook_fn; }
 CLUT_API void ClutSetHookAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each = hook_fn; }
-
-#ifdef CLUT_HAS_LONGJMP
-
-#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
-  if (setjmp(Clut.current_test.jmp_buffer) == 0) {                                                                                                                                                                                                                 \
-    call;                                                                                                                                                                                                                                                          \
-  }
-#else
-#define CLUT_RUN_GUARDED(call)                                                                                                                                                                                                                                     \
-  {                                                                                                                                                                                                                                                                \
-    call;                                                                                                                                                                                                                                                          \
-  }
-#endif
 
 CLUT_API void ClutRunTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()); }
 
