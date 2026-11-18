@@ -7,7 +7,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Streams / epsilons */
 #ifndef CLUT_STREAM_DEFAULT
 #define CLUT_STREAM_DEFAULT stdout
 #endif
@@ -78,15 +77,14 @@ typedef struct {
   double total_seconds;
 } ClutSummary;
 
-/* Function Types */
 typedef struct {
-  size_t current_repetition;
-  size_t total_repetitions;
-} ClutRepetitionInfo;
+  size_t current_iteration;
+  size_t total_iterations;
+} ClutIterationInfo;
 
 typedef void (*ClutHookFn)();
 typedef void (*ClutTestFn)();
-typedef void (*ClutRepeatedTestFn)(ClutRepetitionInfo);
+typedef void (*ClutRepeatedTestFn)(ClutIterationInfo);
 typedef void (*ClutParamTestFn)(const void *param);
 
 typedef struct {
@@ -207,15 +205,15 @@ typedef struct {
   CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunTest(CLUT_TEST_BODY(name)); }                                                                                                                                                                               \
   static void CLUT_TEST_BODY(name)(void)
 
-#define REPEATED_TEST(name, repetitions)                                                                                                                                                                                                                           \
-  static void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                      \
-  CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeated(CLUT_TEST_BODY(name), repetitions); }                                                                                                                                                              \
-  static void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
+#define REPEATED_TEST(name, iterations)                                                                                                                                                                                                                            \
+  static void CLUT_TEST_BODY(name)(ClutIterationInfo input);                                                                                                                                                                                                       \
+  CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeated(CLUT_TEST_BODY(name), iterations); }                                                                                                                                                               \
+  static void CLUT_TEST_BODY(name)(ClutIterationInfo input)
 
-#define REPEATED_TEST_WITH_THRESHOLD(name, repetitions, failure_threshold)                                                                                                                                                                                         \
-  static void CLUT_TEST_BODY(name)(ClutRepetitionInfo input);                                                                                                                                                                                                      \
-  CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeatedWithThreshold(CLUT_TEST_BODY(name), repetitions, failure_threshold); }                                                                                                                              \
-  static void CLUT_TEST_BODY(name)(ClutRepetitionInfo input)
+#define REPEATED_TEST_WITH_THRESHOLD(name, iterations, failure_threshold)                                                                                                                                                                                          \
+  static void CLUT_TEST_BODY(name)(ClutIterationInfo input);                                                                                                                                                                                                       \
+  CLUT_API void CLUT_TEST_WRAPPER(name)(void) { ClutRunRepeatedWithThreshold(CLUT_TEST_BODY(name), iterations, failure_threshold); }                                                                                                                               \
+  static void CLUT_TEST_BODY(name)(ClutIterationInfo input)
 
 #define PARAM_TEST(name, Type, ...)                                                                                                                                                                                                                                \
   static void CLUT_TEST_BODY(name)(Type input);                                                                                                                                                                                                                    \
@@ -398,8 +396,8 @@ CLUT_API void ClutSetHookAfterAll(ClutHookFn hook_fn);
 CLUT_API void ClutSetHookAfterEach(ClutHookFn hook_fn);
 
 CLUT_API void ClutRunTest(ClutTestFn test_fn);
-CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t repetitions);
-CLUT_API void ClutRunRepeatedWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold);
+CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t iterations);
+CLUT_API void ClutRunRepeatedWithThreshold(ClutRepeatedTestFn test_fn, size_t iterations, size_t failure_threshold);
 CLUT_API void ClutRunParamTestImpl(ClutParamTestFn test_fn, const void *items, size_t item_size, size_t count);
 
 #define ClutRunParamTest(test_fn, Type, ...)                                                                                                                                                                                                                       \
@@ -1247,27 +1245,27 @@ CLUT_API void ClutSetHookAfterEach(ClutHookFn hook_fn) { Clut.hooks.after_each =
 
 CLUT_API void ClutRunTest(ClutTestFn test_fn) { CLUT_RUN_GUARDED(test_fn()); }
 
-CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t repetitions) {
-  volatile ClutRepetitionInfo input = (ClutRepetitionInfo){.total_repetitions = repetitions};
+CLUT_API void ClutRunRepeated(ClutRepeatedTestFn test_fn, size_t iterations) {
+  volatile ClutIterationInfo input = (ClutIterationInfo){.total_iterations = iterations};
   volatile size_t failed = 0;
   volatile size_t skipped = 0;
-  for (volatile size_t i = 1; i <= repetitions; ++i) {
+  for (volatile size_t i = 0; i < iterations; ++i) {
     Clut.current_test.iteration = (int)i;
-    input.current_repetition = i;
+    input.current_iteration = i;
     CLUT_RUN_GUARDED(test_fn(input));
     clut_tally_iteration(&failed, &skipped);
   }
-  clut_set_test_outcome(failed, skipped, repetitions);
+  clut_set_test_outcome(failed, skipped, iterations);
 }
 
-CLUT_API void ClutRunRepeatedWithThreshold(ClutRepeatedTestFn test_fn, size_t repetitions, size_t failure_threshold) {
-  volatile ClutRepetitionInfo input = (ClutRepetitionInfo){.total_repetitions = repetitions};
+CLUT_API void ClutRunRepeatedWithThreshold(ClutRepeatedTestFn test_fn, size_t iterations, size_t failure_threshold) {
+  volatile ClutIterationInfo input = (ClutIterationInfo){.total_iterations = iterations};
   volatile size_t failed = 0;
   volatile size_t skipped = 0;
   volatile size_t ran = 0;
-  for (volatile size_t i = 1; i <= repetitions; ++i) {
+  for (volatile size_t i = 0; i < iterations; ++i) {
     Clut.current_test.iteration = (int)i;
-    input.current_repetition = i;
+    input.current_iteration = i;
     CLUT_RUN_GUARDED(test_fn(input));
     ran++;
     if (clut_tally_iteration(&failed, &skipped) && failed >= failure_threshold) {
