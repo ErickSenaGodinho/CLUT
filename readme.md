@@ -35,6 +35,16 @@ Failed:     0
 Skipped:    0
 --------------------------------
 Total time: 0.000s
+
+================================
+RUNNER SUMMARY
+================================
+Tests:      1
+Passed:     1
+Failed:     0
+Skipped:    0
+--------------------------------
+Total time: 0.000s
 ```
 
 CLUT is header-only, stb style: `#define CLUT_IMPLEMENTATION` before the include, in exactly one file.
@@ -53,16 +63,27 @@ See [docs/runner_generator.md](docs/runner_generator.md) for details.
 
 Most C testing frameworks either require extra setup, multiple files or additional tooling.
 
-CLUT keeps things simple:
+CLUT wants one header. That's it. The example at the top of this page is the whole setup.
 
-- Single header integration
-- No external dependencies
-- Multiple output modes (Default, GitHub Actions, TAP)
-- Hooks for test setup and teardown
-- Support for repeated and parameterized tests
+Need more? It's there. Don't need it? It stays out of your way.
+
+**Out of the box**
+
+- Single header integration, no external dependencies
+- Readable output, ready to go
+- CI friendly: exit code is the number of failed tests (max 255)
+
+**When you want more**
+
+- Hooks (`before_all`, `before_each`, `after_each`, `after_all`)
+- Repeated and parameterized tests
+- Float and double comparison with configurable epsilon
+- Multiple output modes (Default, GitHub Actions, TAP), with optional ANSI colors
+- Custom reporters
+- Everything overridable: allocator, output streams, epsilons, how a test gets aborted
 - Optional CLI tool to auto-generate the test runner from your test files
-- Designed for small projects and fast iteration
-- CI friendly
+
+Start simple. Grow when the project does.
 
 ---
 
@@ -70,8 +91,9 @@ CLUT keeps things simple:
 
 | Doc | What's in it |
 |---|---|
-| [docs/guide.md](docs/guide.md) | Examples first: your first test, repeated and parameterized tests, custom failure messages, output formats |
-| [docs/api-reference.md](docs/api-reference.md) | Cheatsheet of every macro: setup, runner/suite, test definitions, hooks, assertions, configuration |
+| [docs/guide.md](docs/guide.md) | Examples first: your first test, hooks, repeated and parameterized tests, skipping, floats, custom failure messages |
+| [docs/api-reference.md](docs/api-reference.md) | Cheatsheet of every macro: setup, runner/suite, test definitions, hooks, assertions, reporters, configuration |
+| [docs/reporters.md](docs/reporters.md) | Output modes, custom reporters, every callback, what you get in each one |
 | [docs/runner_generator.md](docs/runner_generator.md) | The `runner_generator` CLI tool: usage, flags, generated runner, include paths |
 
 ---
@@ -84,6 +106,7 @@ CLUT/
 ├── docs/
 │   ├── guide.md
 │   ├── api-reference.md
+│   ├── reporters.md
 │   └── runner_generator.md
 ├── examples/
 ├── tests/
