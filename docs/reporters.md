@@ -48,20 +48,39 @@ and line that failed. No parsing on your side.
 
 **TAP**
 
-The plan (`1..N`) comes at the end of the suite, which TAP allows. Skipped tests are
-`ok N - name # SKIP`. The numbering restarts on every suite, so with several suites you get
-several plans. Feed it to whatever TAP consumer you already have.
+TAP version 14. Every suite is a subtest: its tests are indented, and the suite itself shows up
+as one line at the top level, named `suite_1`, `suite_2`, and so on. `ok` if nothing in it
+failed, `not ok` if something did.
 
 ```
-ok 1 - Addition # (0.000s)
-not ok 2 - Strings # (0.000s)
-# test_strings.c:7: Expected "Hella" to be equal to "Hello"
-1..2
-# Suite Summary: Tests: 2, Passed: 1, Failed: 1, Skipped: 0, Time: 0.000s
+TAP version 14
+    ok 1 - Addition # (0.000s)
+    not ok 2 - Strings # (0.000s)
+      ---
+      severity: fail
+      message: "Expected \"Hella\" to be equal to \"Hello\""
+      file: "test_strings.c"
+      line: 7
+      ...
+    1..2
+    # Suite Summary: Tests: 2, Passed: 1, Failed: 1, Skipped: 0, Time: 0.000s
+not ok 1 - suite_1 # (0.000s)
 
+1..1
 # Runner Summary: Tests: 2, Passed: 1, Failed: 1, Skipped: 0, Time: 0.000s
 
 ```
+
+Things to know:
+
+- A failed test gets a YAML block with `severity`, `message`, `file` and `line`. A failure from
+  `REPEATED_TEST` or `PARAM_TEST` also has `iteration`. A test with more than one failure
+  (several iterations failed) lists them all under `failures:`.
+- Skipped tests are `ok N - name # SKIP`.
+- Each suite has its own plan (`1..N`, counting its tests) and numbering restarts on every
+  suite. The top-level plan counts suites.
+- The `# Suite Summary` and `# Runner Summary` lines are TAP comments. Your TAP consumer will
+  ignore them. You won't.
 
 ---
 

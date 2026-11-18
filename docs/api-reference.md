@@ -281,7 +281,7 @@ CLUT_STATIC               // functions and internal state become `static`
 
 // output
 CLUT_OUTPUT_GITHUB        // GitHub Actions annotations
-CLUT_OUTPUT_TAP           // TAP
+CLUT_OUTPUT_TAP           // TAP 14, one subtest per suite
 CLUT_OUTPUT_COLOR         // ANSI colors in the default output
 CLUT_STREAM_DEFAULT       // where normal output goes. Default: stdout
 CLUT_STREAM_FAIL          // where failures go. Default: stderr

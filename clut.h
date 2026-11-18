@@ -728,61 +728,152 @@ static const ClutReporter ClutGithubReporter = {
 #elif defined(CLUT_OUTPUT_TAP)
 
 typedef struct {
-  size_t clut_tap_test_index;
+  size_t suite_index;
+  size_t test_index;
+  bool header_printed;
 } ClutTapContext;
 
 static ClutTapContext clut_tap_context = {0};
 
-static void clut_report_pass(void *context, const ClutTestResult *result) {
-  ClutTapContext *ctx = (ClutTapContext *)context;
-  ctx->clut_tap_test_index++;
-  fprintf(CLUT_STREAM_DEFAULT, "ok %zu - %s # (%.3fs)\n", ctx->clut_tap_test_index, result->test_name, result->duration);
-  if (result->skipped_iterations > 0)
-    fprintf(CLUT_STREAM_DEFAULT, "# %s: %zu skipped\n", result->test_name, result->skipped_iterations);
+static void clut_tap_ensure_header(ClutTapContext *ctx) {
+  if (!ctx->header_printed) {
+    fprintf(CLUT_STREAM_DEFAULT, "TAP version 14\n");
+    ctx->header_printed = true;
+  }
 }
 
-static void clut_tap_print_failure(const ClutTestFailure *failure) {
-  FILE *stream = CLUT_STREAM_DEFAULT;
-  fprintf(stream, "# %s:%d: ", failure->file, failure->line);
-  for (const char *p = failure->message; *p; ++p) {
-    fputc(*p, stream);
-    if (*p == '\n') {
-      fputs("# ", stream);
+static void clut_tap_print_yaml_escaped(FILE *stream, const char *str) {
+  if (!str) {
+    return;
+  }
+  for (const unsigned char *p = (const unsigned char *)str; *p; ++p) {
+    switch (*p) {
+    case '"':
+      fputs("\\\"", stream);
+      break;
+    case '\\':
+      fputs("\\\\", stream);
+      break;
+    case '\n':
+      fputs("\\n", stream);
+      break;
+    case '\r':
+      fputs("\\r", stream);
+      break;
+    case '\t':
+      fputs("\\t", stream);
+      break;
+    default:
+      if (*p < 0x20 || *p == 0x7F) {
+        fprintf(stream, "\\x%02X", *p);
+      } else {
+        fputc(*p, stream);
+      }
+      break;
     }
   }
-  if (failure->iteration >= 0) {
-    fprintf(stream, " [iteration %d]", failure->iteration);
+}
+
+static void clut_tap_print_failure_fields(FILE *stream, const ClutTestFailure *f, const char *indent) {
+  fprintf(stream, "%smessage: \"", indent);
+  clut_tap_print_yaml_escaped(stream, f->message);
+  fprintf(stream, "\"\n");
+
+  fprintf(stream, "%sfile: \"", indent);
+  clut_tap_print_yaml_escaped(stream, f->file);
+  fprintf(stream, "\"\n");
+
+  fprintf(stream, "%sline: %d\n", indent, f->line);
+
+  if (f->iteration >= 0) {
+    fprintf(stream, "%siteration: %d\n", indent, f->iteration);
   }
-  fputc('\n', stream);
+}
+
+static void clut_tap_print_failures_yaml(const ClutTestResult *result) {
+  if (result->failure_count == 0) {
+    return;
+  }
+
+  FILE *stream = CLUT_STREAM_DEFAULT;
+  fprintf(stream, "      ---\n");
+  fprintf(stream, "      severity: fail\n");
+
+  if (result->failure_count == 1) {
+    clut_tap_print_failure_fields(stream, &result->failures[0], "      ");
+  } else {
+    fprintf(stream, "      failures:\n");
+    for (size_t i = 0; i < result->failure_count; ++i) {
+      const ClutTestFailure *f = &result->failures[i];
+      fprintf(stream, "        - message: \"");
+      clut_tap_print_yaml_escaped(stream, f->message);
+      fprintf(stream, "\"\n");
+      fprintf(stream, "          file: \"");
+      clut_tap_print_yaml_escaped(stream, f->file);
+      fprintf(stream, "\"\n");
+      fprintf(stream, "          line: %d\n", f->line);
+      if (f->iteration >= 0) {
+        fprintf(stream, "          iteration: %d\n", f->iteration);
+      }
+    }
+  }
+
+  fprintf(stream, "      ...\n");
+}
+
+static void clut_report_pass(void *context, const ClutTestResult *result) {
+  ClutTapContext *ctx = (ClutTapContext *)context;
+  clut_tap_ensure_header(ctx);
+  ctx->test_index++;
+
+  fprintf(CLUT_STREAM_DEFAULT, "    ok %zu - %s # (%.3fs)\n", ctx->test_index, result->test_name, result->duration);
+
+  if (result->skipped_iterations > 0) {
+    fprintf(CLUT_STREAM_DEFAULT, "    # %s: %zu skipped\n", result->test_name, result->skipped_iterations);
+  }
 }
 
 static void clut_report_fail(void *context, const ClutTestResult *result) {
   ClutTapContext *ctx = (ClutTapContext *)context;
-  ctx->clut_tap_test_index++;
-  fprintf(CLUT_STREAM_DEFAULT, "not ok %zu - %s # (%.3fs)\n", ctx->clut_tap_test_index, result->test_name, result->duration);
-  for (size_t i = 0; i < result->failure_count; ++i) {
-    clut_tap_print_failure(&result->failures[i]);
-  }
+  clut_tap_ensure_header(ctx);
+  ctx->test_index++;
+
+  fprintf(CLUT_STREAM_DEFAULT, "    not ok %zu - %s # (%.3fs)\n", ctx->test_index, result->test_name, result->duration);
+
+  clut_tap_print_failures_yaml(result);
 }
 
 static void clut_report_skip(void *context, const ClutTestResult *result) {
   ClutTapContext *ctx = (ClutTapContext *)context;
-  ctx->clut_tap_test_index++;
-  fprintf(CLUT_STREAM_DEFAULT, "ok %zu - %s # SKIP\n", ctx->clut_tap_test_index, result->test_name);
+  clut_tap_ensure_header(ctx);
+  ctx->test_index++;
+
+  fprintf(CLUT_STREAM_DEFAULT, "    ok %zu - %s # SKIP\n", ctx->test_index, result->test_name);
 }
 
 static void clut_report_suite_end(void *context, const ClutSummary *summary) {
   ClutTapContext *ctx = (ClutTapContext *)context;
-  fprintf(CLUT_STREAM_DEFAULT, "1..%zu\n", ctx->clut_tap_test_index);
-  fprintf(CLUT_STREAM_DEFAULT, "# Suite Summary: Tests: %zu, Passed: %zu, Failed: %zu, Skipped: %zu, Time: %.3fs\n", summary->total_tests, summary->passed, summary->failed, summary->skipped, summary->total_seconds);
-  fprintf(CLUT_STREAM_DEFAULT, "\n");
-  ctx->clut_tap_test_index = 0;
+  clut_tap_ensure_header(ctx);
+  ctx->suite_index++;
+
+  fprintf(CLUT_STREAM_DEFAULT, "    1..%zu\n", ctx->test_index);
+  fprintf(CLUT_STREAM_DEFAULT, "    # Suite Summary: Tests: %zu, Passed: %zu, Failed: %zu, Skipped: %zu, Time: %.3fs\n", summary->total_tests, summary->passed, summary->failed, summary->skipped, summary->total_seconds);
+
+  const char *status = (summary->failed > 0) ? "not ok" : "ok";
+  fprintf(CLUT_STREAM_DEFAULT, "%s %zu - suite_%zu # (%.3fs)\n\n", status, ctx->suite_index, ctx->suite_index, summary->total_seconds);
+
+  ctx->test_index = 0;
 }
 
 static void clut_report_runner_end(void *context, const ClutSummary *summary) {
-  (void)context;
-  fprintf(CLUT_STREAM_DEFAULT, "# Runner Summary: Tests: %zu, Passed: %zu, Failed: %zu, Skipped: %zu, Time: %.3fs\n", summary->total_tests, summary->passed, summary->failed, summary->skipped, summary->total_seconds);
-  fprintf(CLUT_STREAM_DEFAULT, "\n");
+  ClutTapContext *ctx = (ClutTapContext *)context;
+  clut_tap_ensure_header(ctx);
+
+  fprintf(CLUT_STREAM_DEFAULT, "1..%zu\n", ctx->suite_index);
+  fprintf(CLUT_STREAM_DEFAULT, "# Runner Summary: Tests: %zu, Passed: %zu, Failed: %zu, Skipped: %zu, Time: %.3fs\n\n", summary->total_tests, summary->passed, summary->failed, summary->skipped, summary->total_seconds);
+
+  ctx->suite_index = 0;
+  ctx->header_printed = false;
 }
 
 static const ClutReporter ClutTapReporter = {
