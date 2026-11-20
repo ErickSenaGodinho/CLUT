@@ -633,8 +633,8 @@ CLUT_STATE_LINKAGE const ClutReporter *ClutCustomReporter = NULL;
 #define CLUT_ABORT_TEST longjmp(Clut.current_test.jmp_buffer, 1)
 #else
 #define CLUT_ABORT_TEST return
-#endif // CLUT_HAS_LONGJMP
-#endif // CLUT_ABORT_TEST
+#endif /* CLUT_HAS_LONGJMP */
+#endif /* CLUT_ABORT_TEST */
 
 #define CLUT_ABORT_IF_FAILED_OR_SKIPPED                                                                                                                                                                                                                            \
   do {                                                                                                                                                                                                                                                             \
@@ -1503,7 +1503,7 @@ CLUT_API void ClutAssertWithinChar(char expected, size_t delta, char actual, con
   CLUT_ASSERT_WITHIN(clut_message_append_char, clut_message_append_uint, diff, expected, delta, file, line, msg);
 }
 CLUT_API void ClutAssertWithinInt(int expected, size_t delta, int actual, const char *file, int line, const char *msg) {
-  size_t diff = (actual > expected) ? (actual - expected) : (expected - actual);
+  size_t diff = (actual > expected) ? ((size_t)actual - (size_t)expected) : ((size_t)expected - (size_t)actual);
   CLUT_ASSERT_WITHIN(clut_message_append_int, clut_message_append_uint, diff, expected, delta, file, line, msg);
 }
 CLUT_API void ClutAssertWithinUint(size_t expected, size_t delta, size_t actual, const char *file, int line, const char *msg) {
@@ -1625,7 +1625,7 @@ CLUT_API void ClutAssertWithinIntArray(const int *expected, size_t delta, const 
   CLUT_ABORT_IF_FAILED_OR_SKIPPED;
   CLUT_CHECK_BUFFER_ARGS;
   for (size_t i = 0; i < num_elements; i++) {
-    size_t diff = (actual[i] > expected[i]) ? (actual[i] - expected[i]) : (expected[i] - actual[i]);
+    size_t diff = (actual[i] > expected[i]) ? ((size_t)actual[i] - (size_t)expected[i]) : ((size_t)expected[i] - (size_t)actual[i]);
     if (diff <= delta)
       continue;
     CLUT_ARRAY_WITHIN_RECORD(file, line, msg, i, clut_message_append_int, clut_message_append_uint, expected[i], delta, diff);

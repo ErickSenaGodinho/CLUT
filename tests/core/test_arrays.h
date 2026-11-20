@@ -2,6 +2,7 @@
 #define CLUT_TEST_ARRAYS_H
 
 #include "test_common.h"
+#include <limits.h>
 
 TEST(char_array) {
   char exp[] = "ClutTest";
@@ -193,17 +194,22 @@ TEST(within_int_array) {
   int act_ok[] = {105, -45, 10, 195};
   int act_fail[] = {105, -45, 11, 195};
 
+  int exp_overflow[] = {INT_MIN};
+  int act_overflow[] = {INT_MAX};
+
   VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, act_ok, 4));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, exp, 4));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, act_fail, 2));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 0, exp, 4));
   VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(NULL, 10, NULL, 0));
+  VALIDATE_PASS(TEST_ASSERT_WITHIN_INT_ARRAY(exp_overflow, (size_t)UINT_MAX, act_overflow, 1));
 
   VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, act_fail, 4), "Array mismatch at Element [2]: Expected 0 within +/- 10 but actual diff was 11");
   VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 0, act_ok, 4), "Array mismatch at Element [0]: Expected 100 within +/- 0 but actual diff was 5");
   VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_INT_ARRAY(exp, 10, NULL, 4), "One of the pointers is NULL");
   VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_INT_ARRAY(NULL, 10, act_ok, 4), "One of the pointers is NULL");
   VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_INT_ARRAY_MESSAGE(exp, 10, act_fail, 4, "custom within int array"), "custom within int array: Array mismatch at Element [2]: Expected 0 within +/- 10 but actual diff was 11");
+  VALIDATE_FAIL_MSG(TEST_ASSERT_WITHIN_INT_ARRAY(exp_overflow, (size_t)UINT_MAX - 1, act_overflow, 1), "Array mismatch at Element [0]: Expected -2147483648 within +/- 4294967294 but actual diff was 4294967295");
 }
 
 TEST(within_uint_array) {
